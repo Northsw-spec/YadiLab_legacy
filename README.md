@@ -16,13 +16,13 @@ Utvecklingen styrs av [Masterprompten](docs/MASTERPROMPT.md) och den korta opera
 python3 -m network_core
 ```
 
-En lokal webbläsare öppnas på `http://127.0.0.1:8765/`. Vill du styra datamapp och webbläsare:
+En lokal webbläsare öppnas normalt på `http://127.0.0.1:8765/`. Om standardporten är upptagen försöker appen använda nästa lediga port inom `8766`–`8774` och skriver ut den faktiska webbadressen i terminalen. Vid uttryckligt `--port 8765` byter appen däremot inte port: den avslutar med ett begripligt fel om porten är upptagen. Vill du styra datamapp och webbläsare:
 
 ```bash
 python3 -m network_core --data-dir ~/NetworkProjects --no-browser --port 8765
 ```
 
-Öppna därefter `http://127.0.0.1:8765/`. Avsluta servern med `Ctrl+C`.
+Öppna därefter adressen som skrivs ut i terminalen (med explicit `--port 8765` är det `http://127.0.0.1:8765/`). Avsluta servern med `Ctrl+C`.
 
 ## Topologi och ICMP-paketresa
 
