@@ -1,0 +1,41 @@
+name: Standalone Linux binary
+on:
+  push:
+    branches:
+      - build/linux-executable-188cef2
+permissions:
+  contents: read
+jobs:
+  build-linux-x64:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Verify exact source ancestry
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD~3)" = "188cef27a8f8958ea2a3de0ef13a189862c55de8"
+          git diff --quiet 188cef27a8f8958ea2a3de0ef13a189862c55de8 -- network_core web
+      - name: Build Linux x86-64 standalone executable
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check pyinstaller==6.16.0
+          python -m PyInstaller --clean --noconfirm --onefile --console --name NetworkLab --paths . --add-data 'web:web' packaging/entrypoint.py
+          file dist/NetworkLab
+          test -x dist/NetworkLab
+      - name: Smoke test frozen binary and disk Save/Open
+        shell: bash
+        run: python packaging/smoke_binary.py dist/NetworkLab
+      - name: Generate SHA256 checksum
+        shell: bash
+        run: cd dist && sha256sum NetworkLab > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NetworkLab-linux-x86_64-188cef2
+          path: |
+            dist/NetworkLab
+            dist/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
