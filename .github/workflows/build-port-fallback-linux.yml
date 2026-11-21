@@ -1,0 +1,41 @@
+name: Linux binary - port startup fix
+on:
+  push:
+    branches:
+      - build/linux-port-fallback-pr83
+permissions:
+  contents: read
+jobs:
+  build-linux-x64:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Verify identical application source to PR head
+        run: |
+          git merge-base --is-ancestor 61e777287e1b9c45441bcde1cccba243dc1affda HEAD
+          git diff --quiet 61e777287e1b9c45441bcde1cccba243dc1affda -- network_core web tests README.md
+      - name: Build standalone Linux executable
+        run: |
+          python -m pip install --disable-pip-version-check pyinstaller==6.16.0
+          python -m PyInstaller --clean --noconfirm --onefile --console --name NetworkLab --paths . --add-data 'web:web' packaging/entrypoint.py
+          file dist/NetworkLab
+          test -x dist/NetworkLab
+      - name: Real frozen API, UI and Save/Open
+        run: python packaging/smoke_binary.py dist/NetworkLab
+      - name: Real frozen port-collision and fallback acceptance
+        run: python packaging/smoke_startup_ports.py dist/NetworkLab
+      - name: Calculate SHA256
+        run: cd dist && sha256sum NetworkLab > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NetworkLab-linux-x86_64-PR83-port-fallback
+          path: |
+            dist/NetworkLab
+            dist/SHA256SUMS.txt
+          retention-days: 30
+          if-no-files-found: error
