@@ -207,15 +207,26 @@ function updateBoundAddress(binding) {
   const status = $(binding.input + '-status');
   const expected = normalizedAddress(portForAddressValue(selector.value), binding.type);
   if (field.dataset.manual !== 'true') field.value = expected || '';
-  const valid = sameAddress(field.value, expected);
+  // A selected port with no address can still be submitted so the engine
+  // returns its authoritative missing-configuration diagnostic. Never pretend
+  // it has an IP/MAC, and never allow a fabricated manually entered address.
+  const missing = !expected && field.value.trim() === '' && Boolean(selector.value);
+  const valid = sameAddress(field.value, expected) || missing;
   field.setAttribute('aria-invalid', String(!valid && field.value.trim() !== ''));
-  status.textContent = valid ? 'Matchar ett dokumenterat gränssnitt.'
+  status.textContent = missing ? 'Porten saknar dokumenterad adress; motorn kontrollerar sändningen.'
+    : valid ? 'Matchar ett dokumenterat gränssnitt.'
     : !expected ? 'Den valda porten saknar dokumenterad ' + (binding.type === 'mac' ? 'MAC' : 'IPv4') + '.'
     : 'Adress måste matcha en dokumenterad port. Välj porten eller klistra in rätt adress.';
   return valid;
 }
 function syncBoundAddresses() {
-  for (const binding of ADDRESS_BINDINGS) updateBoundAddress(binding);
+  for (const binding of ADDRESS_BINDINGS) {
+    if (binding.workspaceRevision !== workspaceRevision) {
+      binding.workspaceRevision = workspaceRevision;
+      $(binding.input).dataset.manual = 'false';
+    }
+    updateBoundAddress(binding);
+  }
 }
 function requireBoundAddresses(inputIds) {
   for (const id of inputIds) {
