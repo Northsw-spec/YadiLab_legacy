@@ -11,7 +11,7 @@ import tempfile
 import threading
 from pathlib import Path
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import expect, sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -93,12 +93,18 @@ def run() -> None:
 
                     # Normal explicit CLIPBOARD paste remains functional.
                     set_selection("clipboard", "192.0.2.99")
+                    # X11 clipboard transfer is asynchronous. A Playwright
+                    # keypress may complete before Chromium has received the
+                    # bytes from the xclip selection owner. Do not mistake
+                    # that brief interval for an application paste failure.
+                    # This still requires a REAL Ctrl+V and the exact bytes
+                    # in the actual input: there is no synthetic paste event,
+                    # direct fill, fallback or skipped assertion.
                     field.focus()
+                    assert page.evaluate("document.activeElement.id") == "arp-target-ip"
                     page.keyboard.press("Control+A")
                     page.keyboard.press("Control+V")
-                    assert field.input_value() == "192.0.2.99", (
-                        "ordinary Ctrl+V was disabled", field.input_value()
-                    )
+                    expect(field).to_have_value("192.0.2.99", timeout=5000)
                     assert errors == [], errors
                     print("PASS real X11 PRIMARY: 2 middle drags leave ARP To unchanged;"
                           " CLIPBOARD Ctrl+V works normally")
