@@ -21,11 +21,22 @@ from network_core.storage import ProjectStore
 
 
 def set_selection(name: str, text: str) -> None:
+    # xclip deliberately forks to own the X11 selection until a receiver
+    # requests it. Never use capture_output here: the daemon inherits the
+    # stdout/stderr pipes and would keep subprocess.communicate() waiting.
     proc = subprocess.run(
         ["xclip", "-selection", name], input=text, text=True,
-        capture_output=True, timeout=10, check=False
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        timeout=10, check=False
     )
-    assert proc.returncode == 0, (name, proc.stderr)
+    assert proc.returncode == 0, (name, proc.returncode)
+    read = subprocess.run(
+        ["xclip", "-selection", name, "-o"], capture_output=True,
+        text=True, timeout=5, check=False
+    )
+    assert read.returncode == 0 and read.stdout == text, (
+        "X11 selection was not installed", name, read.returncode, read.stdout
+    )
 
 
 def run() -> None:
