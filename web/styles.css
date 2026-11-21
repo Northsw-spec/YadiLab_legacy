@@ -131,3 +131,11 @@
 }
 
 @media (max-width:950px){.workspace > .left-panel,.workspace > .right-panel{grid-template-columns:minmax(0,1fr)}}
+
+/* Paired packet/probe addresses are compact and editable. */
+.send-address-pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;min-width:0}
+.send-address-cell{display:grid;align-content:start;gap:7px;min-width:0}
+.send-address-cell>label{font-size:11px;color:#c7d9e9;font-weight:700}
+.from-address[aria-invalid="true"]{border-color:#ca7c76;box-shadow:0 0 0 1px #ca7c7628}
+.from-address{font-variant-numeric:tabular-nums}
+@media(max-width:650px){.send-address-pair{grid-template-columns:minmax(0,1fr)}}
