@@ -283,7 +283,9 @@ Kör minst `python3 -m unittest discover -s tests -p 'test_*.py' -v`, `npm run c
 
 **Syfte:** endast annonsera plattformar som faktiskt verifierats.
 
-**Verifierad nulägesrisk:** `network_core/storage.py` importerar Unix-specifika `fcntl`; detta är **inte** en bekräftelse på fungerande Windows-stöd. Linux-binärer från separata bygg-/artifact-branches bevisar inte att varje framtida main-SHA är releasetestad. Det särskilda X11 PRIMARY-testet finns i `tests/browser_primary_selection_x11.py`, men workflow `x11-primary-middle-paste.yml` triggas endast av den historiska PR-branchen och ingår därmed **inte** i ordinarie main-CI. Ange den luckan som NOT_VERIFIED för varje ny release-SHA tills den testats på just den aktuella koden.
+**Verifierad plattformsrisk:** `network_core/storage.py` importerar Unix-specifika `fcntl`; detta är **inte** en bekräftelse på fungerande Windows-stöd. Linux-binärer från separata bygg-/artifact-branches bevisar inte att varje framtida main-SHA är releasetestad.
+
+**X11-regressionens CI-grind (introducerad i PR #86):** Den tidigare branchbundna X11-testningen ingick inte i obligatorisk `main`-CI. Det verkliga testet `xvfb-run -a python3 tests/browser_primary_selection_x11.py` är nu ett okonditionellt steg i det redan obligatoriska GitHub Actions-jobbet `unit-tests` i `.github/workflows/ci.yml`, för både `push` och `pull_request`. Det äldre fristående workflowet är endast manuell diagnostik, inte en alternativ kvalitetsgrind. **Verifiering måste göras per exakt SHA:** teststeget ska ha SUCCESS på slutlig PR-HEAD och efterföljande `main`-SHA för att anses godkänt; FAIL, SKIPPED eller PENDING betyder att grinden inte är godkänd. Äldre körningar räknas aldrig som verifiering av en ny release-SHA. Att X11-testet passerar innebär inte att Windows-support eller en binär release är verifierad.
 
 Definiera uttryckligt supportkontrakt för Linux, Windows om avsett, webbläsare, Python, lokalt filsystem, installation, uppstart, nedstängning och uppgradering.
 
