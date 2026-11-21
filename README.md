@@ -27,6 +27,7 @@ python3 -m network_core --data-dir ~/NetworkProjects --no-browser --port 8765
 ## Topologi och ICMP-paketresa
 
 - **Arbetsyta i full bredd:** topologin visas överst och inventering, inspektör samt diagnostik ligger i kollapsbara sektioner nedanför. Sektionerna är stängda vid start; **Toggla Dropdowns** öppnar eller stänger samtliga.
+- **Från → Till för verkliga paket:** Probe, ping, ARP, IPv4-datagram, sessionsramar och ICMP-felsökning har explicita **From**- och **To**-fält. Inklistrad From-IPv4 identifierar endast en exakt dokumenterad källport; okänd adress avvisas utan nätverkstrafik. Ethernet använder MAC-adresser, och DHCP-klienter utan IPv4 använder sin dokumenterade MAC-adress. Den markerade nodens IPv4 kan kopieras från topologins högerklicksmeny utan CIDR-prefix.
 - **Kopiera IPv4 till probe:** högerklicka på en dokumenterad nod eller port, välj **Kopiera IP-adress**, och klistra in värdadressen (utan `/prefix`) i fältet Destination IPv4. Om en nod har flera konfigurerade adresser kan du välja port i menyn. Kopiering ändrar inte projektdata.
 
 
