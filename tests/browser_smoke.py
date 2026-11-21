@@ -4014,6 +4014,11 @@ def topology_workspace_layout_regression(context, base, network_mode, errors):
         assert page.locator('details[data-dropdown-card][open]').count() == 0
         page.on('dialog', lambda dialog: dialog.accept())
         project = icmp_routed_lab()
+        # The engine fixture intentionally stacks devices at (0,0). Arrange
+        # explicit positions only for the real pointer/clipboard UI test.
+        for index, node in enumerate(project['nodes']):
+            node['x'] = index * 340
+            node['y'] = (index % 2) * 100
         with page.expect_response('**/api/validate') as imported:
             page.locator('#import-file').set_input_files({
                 'name':'context-ip.json','mimeType':'application/json',
@@ -4032,6 +4037,7 @@ def topology_workspace_layout_regression(context, base, network_mode, errors):
           });
         }""")
         page.locator('[data-node-id="a"] rect.node-box').click(button='right')
+        assert page.locator('[data-node-id="a"].selected').count() == 1
         menu = page.locator('#canvas-context-menu')
         expect(menu).to_be_visible()
         expect(menu.locator('button').first).to_contain_text('Kopiera IP-adress')
