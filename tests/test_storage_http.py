@@ -1,15 +1,20 @@
+import errno
 import hashlib
+import io
 import json
+import socket
 import tempfile
 import threading
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from unittest.mock import patch
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 from network_core import config
 from network_core.model import ProjectValidationError
-from network_core.server import LabHTTPServer
+from network_core.server import LabHTTPServer, main
 from network_core.storage import ProjectConflictError, ProjectStore
 from test_model import example
 
@@ -158,6 +163,84 @@ class APIIntegrationTests(unittest.TestCase):
             self.assertIn(config.APP_NAME.encode('utf-8'), response.read())
         with urlopen(self.base + '/app.js',timeout=5) as response:
             self.assertIn(b'function render()',response.read())
+
+
+
+class ServerStartupTests(unittest.TestCase):
+    """A port collision is neither a cleanup failure nor silent port substitution."""
+
+    def test_failed_bind_preserves_eaddrinuse_and_does_not_start_worker(self):
+        with tempfile.TemporaryDirectory() as directory:
+            before = {id(t) for t in threading.enumerate()
+                      if t.name == "session-idle-cleanup"}
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as occupied:
+                occupied.bind(("127.0.0.1", 0))
+                occupied.listen()
+                port = occupied.getsockname()[1]
+                with self.assertRaises(OSError) as caught:
+                    LabHTTPServer(("127.0.0.1", port), ProjectStore(directory))
+                self.assertEqual(caught.exception.errno, errno.EADDRINUSE)
+            after = {id(t) for t in threading.enumerate()
+                     if t.name == "session-idle-cleanup"}
+            self.assertEqual(after, before)
+            with LabHTTPServer(("127.0.0.1", port), ProjectStore(directory)) as server:
+                self.assertEqual(server.server_port, port)
+                self.assertTrue(server._cleanup_thread.is_alive())
+
+    def test_explicit_occupied_port_exits_cleanly_without_fallback(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as occupied:
+                occupied.bind(("127.0.0.1", 0))
+                occupied.listen()
+                port = occupied.getsockname()[1]
+                stderr = io.StringIO()
+                with redirect_stderr(stderr), self.assertRaises(SystemExit) as stopped:
+                    main(["--port", str(port), "--no-browser", "--data-dir", directory])
+                self.assertEqual(stopped.exception.code, 2)
+                self.assertIn(f"Port {port} is already in use", stderr.getvalue())
+                self.assertIn("--port", stderr.getvalue())
+                self.assertNotIn("Traceback", stderr.getvalue())
+
+    def test_occupied_default_port_uses_free_loopback_fallback_and_prints_real_url(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as occupied:
+                occupied.bind(("127.0.0.1", 0))
+                occupied.listen()
+                port = occupied.getsockname()[1]
+                stdout, stderr = io.StringIO(), io.StringIO()
+                selected_ports = []
+
+                def verify_running(server, *, poll_interval):
+                    selected_ports.append(server.server_port)
+                    self.assertEqual(server.server_address[0], "127.0.0.1")
+                    self.assertGreater(server.server_port, port)
+                    self.assertLessEqual(server.server_port, port + 9)
+                    self.assertTrue(server._cleanup_thread.is_alive())
+
+                with patch("network_core.server.DEFAULT_PORT", port), \
+                     patch.object(LabHTTPServer, "serve_forever", verify_running), \
+                     redirect_stdout(stdout), redirect_stderr(stderr):
+                    main(["--no-browser", "--data-dir", directory])
+                self.assertEqual(len(selected_ports), 1)
+                self.assertIn(f"at http://127.0.0.1:{selected_ports[0]}/",
+                              stdout.getvalue())
+                self.assertIn(f"Port {port} is busy; using port {selected_ports[0]}",
+                              stderr.getvalue())
+
+    def test_default_port_range_exhausted_exits_with_actionable_message(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as occupied:
+                occupied.bind(("127.0.0.1", 0))
+                occupied.listen()
+                port = occupied.getsockname()[1]
+                stderr = io.StringIO()
+                with patch("network_core.server.DEFAULT_PORT", port), \
+                     patch("network_core.server.DEFAULT_PORT_CANDIDATES", 1), \
+                     redirect_stderr(stderr), self.assertRaises(SystemExit) as stopped:
+                    main(["--no-browser", "--data-dir", directory])
+                self.assertEqual(stopped.exception.code, 2)
+                self.assertIn("default range are busy", stderr.getvalue())
+                self.assertIn("--port PORT", stderr.getvalue())
 
 
 if __name__ == '__main__':
