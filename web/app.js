@@ -97,6 +97,287 @@ const canvas = new TopologyCanvas($('topology'), {
   onScale: percentage => { $('scale-label').textContent = `${percentage} %`; },
 });
 
+
+/* Presentation-only workspace layout: canonical network state is unchanged. */
+function panelCard(title, nodes) {
+  const card = el('details', {className:'dropdown-card', dataset:{dropdownCard:'true'}});
+  const summary = el('summary', {}, title);
+  const body = el('div', {className:'dropdown-body'});
+  body.append(...nodes.filter(Boolean));
+  card.append(summary, body);
+  card.addEventListener('toggle', syncDropdownButton);
+  return card;
+}
+
+function dropdownCards() {
+  return [...document.querySelectorAll('.dropdown-card[data-dropdown-card="true"]')];
+}
+
+function syncDropdownButton() {
+  const cards = dropdownCards();
+  $('toggle-dropdowns').setAttribute('aria-pressed',
+    String(cards.length > 0 && cards.every(card => card.open)));
+}
+
+function setupWorkspacePanels() {
+  const inventory = document.querySelector('.left-panel');
+  const inventoryHeadings = [...inventory.querySelectorAll(':scope > .list-header')];
+  inventory.replaceChildren(
+    panelCard('Inventering', [
+      inventory.querySelector('.panel-section:not(.action-stack)'),
+      inventory.querySelector('.stats'), inventory.querySelector('.action-stack'),
+      inventoryHeadings[0], $('node-list'), inventoryHeadings[1], $('link-list'),
+      inventoryHeadings[2], $('zone-list'),
+    ]),
+    panelCard('Sparade projekt och mallar', [inventory.querySelector('.left-bottom')]),
+  );
+  const tools = document.querySelector('.right-panel');
+  const panels = [...tools.querySelectorAll(':scope > .trace-panel')];
+  const inspectorTitle = tools.querySelector(':scope > .inspector-title');
+  const inspectorBody = tools.querySelector(':scope > .inspector-body');
+  tools.replaceChildren(
+    panelCard('Inspektör / egenskaper', [inspectorTitle, inspectorBody]),
+    ...panels.map(panel => panelCard(
+      panel.querySelector('h3')?.textContent?.trim() || panel.getAttribute('aria-label') || 'Diagnostik',
+      [panel])),
+  );
+  $('toggle-dropdowns').addEventListener('click', () => {
+    const cards = dropdownCards();
+    const open = cards.some(card => !card.open);
+    for (const card of cards) card.open = open;
+    syncDropdownButton();
+  });
+  syncDropdownButton();
+}
+
+function hostIpv4(cidr) {
+  if (typeof cidr !== 'string') return null;
+  const ip = cidr.split('/')[0].trim();
+  return /^\d{1,3}(?:\.\d{1,3}){3}$/.test(ip) ? ip : null;
+}
+
+function topologyIpv4Choices() {
+  // The action belongs to the selected node, never an arbitrary hovered object.
+  if (selection?.type !== 'node') return [];
+  const node = project.nodes.find(item => item.id === selection.id);
+  if (!node) return [];
+  return node.ports.map(port => ({name:port.name, ip:hostIpv4(port.ipv4)}))
+    .filter(item => item.ip !== null);
+}
+
+
+/* Address field bindings are a UI projection of explicitly documented ports.
+   A pasted From value selects one unambiguous port; it never creates an IP
+   assignment or changes the canonical project. DHCP clients use MAC, not IP. */
+const ADDRESS_BINDINGS = [
+  {select:'probe-source', input:'probe-from-ip', type:'ipv4'},
+  {select:'arp-source', input:'arp-from-ip', type:'ipv4'},
+  {select:'ipv4-source', input:'ipv4-from-ip', type:'ipv4'},
+  {select:'ping-source', input:'ping-from-ip', type:'ipv4'},
+  {select:'trouble-source', input:'trouble-from-ip', type:'ipv4'},
+  {select:'icmp-investigation-source', input:'icmp-investigation-from-ip', type:'ipv4'},
+  {select:'session-source', input:'session-from-ip', type:'ipv4'},
+  {select:'session-source', input:'session-from-mac', type:'mac'},
+  {select:'dhcp-client', input:'dhcp-from-mac', type:'mac'},
+  {select:'dhcp-server', input:'dhcp-to-ip', type:'ipv4'},
+  {select:'dora-client', input:'dora-from-mac', type:'mac'},
+  {select:'dora-server', input:'dora-to-ip', type:'ipv4'},
+];
+
+function portForAddressValue(value) {
+  if (!value) return null;
+  let ids;
+  try {ids = JSON.parse(value);} catch {return null;}
+  if (!Array.isArray(ids) || ids.length !== 2) return null;
+  const node = project.nodes.find(item => item.id === ids[0]);
+  return node?.ports.find(port => port.id === ids[1]) || null;
+}
+function normalizedAddress(port, type) {
+  if (!port) return null;
+  return type === 'mac'
+    ? (typeof port.mac === 'string' ? port.mac.trim().toUpperCase() || null : null)
+    : hostIpv4(port.ipv4);
+}
+function sameAddress(a, b) {
+  return Boolean(a && b && String(a).trim().toUpperCase() === String(b).trim().toUpperCase());
+}
+function updateBoundAddress(binding) {
+  const selector = $(binding.select);
+  const field = $(binding.input);
+  const status = $(binding.input + '-status');
+  const expected = normalizedAddress(portForAddressValue(selector.value), binding.type);
+  if (field.dataset.manual !== 'true') field.value = expected || '';
+  // A selected port with no address can still be submitted so the engine
+  // returns its authoritative missing-configuration diagnostic. Never pretend
+  // it has an IP/MAC, and never allow a fabricated manually entered address.
+  const missing = !expected && field.value.trim() === '' && Boolean(selector.value);
+  const valid = sameAddress(field.value, expected) || missing;
+  field.setAttribute('aria-invalid', String(!valid && field.value.trim() !== ''));
+  status.textContent = missing ? 'Porten saknar dokumenterad adress; motorn kontrollerar sändningen.'
+    : valid ? 'Matchar ett dokumenterat gränssnitt.'
+    : !expected ? 'Den valda porten saknar dokumenterad ' + (binding.type === 'mac' ? 'MAC' : 'IPv4') + '.'
+    : 'Adress måste matcha en dokumenterad port. Välj porten eller klistra in rätt adress.';
+  return valid;
+}
+function syncBoundAddresses() {
+  for (const binding of ADDRESS_BINDINGS) {
+    if (binding.workspaceRevision !== workspaceRevision) {
+      binding.workspaceRevision = workspaceRevision;
+      $(binding.input).dataset.manual = 'false';
+    }
+    updateBoundAddress(binding);
+  }
+}
+function requireBoundAddresses(inputIds) {
+  for (const id of inputIds) {
+    const binding = ADDRESS_BINDINGS.find(item => item.input === id);
+    if (!binding) throw new Error('Missing address binding for ' + id);
+    if (!updateBoundAddress(binding)) {
+      notify('Från/To-avvisning: ' + $(id + '-status').textContent, true);
+      $(id).focus();
+      return false;
+    }
+  }
+  return true;
+}
+function arrangeFromToRows() {
+  // Keep the original input elements and listeners; only change presentation.
+  const pairs = [
+    ['probe-from-ip','probe-destination'],
+    ['arp-from-ip','arp-target-ip'],
+    ['ipv4-from-ip','ipv4-destination'],
+    ['ping-from-ip','ping-destination'],
+    ['trouble-from-ip','trouble-destination'],
+    ['icmp-investigation-from-ip','icmp-investigation-destination'],
+    ['session-from-ip','session-ip'],
+    ['session-from-mac','session-mac'],
+  ];
+  for (const [fromId, toId] of pairs) {
+    const fromLabel = document.querySelector('label[for="' + fromId + '"]');
+    const toLabel = document.querySelector('label[for="' + toId + '"]');
+    if (!fromLabel || !toLabel) continue;
+    const row = el('div', {className:'send-address-pair'});
+    const from = el('div', {className:'send-address-cell'});
+    const to = el('div', {className:'send-address-cell'});
+    fromLabel.before(row);
+    from.append(fromLabel, $(fromId), $(fromId + '-status'));
+    to.append(toLabel, $(toId));
+    row.append(from, to);
+  }
+}
+
+function setupAddressBindings() {
+  for (const binding of ADDRESS_BINDINGS) {
+    const selector = $(binding.select);
+    const field = $(binding.input);
+    selector.addEventListener('change', () => {
+      if (binding.selectingFromInput) return;
+      field.dataset.manual = 'false';
+      updateBoundAddress(binding);
+    });
+    field.addEventListener('input', () => {
+      field.dataset.manual = 'true';
+      const raw = field.value.trim();
+      const options = [...selector.options].filter(option =>
+        sameAddress(normalizedAddress(portForAddressValue(option.value), binding.type), raw));
+      if (options.length === 1 && selector.value !== options[0].value) {
+        binding.selectingFromInput = true;
+        try {
+          selector.value = options[0].value;
+          selector.dispatchEvent(new Event('change', {bubbles:true}));
+        } finally {
+          binding.selectingFromInput = false;
+        }
+      }
+      if (options.length > 1) {
+        const status = $(binding.input + '-status');
+        status.textContent = 'Adressen är inte unik. Välj avsändargränssnitt uttryckligen.';
+        field.setAttribute('aria-invalid','true');
+      } else {
+        updateBoundAddress(binding);
+      }
+      if (binding.input === 'probe-from-ip') {
+        diagnosticRuns.ping += 1; forgetJourney();
+      } else if (['arp-from-ip','ping-from-ip','ipv4-from-ip'].includes(binding.input)) {
+        const kind = binding.input.split('-')[0];
+        clearDiagnostic(kind);
+      }
+    });
+  }
+  syncBoundAddresses();
+}
+
+function hideTopologyMenu() {
+  const menu = $('canvas-context-menu');
+  menu.hidden = true;
+  menu.replaceChildren();
+}
+
+async function copyIpv4(ip) {
+  try {
+    if (!navigator.clipboard?.writeText) throw new Error('Clipboard API unavailable');
+    await navigator.clipboard.writeText(ip);
+    return;
+  } catch (_) {
+    // Only a user-initiated copy; fail visibly if the legacy fallback is blocked.
+    const field = el('textarea', {value:ip});
+    field.style.position='fixed';
+    field.style.opacity='0';
+    document.body.append(field);
+    field.select();
+    let copied=false;
+    try {copied=document.execCommand('copy');}
+    finally {field.remove();}
+    if (!copied) throw new Error('Webbläsaren nekade åtkomst till urklipp');
+  }
+}
+
+function setupTopologyContextMenu() {
+  const svg = $('topology');
+  const menu = $('canvas-context-menu');
+  svg.addEventListener('contextmenu', event => {
+    event.preventDefault();
+    const hit = event.target.closest?.('[data-node-id]');
+    if (!hit) {hideTopologyMenu();return;}
+    if (selection?.type !== 'node' || selection.id !== hit.dataset.nodeId) {
+      selection = {type:'node',id:hit.dataset.nodeId};
+      pendingPort = null;
+      render();
+    }
+    const choices = topologyIpv4Choices();
+    menu.replaceChildren();
+    if (choices.length) {
+      for (const {name, ip} of choices) {
+        const action = el('button', {type:'button', role:'menuitem'},
+          choices.length === 1 ? 'Kopiera IP-adress' : 'Kopiera IP-adress · ' + name + ' (' + ip + ')');
+        action.title = name + ' · ' + ip;
+        action.addEventListener('click', async () => {
+          hideTopologyMenu();
+          try {
+            await copyIpv4(ip);
+            notify('IP-adress kopierad: ' + ip);
+          } catch (error) {notify('Kopiering misslyckades: ' + error.message,true);}
+        });
+        menu.append(action);
+      }
+    } else {
+      menu.append(el('button', {type:'button', disabled:true, role:'menuitem'},
+        'Ingen dokumenterad IP-adress'));
+    }
+    menu.hidden = false;
+    const rect = menu.getBoundingClientRect();
+    menu.style.left = Math.max(8, Math.min(event.clientX, window.innerWidth - rect.width - 8)) + 'px';
+    menu.style.top = Math.max(8, Math.min(event.clientY, window.innerHeight - rect.height - 8)) + 'px';
+  });
+  document.addEventListener('pointerdown', event => {
+    if (!menu.hidden && !menu.contains(event.target)) hideTopologyMenu();
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') hideTopologyMenu();
+  });
+  window.addEventListener('blur', hideTopologyMenu);
+}
+
 function notify(message, error = false) {
   const box = $('toast');
   box.textContent = message;
@@ -1510,6 +1791,7 @@ function render() {
   renderPing();
   renderTroubleshooting();
   renderIcmpInvestigation();
+  syncBoundAddresses();
   updateSaveIndicator();
   } finally {
     rendering = false;
@@ -1717,6 +1999,7 @@ function doraSessionInput() {
     $('dora-client').value, $('dora-server').value,
     $('dora-pool-start').value.trim(), $('dora-pool-end').value.trim(),
     $('dora-transaction-id').value.trim(), $('dora-lease-seconds').value.trim(),
+    $('dora-from-mac').value.trim(), $('dora-to-ip').value.trim(),
   ];
 }
 function sessionInteger(value, min, max) {
@@ -1727,6 +2010,7 @@ function investigationStartInputs() {
   return JSON.stringify([...doraSessionInput(), $('investigation-difficulty').value]);
 }
 function startInvestigation() {
+  if (!requireBoundAddresses(['dora-from-mac','dora-to-ip'])) return;
   const inputs = doraSessionInput();
   const difficulty = $('investigation-difficulty').value;
   const [client, server, poolStart, poolEnd, , rawLease] = inputs;
@@ -1766,6 +2050,7 @@ function repairInvestigation() { void investigation.repair(); }
 function stopInvestigation() { void investigation.stop(); }
 
 function startDoraSession() {
+  if (!requireBoundAddresses(['dora-from-mac','dora-to-ip'])) return;
   if (doraBusy) return;
   const [client, server, poolStart, poolEnd] = doraSessionInput();
   if (!client || !server || !poolStart || !poolEnd) {
@@ -1777,6 +2062,7 @@ function startDoraSession() {
     () => JSON.stringify(doraSessionInput()));
 }
 function runDoraSession() {
+  if (!requireBoundAddresses(['dora-from-mac','dora-to-ip'])) return;
   const [client, , , , rawTransaction, rawLease] = doraSessionInput();
   const transactionId = sessionInteger(rawTransaction, 1, 4294967295);
   const leaseSeconds = sessionInteger(rawLease, 60, 604800);
@@ -1812,6 +2098,7 @@ function setDoraLinkFault(disabled) {
   void doraSession.linkFault(linkId, disabled, () => $('dora-session-fault-link').value);
 }
 function renewDoraSession() {
+  if (!requireBoundAddresses(['dora-from-mac','dora-to-ip'])) return;
   const [client, , , , rawTransaction] = doraSessionInput();
   const transactionId = sessionInteger(rawTransaction, 1, 4294967295);
   if (!client || transactionId === null) {
@@ -1834,11 +2121,13 @@ function resetDoraSession() { void doraSession.reset(); }
 function stopDoraSession() { void doraSession.stop(); }
 
 async function runDora() {
+  if (!requireBoundAddresses(['dora-from-mac','dora-to-ip'])) return;
   if (doraBusy) return;
   const currentInputs = () => [
     $('dora-client').value, $('dora-server').value,
     $('dora-pool-start').value.trim(), $('dora-pool-end').value.trim(),
     $('dora-transaction-id').value.trim(), $('dora-lease-seconds').value.trim(),
+    $('dora-from-mac').value.trim(), $('dora-to-ip').value.trim(),
   ];
   const inputs = currentInputs();
   const [client, server, poolStart, poolEnd, rawTransaction, rawLease] = inputs;
@@ -1882,11 +2171,13 @@ async function runDora() {
 }
 
 async function runDhcp() {
+  if (!requireBoundAddresses(['dhcp-from-mac','dhcp-to-ip'])) return;
   if (dhcpBusy) return;
   const currentInputs = () => [
     $('dhcp-client').value, $('dhcp-server').value,
     $('dhcp-offered-ip').value.trim(), $('dhcp-transaction-id').value.trim(),
     $('dhcp-lease-seconds').value.trim(),
+    $('dhcp-from-mac').value.trim(), $('dhcp-to-ip').value.trim(),
   ];
   const inputs = currentInputs();
   const [client, server, proposedIpv4, rawTransaction, rawLease] = inputs;
@@ -1930,7 +2221,10 @@ async function runDhcp() {
 function diagnosticInputs(kind) {
   return diagnosticFields[kind].map(id => $(id).value.trim());
 }
-function beginDiagnostic(kind, readInputs = () => diagnosticInputs(kind)) {
+function beginDiagnostic(kind, readInputs = () => [
+  ...diagnosticInputs(kind),
+  ...(ADDRESS_BINDINGS.filter(binding => binding.input === kind + '-from-ip').map(binding => $(binding.input).value.trim())),
+]) {
   return {kind, run: ++diagnosticRuns[kind], workspaceRevision, editRevision,
     snapshot: JSON.stringify(project), inputs: readInputs(), readInputs};
 }
@@ -1953,6 +2247,7 @@ function clearDiagnostic(kind) {
   }
 }
 async function runArp() {
+  if (!requireBoundAddresses(['arp-from-ip'])) return;
   const [selected, targetIpv4] = diagnosticInputs('arp');
   if (!selected) return;
   const context = beginDiagnostic('arp');
@@ -1980,6 +2275,7 @@ async function runArp() {
 
 function startSimulationSession() { void simulationSession.start(); }
 function runSimulationOperation(operation) {
+  if (!requireBoundAddresses([operation === 'arp' ? 'session-from-ip' : 'session-from-mac'])) return;
   const selected = $('session-source').value;
   if (!selected) return;
   const [sourceNode, sourcePort] = JSON.parse(selected);
@@ -1990,7 +2286,7 @@ function runSimulationOperation(operation) {
     return;
   }
   const readInputs = () => JSON.stringify([operation, $('session-source').value,
-    $(targetField).value.trim()]);
+    $(targetField).value.trim(), $(operation === 'arp' ? 'session-from-ip' : 'session-from-mac').value.trim()]);
   void simulationSession.run(operation, sourceNode, sourcePort, target, readInputs);
 }
 function resetSimulationSession() { void simulationSession.reset(); }
@@ -1999,11 +2295,13 @@ function stopSimulationSession() { void simulationSession.stop(); }
 function icmpInvestigationStartInputs() {
   return JSON.stringify([
     $('icmp-investigation-source').value,
+    $('icmp-investigation-from-ip').value.trim(),
     $('icmp-investigation-destination').value.trim(),
     $('icmp-investigation-ttl').value.trim(),
   ]);
 }
 function startIcmpInvestigation() {
+  if (!requireBoundAddresses(['icmp-investigation-from-ip'])) return;
   const selected = $('icmp-investigation-source').value;
   const destinationIpv4 = $('icmp-investigation-destination').value.trim();
   const ttl = sessionInteger($('icmp-investigation-ttl').value.trim(), 2, 255);
@@ -2054,6 +2352,7 @@ function repairIcmpInvestigation() { void icmpInvestigation.repair(); }
 function stopIcmpInvestigation() { void icmpInvestigation.stop(); }
 
 async function runTroubleshooting() {
+  if (!requireBoundAddresses(['trouble-from-ip'])) return;
   const selected = $('trouble-source').value;
   const kind = $('trouble-type').value;
   if (!selected) return;
@@ -2091,7 +2390,7 @@ async function runTroubleshooting() {
     : {type:kind,nodeId,routeId:targetId,newNextHop:hopText};
   const snapshot = JSON.stringify(project);
   const inputSnapshot = [selected,kind,chosen,destinationIpv4,ttlText,vlanText,
-    prefixText,hopText].join('|');
+    prefixText,hopText,$('trouble-from-ip').value.trim()].join('|');
   const currentInputs = () => {
     const currentType = $('trouble-type').value;
     const currentTarget = currentType === 'LINK_DISABLED' ? $('trouble-link').value :
@@ -2103,7 +2402,7 @@ async function runTroubleshooting() {
     return [ $('trouble-source').value, currentType,currentTarget,
       $('trouble-destination').value.trim(),$('trouble-ttl').value.trim(),
       $('trouble-vlan').value.trim(),$('trouble-prefix').value.trim(),
-      $('trouble-next-hop').value.trim() ].join('|');
+      $('trouble-next-hop').value.trim(),$('trouble-from-ip').value.trim() ].join('|');
   };
   const stillCurrent = () => snapshot === JSON.stringify(project) &&
     currentInputs() === inputSnapshot;
@@ -2123,9 +2422,10 @@ async function runTroubleshooting() {
 }
 
 async function runPing({quick = false} = {}) {
+  if (!requireBoundAddresses([quick ? 'probe-from-ip' : 'ping-from-ip'])) return;
   const readInputs = quick
     ? () => [$('probe-source').value, $('probe-destination').value.trim(),
-        $('probe-ttl').value.trim(), '1', '1']
+        $('probe-ttl').value.trim(), '1', '1', $('probe-from-ip').value.trim()]
     : () => diagnosticInputs('ping');
   const [selected, destinationIpv4, rawTtl, rawIdentifier, rawSequence] = readInputs();
   if (!selected) return;
@@ -2159,6 +2459,7 @@ async function runPing({quick = false} = {}) {
 }
 
 async function runIPv4Trace() {
+  if (!requireBoundAddresses(['ipv4-from-ip'])) return;
   const [selected, destinationIpv4, rawTtl] = diagnosticInputs('ipv4');
   if (!selected) return;
   const context = beginDiagnostic('ipv4');
@@ -2436,6 +2737,10 @@ window.addEventListener('beforeunload', event => {
   event.preventDefault();
   event.returnValue = '';
 });
+setupWorkspacePanels();
+setupTopologyContextMenu();
+arrangeFromToRows();
+setupAddressBindings();
 render();
 canvas.fit();
 refreshSavedProjects();

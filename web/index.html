@@ -118,7 +118,7 @@
       <main class="canvas-column" aria-label="Topologiarbetsyta">
         <div class="canvas-toolbar">
           <div class="canvas-tab"><span class="tab-indicator"></span> Topologi <span class="tab-caption">/ dokumenterad graf</span></div>
-          <div class="canvas-tools"><button id="probe-toggle" class="btn btn-small btn-soft" type="button" aria-controls="probe-panel" aria-expanded="false">Skicka probe · Paketresa</button><span id="canvas-mode">REDIGERING</span><button id="zoom-out" title="Zooma ut" aria-label="Zooma ut" class="icon-button" type="button">−</button><button id="zoom-in" title="Zooma in" aria-label="Zooma in" class="icon-button" type="button">+</button><button id="zoom-fit" class="btn btn-small btn-ghost" type="button">Anpassa</button></div>
+          <div class="canvas-tools"><button id="probe-toggle" class="btn btn-small btn-soft" type="button" aria-controls="probe-panel" aria-expanded="false">Skicka probe · Paketresa</button><button id="toggle-dropdowns" class="btn btn-small btn-ghost" type="button" aria-pressed="false">Toggla Dropdowns</button><span id="canvas-mode">REDIGERING</span><button id="zoom-out" title="Zooma ut" aria-label="Zooma ut" class="icon-button" type="button">−</button><button id="zoom-in" title="Zooma in" aria-label="Zooma in" class="icon-button" type="button">+</button><button id="zoom-fit" class="btn btn-small btn-ghost" type="button">Anpassa</button></div>
         </div>
         <div class="canvas-container">
           <section id="probe-panel" class="probe-panel" aria-label="Skicka ICMP-probe och spela upp paketresa" hidden>
@@ -126,7 +126,10 @@
             <p>Visar endast kabelöverföringar som den simulerade nätverksmotorn faktiskt rapporterar. Tidsförloppet är en visualisering, inte mätt RTT.</p>
             <label for="probe-source">Källgränssnitt</label>
             <select id="probe-source" class="control"></select>
-            <label for="probe-destination">Destination IPv4</label>
+            <label for="probe-from-ip">From · IPv4 (klistra in dokumenterad källadress)</label>
+          <input id="probe-from-ip" class="control from-address" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="192.0.2.10" aria-describedby="probe-from-ip-status">
+          <span id="probe-from-ip-status" class="small-muted" role="status" aria-live="polite">Från-gränssnittet bestäms av adressen eller valet ovan.</span>
+          <label for="probe-destination">To · IPv4 (klistra in måladress)</label>
             <input id="probe-destination" class="control" type="text" autocomplete="off" placeholder="192.0.2.20">
             <label for="probe-ttl">TTL (1–255)</label>
             <input id="probe-ttl" class="control" type="number" min="1" max="255" step="1" value="8">
@@ -165,7 +168,10 @@
           <h3>Simulera ARP-förfrågan</h3>
           <p class="muted tiny">En isolerad körning över deklarerade kablar och VLAN. Inte ping eller IP-routing. Tabellerna sparas inte.</p>
           <label for="arp-source">Källgränssnitt</label><select id="arp-source" class="control"></select>
-          <label for="arp-target-ip">Mål-IPv4</label><input id="arp-target-ip" class="control" type="text" placeholder="192.0.2.20" autocomplete="off">
+          <label for="arp-from-ip">From · IPv4 (klistra in dokumenterad källadress)</label>
+          <input id="arp-from-ip" class="control from-address" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="192.0.2.10" aria-describedby="arp-from-ip-status">
+          <span id="arp-from-ip-status" class="small-muted" role="status" aria-live="polite">Från-gränssnittet bestäms av adressen eller valet ovan.</span>
+          <label for="arp-target-ip">To · IPv4 (klistra in måladress)</label><input id="arp-target-ip" class="control" type="text" placeholder="192.0.2.20" autocomplete="off">
           <button id="run-arp" class="btn btn-soft full" type="button">Simulera ARP</button>
           <div id="arp-result" class="trace-result" aria-live="polite">Ingen ARP-simulering utförd.</div>
         </section>
@@ -173,10 +179,16 @@
           <div class="eyebrow">LAYER 3 · DHCPv4 BOOTSTRAP</div>
           <h3>DHCP – Discover / Offer</h3>
           <p class="muted tiny">En tillfällig simulerad DISCOVER och OFFER via deklarerade kablar och VLAN. Välj klient och server uttryckligen. Ingen DHCPREQUEST/ACK, adresspool, lease eller ändring av projektet.</p>
-          <label for="dhcp-client">Klientgränssnitt (host utan IPv4)</label>
+          <label for="dhcp-client">From · klientgränssnitt (utan IPv4)</label>
           <select id="dhcp-client" class="control"></select>
-          <label for="dhcp-server">DHCP-servergränssnitt (host/router)</label>
+          <label for="dhcp-from-mac">From · klient-MAC (DHCP har ännu ingen klient-IPv4)</label>
+          <input id="dhcp-from-mac" class="control from-address" type="text" autocomplete="off" spellcheck="false" placeholder="02:00:00:00:00:01" aria-describedby="dhcp-from-mac-status">
+          <span id="dhcp-from-mac-status" class="small-muted" role="status" aria-live="polite">Måste matcha vald dokumenterad klientport.</span>
+          <label for="dhcp-server">To · servergränssnitt (host/router med IPv4)</label>
           <select id="dhcp-server" class="control"></select>
+          <label for="dhcp-to-ip">To · DHCP-serverns IPv4 (klistra in)</label>
+          <input id="dhcp-to-ip" class="control from-address" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="192.0.2.1" aria-describedby="dhcp-to-ip-status">
+          <span id="dhcp-to-ip-status" class="small-muted" role="status" aria-live="polite">Måste matcha vald serverport.</span>
           <label for="dhcp-offered-ip">Föreslagen IPv4 (inte tilldelad eller bevisat ledig)</label>
           <input id="dhcp-offered-ip" class="control" type="text" placeholder="192.0.2.70" autocomplete="off">
           <label for="dhcp-transaction-id">Transaktions-ID (1–4294967295)</label>
@@ -190,10 +202,16 @@
           <div class="eyebrow">LAYER 3 · DHCPv4 DORA</div>
           <h3>DHCP – Discover / Offer / Request / ACK</h3>
           <p class="muted tiny">En engångssimulering med fyra riktiga kodade DHCP-meddelanden över deklarerade kablar och VLAN. Välj klient, server och en begränsad adresspool uttryckligen. En BOUND-lease finns endast i minnet för detta anrop – klientens dokumenterade IPv4 ändras aldrig.</p>
-          <label for="dora-client">Klientgränssnitt (host utan IPv4)</label>
+          <label for="dora-client">From · klientgränssnitt (utan IPv4)</label>
           <select id="dora-client" class="control"></select>
-          <label for="dora-server">DHCP-servergränssnitt (host/router med IPv4)</label>
+          <label for="dora-from-mac">From · klient-MAC (DHCP har ännu ingen klient-IPv4)</label>
+          <input id="dora-from-mac" class="control from-address" type="text" autocomplete="off" spellcheck="false" placeholder="02:00:00:00:00:01" aria-describedby="dora-from-mac-status">
+          <span id="dora-from-mac-status" class="small-muted" role="status" aria-live="polite">Måste matcha vald dokumenterad klientport.</span>
+          <label for="dora-server">To · servergränssnitt (host/router med IPv4)</label>
           <select id="dora-server" class="control"></select>
+          <label for="dora-to-ip">To · DHCP-serverns IPv4 (klistra in)</label>
+          <input id="dora-to-ip" class="control from-address" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="192.0.2.1" aria-describedby="dora-to-ip-status">
+          <span id="dora-to-ip-status" class="small-muted" role="status" aria-live="polite">Måste matcha vald serverport.</span>
           <label for="dora-pool-start">Adresspool från IPv4</label>
           <input id="dora-pool-start" class="control" type="text" placeholder="192.0.2.70" autocomplete="off">
           <label for="dora-pool-end">Adresspool till IPv4 (max 256 adresser)</label>
@@ -305,9 +323,14 @@
           </div>
           <div id="session-status" class="small-muted" role="status">Ingen aktiv session.</div>
           <label for="session-source">Källgränssnitt</label><select id="session-source" class="control"></select>
-          <label for="session-ip">ARP: mål-IPv4</label><input id="session-ip" class="control" type="text" autocomplete="off" placeholder="192.0.2.20">
+          <label for="session-from-ip">From · IPv4 (klistra in dokumenterad källadress)</label>
+          <input id="session-from-ip" class="control from-address" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="192.0.2.10" aria-describedby="session-from-ip-status">
+          <span id="session-from-ip-status" class="small-muted" role="status" aria-live="polite">Från-gränssnittet bestäms av adressen eller valet ovan.</span>
+          <label for="session-ip">To · IPv4 (klistra in måladress)</label><input id="session-ip" class="control" type="text" autocomplete="off" placeholder="192.0.2.20">
           <button id="session-arp" class="btn btn-outline full" type="button" disabled>Skicka ARP i session</button>
-          <label for="session-mac">Ethernet: destinations-MAC</label><input id="session-mac" class="control" type="text" autocomplete="off" placeholder="FF:FF:FF:FF:FF:FF">
+          <label for="session-from-mac">From · MAC (Ethernet)</label><input id="session-from-mac" class="control from-address" type="text" autocomplete="off" spellcheck="false" placeholder="02:00:00:00:00:01" aria-describedby="session-from-mac-status">
+          <span id="session-from-mac-status" class="small-muted" role="status" aria-live="polite">Måste matcha källgränssnittets MAC-adress.</span>
+          <label for="session-mac">To · MAC (Ethernet)</label><input id="session-mac" class="control" type="text" autocomplete="off" placeholder="FF:FF:FF:FF:FF:FF">
           <button id="session-ethernet" class="btn btn-outline full" type="button" disabled>Skicka Ethernetram i session</button>
           <div id="session-result" class="trace-result" aria-live="polite">Starta en session. Inga ramar eller ARP-förfrågningar skickas automatiskt.</div>
         </section>
@@ -327,7 +350,10 @@
           <h3>Spåra IPv4-datagram</h3>
           <p class="muted tiny">Ett experimentellt IPv4-datagram skickas genom explicit routing, ARP, kablar och VLAN. Ingen ping eller ICMP-reply. Varje körning har tomma ARP-/MAC-tabeller.</p>
           <label for="ipv4-source">Källgränssnitt</label><select id="ipv4-source" class="control"></select>
-          <label for="ipv4-destination">Destinations-IPv4</label>
+          <label for="ipv4-from-ip">From · IPv4 (klistra in dokumenterad källadress)</label>
+          <input id="ipv4-from-ip" class="control from-address" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="192.0.2.10" aria-describedby="ipv4-from-ip-status">
+          <span id="ipv4-from-ip-status" class="small-muted" role="status" aria-live="polite">Från-gränssnittet bestäms av adressen eller valet ovan.</span>
+          <label for="ipv4-destination">To · IPv4 (klistra in måladress)</label>
           <input id="ipv4-destination" class="control" type="text" autocomplete="off" placeholder="203.0.113.20">
           <label for="ipv4-ttl">Start-TTL (1–255)</label>
           <input id="ipv4-ttl" class="control" type="number" min="1" max="255" step="1" value="4">
@@ -340,7 +366,10 @@
           <p class="muted tiny">Echo Request måste nå rätt port och Echo Reply måste verkligen hitta tillbaka. ARP, kablar, VLAN och routes simuleras för båda riktningar. Ingen uppmätt svarstid eller extern ping.</p>
           <label for="ping-source">Källgränssnitt</label>
           <select id="ping-source" class="control"></select>
-          <label for="ping-destination">Destinations-IPv4</label>
+          <label for="ping-from-ip">From · IPv4 (klistra in dokumenterad källadress)</label>
+          <input id="ping-from-ip" class="control from-address" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="192.0.2.10" aria-describedby="ping-from-ip-status">
+          <span id="ping-from-ip-status" class="small-muted" role="status" aria-live="polite">Från-gränssnittet bestäms av adressen eller valet ovan.</span>
+          <label for="ping-destination">To · IPv4 (klistra in måladress)</label>
           <input id="ping-destination" class="control" type="text" autocomplete="off" placeholder="192.0.2.20">
           <label for="ping-ttl">TTL per riktning (1–255)</label>
           <input id="ping-ttl" class="control" type="number" min="1" max="255" step="1" value="4">
@@ -357,7 +386,10 @@
           <p class="muted tiny">Tre oberoende ICMP Echo-försök på kanoniska kopior: referens, exakt ett kontrollerat fel och fullständig återställning. Ingen ändring av arbetsytan eller sparad fil.</p>
           <label for="trouble-source">Källgränssnitt</label>
           <select id="trouble-source" class="control"></select>
-          <label for="trouble-destination">Destinations-IPv4</label>
+          <label for="trouble-from-ip">From · IPv4 (klistra in dokumenterad källadress)</label>
+          <input id="trouble-from-ip" class="control from-address" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="192.0.2.10" aria-describedby="trouble-from-ip-status">
+          <span id="trouble-from-ip-status" class="small-muted" role="status" aria-live="polite">Från-gränssnittet bestäms av adressen eller valet ovan.</span>
+          <label for="trouble-destination">To · IPv4 (klistra in måladress)</label>
           <input id="trouble-destination" class="control" type="text" autocomplete="off" placeholder="192.0.2.20">
           <label for="trouble-type">Kontrollerat fel</label>
           <select id="trouble-type" class="control">
@@ -408,7 +440,10 @@
           <p class="muted tiny">Välj en källa och en destination som redan har bevisats nå varandra via verkligt simulerade ICMP Echo Request/Reply. Labbet injicerar ett dolt, separat verifierat fel i dokumenterad kabel, avstängd switchport, VLAN, IPv4-adress eller nätmask; i routade nät även statisk route eller next-hop. Undersök först IP-uppgifter, routingtabeller och faktiska paket. DHCP-adressens ursprung är inte lagrat i projektet och markeras därför som EJ VERIFIERAT – aldrig automatiskt friskförklarat. Allt sker i minnet.</p>
           <label for="icmp-investigation-source">Källa med dokumenterad IPv4</label>
           <select id="icmp-investigation-source" class="control"></select>
-          <label for="icmp-investigation-destination">Målets uttryckliga IPv4</label>
+          <label for="icmp-investigation-from-ip">From · IPv4 (klistra in dokumenterad källadress)</label>
+          <input id="icmp-investigation-from-ip" class="control from-address" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="192.0.2.10" aria-describedby="icmp-investigation-from-ip-status">
+          <span id="icmp-investigation-from-ip-status" class="small-muted" role="status" aria-live="polite">Från-gränssnittet bestäms av adressen eller valet ovan.</span>
+          <label for="icmp-investigation-destination">To · IPv4 (klistra in måladress)</label>
           <input id="icmp-investigation-destination" class="control" autocomplete="off" placeholder="203.0.113.20">
           <label for="icmp-investigation-ttl">TTL per riktning (2–255)</label>
           <input id="icmp-investigation-ttl" class="control" type="number" min="2" max="255" step="1" value="5">
@@ -462,6 +497,7 @@
       </aside>
     </div>
     <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+    <div id="canvas-context-menu" class="context-menu" role="menu" aria-label="IPv4-adresser" hidden></div>
   </div>
   <script type="module" src="/app.js"></script>
 </body>

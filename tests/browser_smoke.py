@@ -82,15 +82,23 @@ def stop_server(process):
     process.stderr.close()
 
 
-def browser_open(page, base):
+def browser_open(page, base, expand_panels=True):
     """Prefer real HTTP. Isolated fallback for administrative Chromium loopback blocks.
 
     The fallback still executes the actual app code and calls the REAL
     Python HTTP server via urllib; only the browser's forbidden socket is
     bridged. Never report fallback as proof of direct browser HTTP networking.
     """
+    if expand_panels:
+        # Legacy acceptance tests use the full inspector after page reloads.
+        # Only those tests opt in; the dedicated UI regression checks closed defaults.
+        page.add_init_script("""document.addEventListener('DOMContentLoaded', () => {
+          document.querySelectorAll('details[data-dropdown-card]').forEach(card => card.open = true);
+        });""")
     try:
         page.goto(base, wait_until='domcontentloaded', timeout=10000)
+        if expand_panels:
+            page.evaluate("""() => document.querySelectorAll('[data-dropdown-card]').forEach(card => card.open = true)""")
         return 'DIRECT_HTTP'
     except PlaywrightError as error:
         if 'ERR_BLOCKED_BY_ADMINISTRATOR' not in str(error):
@@ -173,6 +181,8 @@ def browser_open(page, base):
     app = app.replace("import {renderIcmpInvestigationPanel} from './features/diagnostics/icmp-investigation-panel.js';", '')
     app = app.replace("import {createImportReview} from './features/projects/import-review.js';", '')
     page.add_script_tag(content=model + '\n' + canvas + '\n' + dom + '\n' + api + '\n' + persistence + '\n' + transfer + '\n' + mapping_profiles + '\n' + import_review + '\n' + queries + '\n' + presenters + '\n' + icmp_panel + '\n' + investigation + '\n' + icmp_investigation + '\n' + dora_session + '\n' + simulation_session + '\n' + app)
+    if expand_panels:
+        page.evaluate("""() => document.querySelectorAll('[data-dropdown-card]').forEach(card => card.open = true)""")
     return 'BRIDGED_LOCAL_HTTP'
 
 
@@ -3964,6 +3974,99 @@ def mapping_profile_regression(context, base, network_mode, store, errors, resta
     page.close()
 
 
+
+def topology_workspace_layout_regression(context, base, network_mode, errors):
+    """Default-collapsed horizontal controls and explicit IPv4 copy from a node."""
+    page = context.new_page()
+    page.on('pageerror', lambda error: errors.append(getattr(error, 'stack', str(error))))
+    try:
+        assert browser_open(page, base, expand_panels=False) == network_mode
+        # Every packet/probe sender exposes explicit From/To entry fields.
+        for from_id, to_id in [
+            ('probe-from-ip','probe-destination'), ('arp-from-ip','arp-target-ip'),
+            ('ipv4-from-ip','ipv4-destination'), ('ping-from-ip','ping-destination'),
+            ('trouble-from-ip','trouble-destination'),
+            ('icmp-investigation-from-ip','icmp-investigation-destination'),
+            ('session-from-ip','session-ip'), ('session-from-mac','session-mac'),
+            ('dhcp-from-mac','dhcp-to-ip'), ('dora-from-mac','dora-to-ip'),
+        ]:
+            assert page.locator('#' + from_id).count() == 1
+            assert page.locator('#' + to_id).count() == 1
+        cards = page.locator('details[data-dropdown-card]')
+        count = cards.count()
+        assert count >= 8, count
+        assert page.locator('details[data-dropdown-card][open]').count() == 0
+        assert page.locator('#toggle-dropdowns').get_attribute('aria-pressed') == 'false'
+        svg = page.locator('#topology')
+        bbox = svg.bounding_box()
+        viewport = page.viewport_size
+        assert bbox and viewport
+        assert bbox['width'] >= viewport['width'] * .94, (bbox, viewport)
+        left = page.locator('.left-panel').bounding_box()
+        right = page.locator('.right-panel').bounding_box()
+        assert left and right and left['y'] >= bbox['y'] + bbox['height']
+        assert right['y'] >= bbox['y'] + bbox['height']
+        assert left['x'] < right['x'] and left['width'] > 200 and right['width'] > 200
+        page.locator('#toggle-dropdowns').click()
+        assert page.locator('details[data-dropdown-card][open]').count() == count
+        assert page.locator('#toggle-dropdowns').get_attribute('aria-pressed') == 'true'
+        page.locator('#toggle-dropdowns').click()
+        assert page.locator('details[data-dropdown-card][open]').count() == 0
+        page.on('dialog', lambda dialog: dialog.accept())
+        project = icmp_routed_lab()
+        # The engine fixture intentionally stacks devices at (0,0). Arrange
+        # explicit positions only for the real pointer/clipboard UI test.
+        for index, node in enumerate(project['nodes']):
+            node['x'] = index * 340
+            node['y'] = (index % 2) * 100
+        with page.expect_response('**/api/validate') as imported:
+            page.locator('#import-file').set_input_files({
+                'name':'context-ip.json','mimeType':'application/json',
+                'buffer':json.dumps(project).encode('utf-8'),
+            })
+        assert imported.value.status == 200
+        target_ip = next(
+            port['ipv4'].split('/')[0] for node in project['nodes'] if node['id'] == 'a'
+            for port in node['ports'] if port.get('ipv4'))
+        # Validate the browser Clipboard API invocation while retaining an isolated,
+        # deterministic test environment (OS clipboard state is not trusted).
+        page.evaluate("""() => {
+          window.__copiedIPv4 = null;
+          Object.defineProperty(navigator, 'clipboard', {
+            configurable: true, value: {writeText: async value => {window.__copiedIPv4 = value;}}
+          });
+        }""")
+        page.locator('[data-node-id="a"] rect.node-box').click(button='right')
+        assert page.locator('[data-node-id="a"].selected').count() == 1
+        menu = page.locator('#canvas-context-menu')
+        expect(menu).to_be_visible()
+        expect(menu.locator('button').first).to_contain_text('Kopiera IP-adress')
+        menu.locator('button').first.click()
+        assert page.evaluate('window.__copiedIPv4') == target_ip
+        expect(menu).to_be_hidden()
+        page.locator('[data-node-id="a"] rect.node-box').click(button='right')
+        expect(menu).to_be_visible()
+        page.keyboard.press('Escape')
+        expect(menu).to_be_hidden()
+        page.locator('#probe-toggle').click()
+        page.locator('#probe-from-ip').fill(page.evaluate('window.__copiedIPv4'))
+        assert page.locator('#probe-from-ip').input_value() == target_ip
+        assert page.locator('#probe-source').input_value() == '["a","eth0"]'
+        page.locator('#probe-destination').fill('203.0.113.20')
+        with page.expect_response('**/api/icmp/echo') as sent:
+            page.locator('#probe-send').click()
+        assert sent.value.status == 200
+        assert sent.value.json()['status'] == 'REPLIED'
+        # A fabricated From address must never use an unrelated selected port.
+        page.locator('#probe-from-ip').fill('198.51.100.245')
+        assert page.locator('#probe-from-ip').get_attribute('aria-invalid') == 'true'
+        page.locator('#probe-send').click()
+        expect(page.locator('#toast')).to_contain_text('Från/To-avvisning')
+        assert not errors, errors
+    finally:
+        page.close()
+
+
 def probe_canvas_regression(context, base, network_mode, store, errors):
     """True pointer interactions and engine-origin ICMP packet replay in Chromium."""
     page = context.new_page()
@@ -3990,8 +4093,8 @@ def probe_canvas_regression(context, base, network_mode, store, errors):
         assert viewport and bbox['y'] >= 0
         assert bbox['y'] + bbox['height'] <= viewport['height'] + 1, (
             'topology SVG is outside the visible desktop viewport', bbox, viewport)
-        assert page.locator('.right-panel').evaluate(
-            '(element) => element.scrollHeight > element.clientHeight')
+        assert page.locator('.right-panel').bounding_box()['y'] >= bbox['y'] + bbox['height'], (
+            'Control panels must be below the canvas in wide desktop mode')
         x = bbox['x'] + bbox['width'] - 45
         y = bbox['y'] + bbox['height'] - 85
 
@@ -6626,6 +6729,7 @@ def run():
             icmp_panel_integration(context, network_mode, errors)
             dora_session_races(context, network_mode, errors)
             simulation_session_races(context, network_mode, errors)
+            topology_workspace_layout_regression(context, base, network_mode, errors)
             probe_canvas_regression(context, base, network_mode, store, errors)
             assert not errors, errors
             print(f'Browser HTTP mode: {network_mode}')
