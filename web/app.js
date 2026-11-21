@@ -1999,6 +1999,7 @@ function doraSessionInput() {
     $('dora-client').value, $('dora-server').value,
     $('dora-pool-start').value.trim(), $('dora-pool-end').value.trim(),
     $('dora-transaction-id').value.trim(), $('dora-lease-seconds').value.trim(),
+    $('dora-from-mac').value.trim(), $('dora-to-ip').value.trim(),
   ];
 }
 function sessionInteger(value, min, max) {
@@ -2009,6 +2010,7 @@ function investigationStartInputs() {
   return JSON.stringify([...doraSessionInput(), $('investigation-difficulty').value]);
 }
 function startInvestigation() {
+  if (!requireBoundAddresses(['dora-from-mac','dora-to-ip'])) return;
   const inputs = doraSessionInput();
   const difficulty = $('investigation-difficulty').value;
   const [client, server, poolStart, poolEnd, , rawLease] = inputs;
@@ -2125,6 +2127,7 @@ async function runDora() {
     $('dora-client').value, $('dora-server').value,
     $('dora-pool-start').value.trim(), $('dora-pool-end').value.trim(),
     $('dora-transaction-id').value.trim(), $('dora-lease-seconds').value.trim(),
+    $('dora-from-mac').value.trim(), $('dora-to-ip').value.trim(),
   ];
   const inputs = currentInputs();
   const [client, server, poolStart, poolEnd, rawTransaction, rawLease] = inputs;
@@ -2174,6 +2177,7 @@ async function runDhcp() {
     $('dhcp-client').value, $('dhcp-server').value,
     $('dhcp-offered-ip').value.trim(), $('dhcp-transaction-id').value.trim(),
     $('dhcp-lease-seconds').value.trim(),
+    $('dhcp-from-mac').value.trim(), $('dhcp-to-ip').value.trim(),
   ];
   const inputs = currentInputs();
   const [client, server, proposedIpv4, rawTransaction, rawLease] = inputs;
@@ -2282,7 +2286,7 @@ function runSimulationOperation(operation) {
     return;
   }
   const readInputs = () => JSON.stringify([operation, $('session-source').value,
-    $(targetField).value.trim()]);
+    $(targetField).value.trim(), $(operation === 'arp' ? 'session-from-ip' : 'session-from-mac').value.trim()]);
   void simulationSession.run(operation, sourceNode, sourcePort, target, readInputs);
 }
 function resetSimulationSession() { void simulationSession.reset(); }
@@ -2291,6 +2295,7 @@ function stopSimulationSession() { void simulationSession.stop(); }
 function icmpInvestigationStartInputs() {
   return JSON.stringify([
     $('icmp-investigation-source').value,
+    $('icmp-investigation-from-ip').value.trim(),
     $('icmp-investigation-destination').value.trim(),
     $('icmp-investigation-ttl').value.trim(),
   ]);
@@ -2385,7 +2390,7 @@ async function runTroubleshooting() {
     : {type:kind,nodeId,routeId:targetId,newNextHop:hopText};
   const snapshot = JSON.stringify(project);
   const inputSnapshot = [selected,kind,chosen,destinationIpv4,ttlText,vlanText,
-    prefixText,hopText].join('|');
+    prefixText,hopText,$('trouble-from-ip').value.trim()].join('|');
   const currentInputs = () => {
     const currentType = $('trouble-type').value;
     const currentTarget = currentType === 'LINK_DISABLED' ? $('trouble-link').value :
@@ -2397,7 +2402,7 @@ async function runTroubleshooting() {
     return [ $('trouble-source').value, currentType,currentTarget,
       $('trouble-destination').value.trim(),$('trouble-ttl').value.trim(),
       $('trouble-vlan').value.trim(),$('trouble-prefix').value.trim(),
-      $('trouble-next-hop').value.trim() ].join('|');
+      $('trouble-next-hop').value.trim(),$('trouble-from-ip').value.trim() ].join('|');
   };
   const stillCurrent = () => snapshot === JSON.stringify(project) &&
     currentInputs() === inputSnapshot;
