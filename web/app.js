@@ -229,6 +229,32 @@ function requireBoundAddresses(inputIds) {
   }
   return true;
 }
+function arrangeFromToRows() {
+  // Keep the original input elements and listeners; only change presentation.
+  const pairs = [
+    ['probe-from-ip','probe-destination'],
+    ['arp-from-ip','arp-target-ip'],
+    ['ipv4-from-ip','ipv4-destination'],
+    ['ping-from-ip','ping-destination'],
+    ['trouble-from-ip','trouble-destination'],
+    ['icmp-investigation-from-ip','icmp-investigation-destination'],
+    ['session-from-ip','session-ip'],
+    ['session-from-mac','session-mac'],
+  ];
+  for (const [fromId, toId] of pairs) {
+    const fromLabel = document.querySelector('label[for="' + fromId + '"]');
+    const toLabel = document.querySelector('label[for="' + toId + '"]');
+    if (!fromLabel || !toLabel) continue;
+    const row = el('div', {className:'send-address-pair'});
+    const from = el('div', {className:'send-address-cell'});
+    const to = el('div', {className:'send-address-cell'});
+    fromLabel.before(row);
+    from.append(fromLabel, $(fromId), $(fromId + '-status'));
+    to.append(toLabel, $(toId));
+    row.append(from, to);
+  }
+}
+
 function setupAddressBindings() {
   for (const binding of ADDRESS_BINDINGS) {
     const selector = $(binding.select);
@@ -2697,6 +2723,7 @@ window.addEventListener('beforeunload', event => {
 });
 setupWorkspacePanels();
 setupTopologyContextMenu();
+arrangeFromToRows();
 setupAddressBindings();
 render();
 canvas.fit();
