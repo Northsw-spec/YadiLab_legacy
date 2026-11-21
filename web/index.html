@@ -118,7 +118,7 @@
       <main class="canvas-column" aria-label="Topologiarbetsyta">
         <div class="canvas-toolbar">
           <div class="canvas-tab"><span class="tab-indicator"></span> Topologi <span class="tab-caption">/ dokumenterad graf</span></div>
-          <div class="canvas-tools"><button id="probe-toggle" class="btn btn-small btn-soft" type="button" aria-controls="probe-panel" aria-expanded="false">Skicka probe · Paketresa</button><span id="canvas-mode">REDIGERING</span><button id="zoom-out" title="Zooma ut" aria-label="Zooma ut" class="icon-button" type="button">−</button><button id="zoom-in" title="Zooma in" aria-label="Zooma in" class="icon-button" type="button">+</button><button id="zoom-fit" class="btn btn-small btn-ghost" type="button">Anpassa</button></div>
+          <div class="canvas-tools"><button id="probe-toggle" class="btn btn-small btn-soft" type="button" aria-controls="probe-panel" aria-expanded="false">Skicka probe · Paketresa</button><button id="toggle-dropdowns" class="btn btn-small btn-ghost" type="button" aria-pressed="false">Toggla Dropdowns</button><span id="canvas-mode">REDIGERING</span><button id="zoom-out" title="Zooma ut" aria-label="Zooma ut" class="icon-button" type="button">−</button><button id="zoom-in" title="Zooma in" aria-label="Zooma in" class="icon-button" type="button">+</button><button id="zoom-fit" class="btn btn-small btn-ghost" type="button">Anpassa</button></div>
         </div>
         <div class="canvas-container">
           <section id="probe-panel" class="probe-panel" aria-label="Skicka ICMP-probe och spela upp paketresa" hidden>
@@ -462,6 +462,7 @@
       </aside>
     </div>
     <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+    <div id="canvas-context-menu" class="context-menu" role="menu" aria-label="IPv4-adresser" hidden></div>
   </div>
   <script type="module" src="/app.js"></script>
 </body>
