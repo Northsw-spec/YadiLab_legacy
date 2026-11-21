@@ -4021,13 +4021,13 @@ def topology_workspace_layout_regression(context, base, network_mode, errors):
         menu.locator('button').first.click()
         assert page.evaluate('window.__copiedIPv4') == target_ip
         expect(menu).to_be_hidden()
-        page.locator('#probe-toggle').click()
-        page.locator('#probe-destination').fill(page.evaluate('window.__copiedIPv4'))
-        assert page.locator('#probe-destination').input_value() == target_ip
         page.locator('[data-node-id="a"] rect.node-box').click(button='right')
         expect(menu).to_be_visible()
         page.keyboard.press('Escape')
         expect(menu).to_be_hidden()
+        page.locator('#probe-toggle').click()
+        page.locator('#probe-destination').fill(page.evaluate('window.__copiedIPv4'))
+        assert page.locator('#probe-destination').input_value() == target_ip
         assert not errors, errors
     finally:
         page.close()
