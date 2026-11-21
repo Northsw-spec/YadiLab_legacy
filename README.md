@@ -26,6 +26,10 @@ python3 -m network_core --data-dir ~/NetworkProjects --no-browser --port 8765
 
 ## Topologi och ICMP-paketresa
 
+- **Arbetsyta i full bredd:** topologin visas överst och inventering, inspektör samt diagnostik ligger i kollapsbara sektioner nedanför. Sektionerna är stängda vid start; **Toggla Dropdowns** öppnar eller stänger samtliga.
+- **Kopiera IPv4 till probe:** högerklicka på en dokumenterad nod eller port, välj **Kopiera IP-adress**, och klistra in värdadressen (utan `/prefix`) i fältet Destination IPv4. Om en nod har flera konfigurerade adresser kan du välja port i menyn. Kopiering ändrar inte projektdata.
+
+
 - Panorera topologin med **musens mittenknapp** (håll ned och dra), även över noder. Vänsterknappen panorerar inte; vänsterdrag flyttar valda enheter och vänsterklick på portpunkter används för uttryckliga kablar. Mushjulet zoomar.
 - Klicka **Skicka probe · Paketresa** ovanför topologin. Välj ett dokumenterat, aktiverat källgränssnitt med IPv4 och MAC, skriv in destinations-IPv4, ange TTL och klicka **Skicka ICMP-probe**. **Spela upp igen** återger samma motorresultat utan en ny simuleringskörning.
 - Animationen visar bara kabelöverföringar från det faktiska, avgränsade ICMP/IPv4/ARP/Ethernet-resultatet. Varje animerad kabel måste matcha båda deklarerade portändpunkterna; vid avvikelse stoppas animationen. Rörelsen är **inte** simulerad tid, mätt RTT eller verklig nätverkstrafik. Vid motorfel syns status i stället för en påhittad lyckad leverans.
