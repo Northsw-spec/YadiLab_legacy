@@ -1,9 +1,9 @@
 # Masterplan för källkodskvalitet 10/10
 
-**Dokumentversion:** 1.0  
+**Dokumentversion:** 1.1 – förstärkta skydds- och etappgrindar  
 **Datum:** 2026-11-21 (ISO)  
 **Repository:** [Repositoryts rot](../)  
-**Verifierad bascommit:** `32bcefdf3eff25bc6a4f7986a7d88c05f704214c`  
+**Historisk, ursprungligen verifierad bascommit (inte aktuell HEAD):** `32bcefdf3eff25bc6a4f7986a7d88c05f704214c`  
 **Mål:** Högsta möjliga verifierbara källkodskvalitet inom appens uttryckligen stödda omfattning.  
 **Status:** QUALITY-001 integrerad; QUALITY-002 konfigurerad men inte negativt enforcement-testad; QUALITY-003–011 planerade.
 
@@ -28,7 +28,39 @@ Bindande invariants:
 11. **Begränsningar dokumenteras**, inte döljs bakom allmänna produktpåståenden.
 12. **Inga nya funktioner utan motiverad nytta** och en separat verifierbar funktionsdefinition.
 
+### 1A. Gemensamt skyddskontrakt – vad Codex får och inte får göra
+
+Detta skyddskontrakt gäller **QUALITY-000–011, alla del-PR:er, diagnostiska experiment, ändringar i tester/CI och eventuella byggartefakter**. Det ger inga nya utvecklingsuppdrag. Den senast uttryckliga användarinstruktionen och de bindande funktions-/importkontrakten gäller fortfarande; oklara eller motstridiga instruktioner får **inte** lösas genom att anta bredare ändringstillstånd. Fortsätt i stället med skrivskyddad analys, dokumentera konflikten och avstå från den riskabla ändringen.
+
+**Ändringstillstånd är en trappa, inte en följd av att en etapp nämns:**
+
+| Nivå | Tillåtet | Inte tillåtet |
+|---|---|---|
+| AUDIT / READ_ONLY | Läsa, analysera, jämföra referenser, inventera och rapportera; versionshantera avgränsad revisionsdokumentation | Ändra produktionskod eller tolka misstanke som verifierad defekt |
+| TEST / EVIDENCE | Lägga till isolerade positiva/negativa tester och fixturer, med verifierad förväntan och säker testdata | Ändra produktionskoden för att göra ett svagt test grönt; avaktivera befintliga kontroller |
+| NARROW_FIX | En liten ändring med konkret reproducerad defekt/kontraktsavvikelse, före-/efterbevis och relevanta regressioner, inom aktuell etapps uttryckliga tillstånd | Allmän cleanup, ombyggnad av närliggande kod, byte av arkitektur, implicit feature-utveckling |
+| CONTRACT / BREAKING_CHANGE | **Endast ett separat, uttryckligen godkänt uppdrag** med migrations-, kompatibilitets- och rollbackplan | Ändrad kanonisk schema-/filsemantik, API-brott, importregler, borttagen funktion, nytt protokoll, ändrad platform-support eller CI-/rulesetförsvagning under förevändning att kvaliteten förbättras |
+
+**Innan någon kod skrivs måste Codex kunna redovisa:** (1) exakt observerad avvikelse och riskklass eller specificerat accepterat förbättringsmål; (2) stödd förväntad semantik från kontrakt/oberoende facit; (3) minsta relevanta filer/funktioner och icke-mål; (4) en regressionskontroll som kan fallera av den aktuella avvikelsen; (5) skydd för identiteter, befintliga användarflöden och asynkrona/atomära garantier; (6) verifierings- och återställningsplan. Saknas något: **AUDIT / NOT_VERIFIED**, ingen improviserad implementation.
+
+**Absoluta spärrar utan särskilt uttryckligt mandat:**
+
+- Ingen massrefaktor, automatisk uppdelning efter radantal, allmän formatering av orörda filer, namnbyte, omskrivning från grunden, ”modernisering” av alla moduler eller borttagning av så kallad AI-/legacy-kod utifrån misstanke.
+- Ingen ny parallell kanonisk modell, importmotor, protokollmotor, sessionslagring, eventbus, generell HTTP-router eller state manager. Inga gissade enheter/länkar/rutter och inget påstått protokoll-PASS byggt på enbart grafväg.
+- Ingen oombedd installation eller uppgradering av runtimebibliotek, JavaScript-ramverk, Python-/Node-versioner, schema-/projektformat eller annan plattformspolicy. Reproducerbar testmiljö får beskrivas och byggas isolerat inom avtalat scope.
+- Ingen tyst ändring av GitHub rulesets, branchskydd, nödvändiga CI-checks, workflow-triggers, GitHub Actions-permissions, testtäckning eller testtimeouts för att kringgå ett FAIL. Förslag ska redovisas separat; en försvagning kräver nytt uttryckligt uppdrag.
+- Ingen force-push, direktpush till skyddad main, merge av avsiktligt röd test-PR, historikomskrivning eller destruktiva kommandon mot användarens riktiga filer/arbetskatalog. För experiment: separata temporära kataloger och fiktiva testprojekt; bevara originalbytes och kontrollsummor.
+- Ingen falsk verifiering: ”CI grön”, headless Chromium, isolerad stub, syntetisk fixtur, lyckad kompilering eller en äldre körnings artefakt får **inte** ersätta aktuell, relevant, verklig end-to-end-verifiering. Tester får aldrig raderas, markeras skip/xfail, göras tautologiska eller få lösare assertions bara för att slippa regressionsfel.
+- Ingen obehörig publicering av riktiga kund-/företagsdokument, identifierande infrastrukturnamn, IP-planer, personuppgifter, inloggningar eller hemligheter. Använd uttryckligt tillåtna och avidentifierade, artificiella eller lokalt skyddade underlag; notera när anonymisering kan ändra det som testas.
+- Ingen tyst ”scope creep”: om nya behov, okända fakta eller problem upptäcks, skriv ett separat ISSUE/FINDING-förslag med evidens och lämplig QUALITY-etapp. P0/P1 får prioriteras före ordningen, men **endast som egen minimal korrigerings-PR**, inte som tillstånd att renovera hela delsystemet.
+
+**Obligatorisk ändringsgranskning före PR:** redovisa tillåtna filer, alla faktiskt ändrade filer, diffstatistik och varför varje ändring behövs; följ beroendegrafen; kontrollera att ingen oavsiktlig fil, låsfil, testdefinition, dokumenterad garanti eller byggskript ändrats. En större diff än vad det enda problemet kräver ska avbrytas eller delas i mindre självständigt verifierbara PR:er. **Lägg inte ett fungerande systems tidigare regressioner som pant för renare kodstil.**
+
+**Acceptans och självkontroll:** en etapp kan slutföras som endast en revisionsrapport, med alla kodområden **KEEP**, eller stanna som NOT_VERIFIED med tydlig blockerare. Status på kod, tester, CI, ruleset och release redovisas separat på exakt SHA; en av dem får aldrig antas från en annan. Det finns inget krav på ett visst antal kodrader, commits, refaktoreringar, nya funktioner, testfall eller höjt självvalt betyg.
+
 ## 2. Verifierad utgångspunkt per 2026-11-21
+
+**Historisk ögonblicksbild från planens tillkomst, inte en aktuell CI-/PR-status.** Codex ska inför varje steg kontrollera ny exakt main-SHA, aktiva PR:er, utfall på just den SHA:n, workflow- och rulesetstatus. Ändra aldrig ett statusfält utifrån förmodad eller äldre PASS. Vid senare verifierad merge kompletteras historiken spårbart i QUALITY-000, inte genom att det ursprungliga facit suddas ut.
 
 | Kontroll | Verifierat läge |
 |---|---|
@@ -93,13 +125,13 @@ Redan korrigerade fel: PR #76 (importacceptans), #77 (stale Builder HTTP-svar), 
 
 **2A – Inventering:** verifiera aktiva `main`-regler: PR-krav, linjär historik, deletion/non-fast-forward-skydd, obligatoriska `unit-tests` från rätt GitHub Actions-app. Inga bypass-aktörer får oavsiktligt tillkomma.
 
-**2B – Negativ enforcement-verifiering:** skapa en tydligt namngiven tillfällig testbranch och test-PR med avsiktligt misslyckad `unit-tests` eller tillåten reproducerbar misslyckad status. **Test-PR:n får aldrig mergas.** Bevisa via GitHubs mergebarhets-/regelsvar att merge blockeras. Verifiera även PENDING/missing-status när det går utan kringgående. Stäng test-PR och ta bort testbranch. Ingen försämring av `main`.
+**2B – Negativ enforcement-verifiering:** skapa en tydligt namngiven tillfällig testbranch och test-PR med avsiktligt misslyckad `unit-tests`, **utan ändring av produktionskod och utan ändring av regler/obligatoriska workflow-definitioner**. Test-PR:n får **ALDRIG** mergas, läggas i mergekö, försöksmergas via PUT/GraphQL/CLI eller användas för riskfylld direktpush. Samla separat (a) FAIL på exakt PR-HEAD från rätt GitHub Actions-app och (b) GitHubs **icke-muterande regler-/mergekravsstatus** som uttryckligen rapporterar blockeringen. Enbart `mergeable=true/false`, konfliktstatus eller workflow-FAIL bevisar **inte** ruleset-enforcement. Om tillgängliga läs-API:er inte kan fastställa blockeringen: **ENFORCEMENT NOT_VERIFIED**, aldrig simulerat PASS och inget riskfyllt mergeförsök. PENDING/missing testas bara om det kan göras säkert utan att försvaga CI. Stäng negativa test-PR:n utan merge, återställ/ta bort endast dess uttryckligt tillfälliga branch och bevisa att `main` inte ändrats. Under den negativa testen får ingen annan utvecklings-PR pågå.
 
 **2C – Strict-policy:** riskbedöm `strict_required_status_checks_policy=false` jämfört med krav på uppdaterad branch. Bedöm både race mellan bas och PR-HEAD samt extra CI-kostnad. Behåll alltid den befintliga manuella grinden för förväntad bas.
 
 **2D – Policy:** förbjud direktcommit, force-push, bypass, merge på FAIL/PENDING/UNKNOWN och tyst CI-bortkoppling.
 
-**Acceptans:** `REQUIRED STATUS CHECKS: ENFORCED` först när ett faktiskt misslyckat försök **bevisligen** stoppas. Saknad verifiering = NOT_VERIFIED, inte PASS.
+**Acceptans:** `REQUIRED STATUS CHECKS: ENFORCED` först efter ett otvetydigt **icke-destruktivt GitHub-blockeringsbevis** för en verkligt röd PR från rätt integrationskälla. Inga merge-API-försök på test-PR tillåts. Räcker inte verktygsinformationen: NOT_VERIFIED och stopp med exakt saknat bevis, inte PASS.
 
 ## 7. QUALITY-003 – Oberoende protokollverifiering
 
@@ -122,6 +154,8 @@ Redan korrigerade fel: PR #76 (importacceptans), #77 (stale Builder HTTP-svar), 
 **Metamorfa negativa tester:** en raderad nödvändig kabel ska inte förbättra reachability; irrelevant nod ska inte förändra en isolerad väg; nodposition ska inte påverka routing; ogiltig VLAN-övergång ska inte passera; saknad returroute ska aldrig ge Echo Reply; Save/Open får inte ändra nätverkets betydelse.
 
 **Leverans:** `Protocol Reference Matrix` med standard, scenario, förväntad och observerad observation, testkod, avvikelse, status samt dokumenterat UNSUPPORTED.
+
+**Implementationsspärr QUALITY-003:** börja med oberoende facit och **nya tester**, inte med ombyggnad av protokollmotorerna. Om ett test påvisar reproducerbar avvikelse får endast en isolerad, negativt testad korrigering inom existerande protokollkontrakt föreslås/genomföras i **egen liten PR**. Stöds inte protokollfunktionen ska den märkas UNSUPPORTED, inte automatiskt implementeras eller emuleras. Inga nya protokoll, automatiska antaganden eller kompatibilitetslöften.
 
 **Acceptans:** alla avtalade oberoende referensfall PASS utan oförklarade avvikelser; inga kända falskt positiva dataplanresultat; full lokal och CI-regression PASS.
 
@@ -183,6 +217,8 @@ Kör minst `python3 -m unittest discover -s tests -p 'test_*.py' -v`, `npm run c
 
 **5E Parsergränser:** stora och korrupta filer, ZIP/ODS/XLSX/CSV-kantfall, numeriska och parsergränser, begränsad RAM/CPU och tydlig avvisning utan truncering.
 
+**Dataskydd QUALITY-005:** alla krasch-, race-, avbrotts-, korrumperings- och samtidighetstester ska köras mot uttryckliga **temporära kopior och isolerade testservrar**, aldrig mot användarens riktiga data-dir, projektfiler, home-katalog, riktiga network shares eller produktionsprojekt. Först mät/skydda data, därefter avgränsad defektfix. Förbjud sänkta timeout-/racekrav eller skippade tester som lösning.
+
 **Acceptans:** inget reproducerat tyst datatapp, inkonsekvent Save-status, föråldrad UI-återställning eller falskt lyckad sessionsoperation. Okända race klassificeras och planeras.
 
 ## 10. QUALITY-006 – Verklig dokumentationsimport och proveniens
@@ -192,6 +228,8 @@ Kör minst `python3 -m unittest discover -s tests -p 'test_*.py' -v`, `npm run c
 **6A Korpus:** CSV, XLSX, ODS, flera blad/roller, tomma eller oregelbundna rader, avvikande rubriker, partiella och motsägelsefulla port-/VLAN-/länkfakta samt dokumentfamiljer med olika organisationskonventioner. Avidentifiera före offentlig incheckning.
 
 **6B Manuellt facit:** separera direkta cellfakta från användarval, saknade uppgifter, konflikter och ej stödda format. Facit ska bestämmas oberoende av importmotorn.
+
+**Korpus-/integritetsspärr:** externa arbetsböcker får användas bara med uttrycklig rätt att behandla dem och efter dokumenterad anonymisering; inga reala hemligheter eller identifierande kundnät i publik Git. Om underlaget saknas: NOT_VERIFIED, aldrig påhittat företagscase eller dold källa. Ingen ny inferens om kablar/portkopplingar, ingen ändring av importkontrakt eller schema utan separat godkänt uppdrag.
 
 **6C Test:** exakta source IDs, cellpositioner, MappingViews, ImportPlan, beroenden, valda atomära beslut, historisk importEvidence, replay, källhash, schema 1.4, verklig Save/Open och omstart. Inga implicit skapade kablar.
 
@@ -221,6 +259,8 @@ Kör minst `python3 -m unittest discover -s tests -p 'test_*.py' -v`, `npm run c
 
 **Beslutsregel:** bestäm acceptabla budgetar **efter baslinjemätning men före optimering**. Ta inte siffror ur luften. Prestanda får aldrig köpas med utelämnade objekt, förändrade ID:n, avstängd validering eller fabricerade paket.
 
+**Resursspärr:** använd tempdata, mätgränser, tids-/minnesbudget och avbrytbara belastningstester; kör aldrig okontrollerad oändlig eller destruktiv last mot användarmiljö, GitHub-runners eller riktiga nät. Optimera bara en verifierad flaskhals i egen liten PR, med exakt beteendeekvivalens och synlig före-/eftermetrik.
+
 **Acceptans:** uppfyllda reproducerbara budgetar inom uttalade gränser; utanför gräns tydligt fel utan datatapp.
 
 ## 12. QUALITY-008 – Frontend, pedagogik och tillgänglighet
@@ -235,21 +275,29 @@ Kör minst `python3 -m unittest discover -s tests -p 'test_*.py' -v`, `npm run c
 
 **8E Oberoende användarprov:** låt personer som inte utvecklat appen utföra realistiska uppgifter. Registrera faktisk uppgiftsframgång, feltolkningar och behov av stöd utan påhittade frekvenser.
 
+**UI-spärr:** ett kvalitetsmål medger inte automatisk redesign, nytt navigeringssystem eller ny användarfunktion. Varje korrigering måste utgå från ett reproducerat hinder i en redan stödd uppgift, bevara data/val, tangentbord, pointer, From/To, kopiering, fullbreddstopologi och motordrivna paketresor. Endast smala ändringar med riktiga Chromium-regressioner; användarstudier får inte fabriceras.
+
 **Acceptans:** UI avspeglar alltid kanoniskt tillstånd, begränsningar och faktiska simuleringsresultat; kärnuppgifter kräver inte rå JSON.
 
 ## 13. QUALITY-009 – Distribution och plattformskompatibilitet
 
 **Syfte:** endast annonsera plattformar som faktiskt verifierats.
 
+**Verifierad nulägesrisk:** `network_core/storage.py` importerar Unix-specifika `fcntl`; detta är **inte** en bekräftelse på fungerande Windows-stöd. Linux-binärer från separata bygg-/artifact-branches bevisar inte att varje framtida main-SHA är releasetestad. Det särskilda X11 PRIMARY-testet finns i `tests/browser_primary_selection_x11.py`, men workflow `x11-primary-middle-paste.yml` triggas endast av den historiska PR-branchen och ingår därmed **inte** i ordinarie main-CI. Ange den luckan som NOT_VERIFIED för varje ny release-SHA tills den testats på just den aktuella koden.
+
 Definiera uttryckligt supportkontrakt för Linux, Windows om avsett, webbläsare, Python, lokalt filsystem, installation, uppstart, nedstängning och uppgradering.
 
 För varje **stödd** kombination: ren installation, skapa/topologi, import, simulering, Save, processstopp, återstart och Open av exakt samma fil med oförändrade ID:n/bytes. Exakta versioner och miljöer ska anges.
+
+**Paketeringsspärr:** märk endast binärer för uttryckligen verifierad OS/arkitektur. Bygg från exakt redovisad käll-SHA; kontrollera kedjan source → build-logg → artefakt → SHA-256 → verklig start, HTTP, Save/Open och portkonflikt. Bygggrenar, ändrade workflows, lokala proxyer och äldre artefakter får inte användas som oberoende bevis för main utan verifierad identisk källkod och relevant testning. Ingen obeställd port till Windows eller ny installationsarkitektur.
 
 **Acceptans:** reproducerbar ren installation enligt dokumentationen. Allt annat märks NOT_VERIFIED och marknadsförs inte som färdigt.
 
 ## 14. QUALITY-010 – Dokumentation och reproducerbar QA
 
 **10A Dokumentationsrevision:** synkronisera README, ARCHITECTURE, denna kvalitetsplan, AGENTS, MASTERPROMPT, import- och protokollkontrakt. Historiska påståenden om ”ännu inte implementerat” ska inte utges för aktuella fakta.
+
+**Dokumentationsspärr:** rätta endast källbelagda sakfel och tydliggör skillnaden mellan historik, normativt kontrakt, mål och verifierat implementerat beteende. Ändra inte normativa protokoll-/import-/projektspecifikationer eller utgå från att ett passerat test gör en gammal historisk kommentar aktuell. Bevara revisionsspår och hänvisa till exakt kod/CI när status ändras.
 
 **10B Funktionsmatris:** IMPLEMENTED / PARTIALLY_SUPPORTED / UNSUPPORTED / NOT_VERIFIED per central funktion, med kod/testreferens och begränsningar.
 
@@ -289,9 +337,13 @@ Varje dimension betygsätts 0–10 med evidens; viktningen ger ett samlat bedöm
 
 Om granskningen finner 9/10 redovisas evidens, återstående brister och nya avgränsade åtgärder. Självdeklarerad 10/10 utan oberoende belägg är förbjuden.
 
+**Oberoendekrav:** Codex kan förbereda rapporter och hitta fel men får **inte** kalla sin egen granskning extern eller själv utfärda oberoende 10/10-intyg. Om extern kompetent granskare saknas är den grinden NOT_VERIFIED. Slutrevisionen ger inte mandat till bred kodomskrivning; varje upptäckt defekt blir en separat prioriterad, reproducerbar åtgärd.
+
 ## 16. Gemensam process och acceptansgrindar per PR
 
 **Före kod:** läs AGENTS, MASTERPROMPT och relevant kontrakt; kontrollera aktuell `main`, CI, öppna grenar/PR:er; välj verifierat problem; skriv testbar positiv/negativ DoD.
+
+**Scopegrind:** kontrollera skyddskontraktet i 1A. Visa tillåtna filer/operationer och icke-mål före första ändringen. Om planerad diff ändrar annan del än det evidensbaserade problemet: STOP, skriv fynd i rapport och fortsätt endast med den godkända kärnan. Ändringar i CI/rulesets, scheman, import-/protokollkontrakt, runtimeberoenden och officiella releasekommandon får aldrig gömmas i vanlig funktions- eller dokumentations-PR.
 
 **Under kod:** minsta sammanhängande lösning, ingen parallell datamodell, inga tysta mutationer, dokumentera nya begränsningar; regressionsfall ska först kunna påvisa problemet.
 
