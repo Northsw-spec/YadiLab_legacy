@@ -110,12 +110,54 @@ export class TopologyCanvas {
     this.interaction = null;
     this.playback = null;
     this.setView();
+    // On Linux/X11, middle-click requests PRIMARY selection, not the regular
+    // Ctrl+C clipboard. Chromium can route that paste to the previously
+    // focused input even when a middle-button SVG pan is in progress.
+    // Suppress only clipboard insertion belonging to a canvas middle gesture;
+    // ordinary Ctrl+V, context-menu paste, and middle paste outside the canvas
+    // must remain usable.
+    let middleGesture = false;
+    let releaseMiddleGestureTimer = null;
+    const releaseMiddleGesture = () => {
+      if (releaseMiddleGestureTimer !== null) clearTimeout(releaseMiddleGestureTimer);
+      // The OS/browser may dispatch auxclick/paste after pointerup. Keep the
+      // guard until those synchronous default actions have completed.
+      releaseMiddleGestureTimer = setTimeout(() => {
+        middleGesture = false;
+        releaseMiddleGestureTimer = null;
+      }, 0);
+    };
+    const blockMiddleGesturePaste = event => {
+      if (!middleGesture) return;
+      if (event.type === 'beforeinput' && event.inputType !== 'insertFromPaste') return;
+      event.preventDefault();
+    };
+    document.addEventListener('paste', blockMiddleGesturePaste, true);
+    document.addEventListener('beforeinput', blockMiddleGesturePaste, true);
+    document.addEventListener('auxclick', event => {
+      if (middleGesture && event.button === 1) {
+        event.preventDefault();
+        releaseMiddleGesture();
+      }
+    }, true);
     // Middle drag pans even over ports/nodes/cables; no left-button panning.
     svg.addEventListener('pointerdown', event => {
       if (event.button !== 1) return;
       event.preventDefault();
       event.stopPropagation();
       if (this.interaction) return;
+      if (releaseMiddleGestureTimer !== null) {
+        clearTimeout(releaseMiddleGestureTimer);
+        releaseMiddleGestureTimer = null;
+      }
+      middleGesture = true;
+      // Prevent Linux PRIMARY selection from targeting an earlier From/To
+      // field while moving the canvas. A blur does not modify its value.
+      const focused = document.activeElement;
+      if (focused instanceof HTMLElement &&
+          (focused.matches('input,textarea,[contenteditable]') || focused.isContentEditable)) {
+        focused.blur();
+      }
       this.capture(event, {kind: 'pan', x: event.clientX, y: event.clientY, start: {...this.view}});
       svg.classList.add('middle-panning');
     }, true);
@@ -146,6 +188,7 @@ export class TopologyCanvas {
     const finish = event => {
       if (!this.interaction || this.interaction.pointerId !== event.pointerId) return;
       if (this.interaction.kind === 'node') onEndMove();
+      else if (this.interaction.kind === 'pan') releaseMiddleGesture();
       svg.classList.remove('middle-panning');
       this.interaction = null;
       try { if (svg.hasPointerCapture(event.pointerId)) svg.releasePointerCapture(event.pointerId); } catch (_) { /* browser already released */ }
@@ -155,6 +198,7 @@ export class TopologyCanvas {
     svg.addEventListener('lostpointercapture', event => {
       if (this.interaction?.pointerId !== event.pointerId) return;
       const wasNode = this.interaction.kind === 'node';
+      if (this.interaction.kind === 'pan') releaseMiddleGesture();
       this.interaction = null;
       svg.classList.remove('middle-panning');
       if (wasNode) onEndMove();

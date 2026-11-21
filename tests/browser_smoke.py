@@ -3981,6 +3981,8 @@ def topology_workspace_layout_regression(context, base, network_mode, errors):
     page.on('pageerror', lambda error: errors.append(getattr(error, 'stack', str(error))))
     try:
         assert browser_open(page, base, expand_panels=False) == network_mode
+        assert page.locator('#arp-source').get_attribute('aria-describedby') == 'arp-source-help'
+        assert 'MAC-adress' in page.locator('#arp-source-help').text_content()
         # Every packet/probe sender exposes explicit From/To entry fields.
         for from_id, to_id in [
             ('probe-from-ip','probe-destination'), ('arp-from-ip','arp-target-ip'),
@@ -4130,6 +4132,50 @@ def probe_canvas_regression(context, base, network_mode, store, errors):
         assert svg.get_attribute('viewBox') != old_view
         assert 'middle-panning' not in (svg.get_attribute('class') or '')
         assert page.locator('#inspector-heading').inner_text() == heading
+
+        # Linux/X11 PRIMARY selection regression: clicking the topology with
+        # the wheel previously inserted text selected in another browser tab
+        # into whichever From/To input still had focus (e.g. ARP To IPv4).
+        # Headless Chromium cannot supply a real OS PRIMARY selection here.
+        # Instead, verify real middle-pointer capture, focus release and
+        # cancelable browser paste/beforeinput events during that gesture.
+        page.evaluate("""() => {
+          const field = document.querySelector('#arp-target-ip');
+          field.value = '192.0.2.20';
+          field.focus({preventScroll:true});
+        }""")
+        assert page.evaluate('document.activeElement.id') == 'arp-target-ip'
+        initial_arp_value = page.locator('#arp-target-ip').input_value()
+        starting_view = svg.get_attribute('viewBox')
+        page.mouse.move(x, y)
+        page.mouse.down(button='middle')
+        assert page.evaluate('document.activeElement.id') != 'arp-target-ip'
+        assert 'middle-panning' in (svg.get_attribute('class') or '')
+        paste_canceled = page.evaluate("""() => {
+          const field = document.getElementById('arp-target-ip');
+          const paste = new Event('paste', {bubbles:true, cancelable:true});
+          const before = new InputEvent('beforeinput', {
+            bubbles:true, cancelable:true, inputType:'insertFromPaste',
+            data:'(vad jag anser)'
+          });
+          field.dispatchEvent(paste);
+          field.dispatchEvent(before);
+          return [paste.defaultPrevented, before.defaultPrevented];
+        }""")
+        assert paste_canceled == [True, True], paste_canceled
+        page.mouse.move(x + 45, y + 25, steps=3)
+        page.mouse.up(button='middle')
+        assert 'middle-panning' not in (svg.get_attribute('class') or '')
+        assert svg.get_attribute('viewBox') != starting_view
+        assert page.locator('#arp-target-ip').input_value() == initial_arp_value
+        # Ordinary user typing and clipboard paste remain permitted outside a
+        # canvas middle-button gesture; the app must not disable Ctrl+V.
+        page.locator('#arp-target-ip').focus()
+        assert page.evaluate("""() => {
+          const e = new Event('paste', {bubbles:true, cancelable:true});
+          return document.getElementById('arp-target-ip').dispatchEvent(e);
+        }""") is True
+        assert page.locator('#arp-target-ip').input_value() == initial_arp_value
 
         # The visible probe control calls actual ICMP HTTP, not graph tracing.
         page.locator('#probe-toggle').click()

@@ -167,7 +167,8 @@
           <div class="eyebrow">LAYER 2 · ARP</div>
           <h3>Simulera ARP-förfrågan</h3>
           <p class="muted tiny">En isolerad körning över deklarerade kablar och VLAN. Inte ping eller IP-routing. Tabellerna sparas inte.</p>
-          <label for="arp-source">Källgränssnitt</label><select id="arp-source" class="control"></select>
+          <label for="arp-source">Källgränssnitt</label><select id="arp-source" class="control" aria-describedby="arp-source-help"></select>
+          <p id="arp-source-help" class="muted tiny">ARP skickas från en bestämd port i ett lokalt VLAN. Källgränssnittet avgör vilken MAC-adress och vilken fysisk anslutning som används. En dator eller router kan ha flera gränssnitt, även om From-IPv4 redan är angiven.</p>
           <label for="arp-from-ip">From · IPv4 (klistra in dokumenterad källadress)</label>
           <input id="arp-from-ip" class="control from-address" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="192.0.2.10" aria-describedby="arp-from-ip-status">
           <span id="arp-from-ip-status" class="small-muted" role="status" aria-live="polite">Från-gränssnittet bestäms av adressen eller valet ovan.</span>

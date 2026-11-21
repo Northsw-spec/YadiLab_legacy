@@ -1,0 +1,24 @@
+name: Linux X11 PRIMARY middle-paste regression
+on:
+  push:
+    branches:
+      - fix/canvas-middle-primary-selection-paste
+permissions:
+  contents: read
+jobs:
+  x11-primary-clipboard:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install real X11 and Chromium
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb xauth xclip
+          python3 -m pip install playwright==1.57.0
+          python3 -m playwright install --with-deps chromium
+      - name: Verify PRIMARY selection middle click and ordinary Ctrl+V
+        run: xvfb-run -a python3 tests/browser_primary_selection_x11.py
