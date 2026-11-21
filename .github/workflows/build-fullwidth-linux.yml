@@ -1,0 +1,43 @@
+name: Standalone Linux binary - PR82 From/To
+on:
+  push:
+    branches:
+      - build/linux-fullwidth-from-to
+permissions:
+  contents: read
+jobs:
+  build-linux-x64:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Verify exact merged application source
+        shell: bash
+        run: |
+          git merge-base --is-ancestor c9031ceb25d4e786ddf81c84bc1b141565fa44e6 HEAD
+          git diff --quiet c9031ceb25d4e786ddf81c84bc1b141565fa44e6 -- network_core web README.md
+      - name: Build Linux x86-64 standalone executable
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check pyinstaller==6.16.0
+          python -m PyInstaller --clean --noconfirm --onefile --console --name NetworkLab --paths . --add-data 'web:web' packaging/entrypoint.py
+          file dist/NetworkLab
+          test -x dist/NetworkLab
+      - name: Smoke test frozen UI, API and durable Save/Open
+        shell: bash
+        run: python packaging/smoke_binary.py dist/NetworkLab
+      - name: Generate SHA256 checksum
+        shell: bash
+        run: cd dist && sha256sum NetworkLab > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NetworkLab-linux-x86_64-PR82-FromTo
+          path: |
+            dist/NetworkLab
+            dist/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
