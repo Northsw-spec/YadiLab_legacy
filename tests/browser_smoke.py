@@ -89,6 +89,12 @@ def browser_open(page, base, expand_panels=True):
     Python HTTP server via urllib; only the browser's forbidden socket is
     bridged. Never report fallback as proof of direct browser HTTP networking.
     """
+    if expand_panels:
+        # Legacy acceptance tests use the full inspector after page reloads.
+        # Only those tests opt in; the dedicated UI regression checks closed defaults.
+        page.add_init_script("""document.addEventListener('DOMContentLoaded', () => {
+          document.querySelectorAll('details[data-dropdown-card]').forEach(card => card.open = true);
+        });""")
     try:
         page.goto(base, wait_until='domcontentloaded', timeout=10000)
         if expand_panels:
@@ -3975,6 +3981,17 @@ def topology_workspace_layout_regression(context, base, network_mode, errors):
     page.on('pageerror', lambda error: errors.append(getattr(error, 'stack', str(error))))
     try:
         assert browser_open(page, base, expand_panels=False) == network_mode
+        # Every packet/probe sender exposes explicit From/To entry fields.
+        for from_id, to_id in [
+            ('probe-from-ip','probe-destination'), ('arp-from-ip','arp-target-ip'),
+            ('ipv4-from-ip','ipv4-destination'), ('ping-from-ip','ping-destination'),
+            ('trouble-from-ip','trouble-destination'),
+            ('icmp-investigation-from-ip','icmp-investigation-destination'),
+            ('session-from-ip','session-ip'), ('session-from-mac','session-mac'),
+            ('dhcp-from-mac','dhcp-to-ip'), ('dora-from-mac','dora-to-ip'),
+        ]:
+            assert page.locator('#' + from_id).count() == 1
+            assert page.locator('#' + to_id).count() == 1
         cards = page.locator('details[data-dropdown-card]')
         count = cards.count()
         assert count >= 8, count
@@ -4026,8 +4043,19 @@ def topology_workspace_layout_regression(context, base, network_mode, errors):
         page.keyboard.press('Escape')
         expect(menu).to_be_hidden()
         page.locator('#probe-toggle').click()
-        page.locator('#probe-destination').fill(page.evaluate('window.__copiedIPv4'))
-        assert page.locator('#probe-destination').input_value() == target_ip
+        page.locator('#probe-from-ip').fill(page.evaluate('window.__copiedIPv4'))
+        assert page.locator('#probe-from-ip').input_value() == target_ip
+        assert page.locator('#probe-source').input_value() == '["a","eth0"]'
+        page.locator('#probe-destination').fill('203.0.113.20')
+        with page.expect_response('**/api/icmp/echo') as sent:
+            page.locator('#probe-send').click()
+        assert sent.value.status == 200
+        assert sent.value.json()['status'] == 'REPLIED'
+        # A fabricated From address must never use an unrelated selected port.
+        page.locator('#probe-from-ip').fill('198.51.100.245')
+        assert page.locator('#probe-from-ip').get_attribute('aria-invalid') == 'true'
+        page.locator('#probe-send').click()
+        expect(page.locator('#toast')).to_contain_text('Från/To-avvisning')
         assert not errors, errors
     finally:
         page.close()
