@@ -97,6 +97,142 @@ const canvas = new TopologyCanvas($('topology'), {
   onScale: percentage => { $('scale-label').textContent = `${percentage} %`; },
 });
 
+
+/* Presentation-only workspace layout: canonical network state is unchanged. */
+function panelCard(title, nodes) {
+  const card = el('details', {className:'dropdown-card', dataset:{dropdownCard:'true'}});
+  const summary = el('summary', {}, title);
+  const body = el('div', {className:'dropdown-body'});
+  body.append(...nodes.filter(Boolean));
+  card.append(summary, body);
+  card.addEventListener('toggle', syncDropdownButton);
+  return card;
+}
+
+function dropdownCards() {
+  return [...document.querySelectorAll('.dropdown-card[data-dropdown-card="true"]')];
+}
+
+function syncDropdownButton() {
+  const cards = dropdownCards();
+  $('toggle-dropdowns').setAttribute('aria-pressed',
+    String(cards.length > 0 && cards.every(card => card.open)));
+}
+
+function setupWorkspacePanels() {
+  const inventory = document.querySelector('.left-panel');
+  const inventoryHeadings = [...inventory.querySelectorAll(':scope > .list-header')];
+  inventory.replaceChildren(
+    panelCard('Inventering', [
+      inventory.querySelector('.panel-section:not(.action-stack)'),
+      inventory.querySelector('.stats'), inventory.querySelector('.action-stack'),
+      inventoryHeadings[0], $('node-list'), inventoryHeadings[1], $('link-list'),
+      inventoryHeadings[2], $('zone-list'),
+    ]),
+    panelCard('Sparade projekt och mallar', [inventory.querySelector('.left-bottom')]),
+  );
+  const tools = document.querySelector('.right-panel');
+  const panels = [...tools.querySelectorAll(':scope > .trace-panel')];
+  const inspectorTitle = tools.querySelector(':scope > .inspector-title');
+  const inspectorBody = tools.querySelector(':scope > .inspector-body');
+  tools.replaceChildren(
+    panelCard('Inspektör / egenskaper', [inspectorTitle, inspectorBody]),
+    ...panels.map(panel => panelCard(
+      panel.querySelector('h3')?.textContent?.trim() || panel.getAttribute('aria-label') || 'Diagnostik',
+      [panel])),
+  );
+  $('toggle-dropdowns').addEventListener('click', () => {
+    const cards = dropdownCards();
+    const open = cards.some(card => !card.open);
+    for (const card of cards) card.open = open;
+    syncDropdownButton();
+  });
+  syncDropdownButton();
+}
+
+function hostIpv4(cidr) {
+  if (typeof cidr !== 'string') return null;
+  const ip = cidr.split('/')[0].trim();
+  return /^\d{1,3}(?:\.\d{1,3}){3}$/.test(ip) ? ip : null;
+}
+
+function topologyIpv4Choices(target) {
+  const portDot = target.closest?.('[data-port-node][data-port-id]');
+  const nodeElement = target.closest?.('[data-node-id]');
+  if (!nodeElement) return [];
+  const node = project.nodes.find(item => item.id === nodeElement.dataset.nodeId);
+  if (!node) return [];
+  const ports = portDot
+    ? node.ports.filter(port => port.id === portDot.dataset.portId)
+    : node.ports;
+  return ports.map(port => ({name:port.name, ip:hostIpv4(port.ipv4)}))
+    .filter(item => item.ip !== null);
+}
+
+function hideTopologyMenu() {
+  const menu = $('canvas-context-menu');
+  menu.hidden = true;
+  menu.replaceChildren();
+}
+
+async function copyIpv4(ip) {
+  try {
+    if (!navigator.clipboard?.writeText) throw new Error('Clipboard API unavailable');
+    await navigator.clipboard.writeText(ip);
+    return;
+  } catch (_) {
+    // Only a user-initiated copy; fail visibly if the legacy fallback is blocked.
+    const field = el('textarea', {value:ip});
+    field.style.position='fixed';
+    field.style.opacity='0';
+    document.body.append(field);
+    field.select();
+    let copied=false;
+    try {copied=document.execCommand('copy');}
+    finally {field.remove();}
+    if (!copied) throw new Error('Webbläsaren nekade åtkomst till urklipp');
+  }
+}
+
+function setupTopologyContextMenu() {
+  const svg = $('topology');
+  const menu = $('canvas-context-menu');
+  svg.addEventListener('contextmenu', event => {
+    event.preventDefault();
+    const choices = topologyIpv4Choices(event.target);
+    menu.replaceChildren();
+    if (choices.length) {
+      for (const {name, ip} of choices) {
+        const action = el('button', {type:'button', role:'menuitem'},
+          choices.length === 1 ? 'Kopiera IP-adress' : 'Kopiera IP-adress · ' + name + ' (' + ip + ')');
+        action.title = name + ' · ' + ip;
+        action.addEventListener('click', async () => {
+          hideTopologyMenu();
+          try {
+            await copyIpv4(ip);
+            notify('IP-adress kopierad: ' + ip);
+          } catch (error) {notify('Kopiering misslyckades: ' + error.message,true);}
+        });
+        menu.append(action);
+      }
+    } else {
+      menu.append(el('button', {type:'button', disabled:true, role:'menuitem'},
+        'Ingen dokumenterad IP-adress'));
+    }
+    menu.hidden = false;
+    const rect = menu.getBoundingClientRect();
+    menu.style.left = Math.max(8, Math.min(event.clientX, window.innerWidth - rect.width - 8)) + 'px';
+    menu.style.top = Math.max(8, Math.min(event.clientY, window.innerHeight - rect.height - 8)) + 'px';
+  });
+  document.addEventListener('pointerdown', event => {
+    if (!menu.hidden && !menu.contains(event.target)) hideTopologyMenu();
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') hideTopologyMenu();
+  });
+  window.addEventListener('blur', hideTopologyMenu);
+}
+
 function notify(message, error = false) {
   const box = $('toast');
   box.textContent = message;
@@ -2436,6 +2572,8 @@ window.addEventListener('beforeunload', event => {
   event.preventDefault();
   event.returnValue = '';
 });
+setupWorkspacePanels();
+setupTopologyContextMenu();
 render();
 canvas.fit();
 refreshSavedProjects();
