@@ -10,13 +10,15 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
       - name: Verify exact source ancestry
         shell: bash
         run: |
-          test "$(git rev-parse HEAD~3)" = "188cef27a8f8958ea2a3de0ef13a189862c55de8"
+          git merge-base --is-ancestor 188cef27a8f8958ea2a3de0ef13a189862c55de8 HEAD
           git diff --quiet 188cef27a8f8958ea2a3de0ef13a189862c55de8 -- network_core web
       - name: Build Linux x86-64 standalone executable
         shell: bash
