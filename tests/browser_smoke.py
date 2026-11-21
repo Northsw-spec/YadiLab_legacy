@@ -3981,6 +3981,8 @@ def topology_workspace_layout_regression(context, base, network_mode, errors):
     page.on('pageerror', lambda error: errors.append(getattr(error, 'stack', str(error))))
     try:
         assert browser_open(page, base, expand_panels=False) == network_mode
+        assert page.locator('#arp-source').get_attribute('aria-describedby') == 'arp-source-help'
+        assert 'MAC-adress' in page.locator('#arp-source-help').text_content()
         # Every packet/probe sender exposes explicit From/To entry fields.
         for from_id, to_id in [
             ('probe-from-ip','probe-destination'), ('arp-from-ip','arp-target-ip'),
