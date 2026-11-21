@@ -54,7 +54,7 @@ Redan korrigerade fel: PR #76 (importacceptans), #77 (stale Builder HTTP-svar), 
 | QUALITY-001 | VLAN-kandidatstatistik + full JS-CI | Hög | ACCEPTED |
 | QUALITY-002 | Bevisat obligatoriskt GitHub-mergeskydd | Kritisk | CONFIGURED / ENFORCEMENT NOT_VERIFIED |
 | QUALITY-003 | Oberoende nätverksprotokollverifiering | Kritisk | PLANNED |
-| QUALITY-004 | Arkitektur, modularisering och förenkling | Hög | PLANNED |
+| QUALITY-004 | Skrivskyddad arkitekturrevision; endast verifierat motiverade små extraktioner (KEEP som standard) | Hög | PLANNED |
 | QUALITY-005 | Dataintegritet, samtidighet och robusthet | Kritisk | PLANNED |
 | QUALITY-006 | Verklig dokumentationsimport och proveniens | Hög | PLANNED |
 | QUALITY-007 | Prestanda, skalning och resursgränser | Hög | PLANNED |
@@ -125,17 +125,51 @@ Redan korrigerade fel: PR #76 (importacceptans), #77 (stale Builder HTTP-svar), 
 
 **Acceptans:** alla avtalade oberoende referensfall PASS utan oförklarade avvikelser; inga kända falskt positiva dataplanresultat; full lokal och CI-regression PASS.
 
-## 8. QUALITY-004 – Arkitektur, modularisering och underhållbarhet
+## 8. QUALITY-004 – Begränsad arkitekturrevision och endast bevisat motiverad modularisering
 
-**Syfte:** minska faktiskt svårbegripliga beroenden och regressionsrisk, inte bara radantal.
+**Status: PLANNED – först efter QUALITY-003 enligt etappordningen.** QUALITY-004 är **inte** en beställning av ny allmän modularisering, totalrenovering eller automatisk refaktorering. Syftet är att bedöma om någon *konkret* återstående ansvarskonflikt, duplicerad affärsregel eller testbarhetsbrist medför påvisbar underhålls- eller regressionsrisk. **KEEP är grundbeslutet. Noll ändrade rader produktionskod är ett fullt godkänt resultat.**
 
-**Kandidater för undersökning:** `web/app.js`, `web/features/projects/import-review.js`, `network_core/import_plan.py`, HTTP/server- och sessionsgränser. Mät ansvar, upprepade regler, sidoeffekter, testbarhet, beroendegraf, asynkronitet och konkurrerande tillstånd.
+### 4A – Obligatorisk, skrivskyddad nulägesrevision före kodförändring
 
-**4A:** märk varje del KEEP / REWRITE / DELETE och ange observerad orsak. **4B:** isolera välavgränsade presentations- eller kommandofunktioner med tydligt input/output. **4C:** ersätt belagd duplicering med en gemensam källa. **4D:** bevisa beteendeekvivalens via fokuserade och fulla regressioner.
+1. Verifiera aktuell `main`, CI, aktiva PR:er och de bindande kontrakten. Gör en ny modulkarta och skilj **historiskt redan genomförd modularisering** från faktiskt återstående problem. 3A–3E och 3D-SGC från den historiska färdplanen är integrerade arbeten, **inte** etapper som ska göras om. Bekräfta faktiska gränser i koden; anta inte att gammal dokumentation är aktuell.
+2. Kartlägg ägarskap för kanoniskt projekt, val/ändringsrevisioner, asynkrona stale-guards, Save/Open, import/proveniens, presentationsansvar, API-kontrakt, sessionernas tillstånd och nätverksmotorernas ansvar. För en tänkt ändring: visa berörda funktioner/rader, faktiska in- och utdata, sidoeffekter, beroenden, testfall och **ett konkret problem eller en reproducerbar risk**.
+3. Klassificera varje granskat område som **KEEP**, **INVESTIGATE** eller **SMALL_EXTRACTION_CANDIDATE**. `REWRITE` och `DELETE` får enbart förekomma som *separata förslag* med verifierad skadeverkan och tydlig motivering, **aldrig som tillstånd att genomföra ändringen inom QUALITY-004**. Saknas evidens: **KEEP / NOT_VERIFIED**, inte spekulativ kodändring.
+4. Redovisa jämförelsen mellan att **låta koden vara** och att extrahera den: hur många ansvar/beroenden försvinner, tillkommer nya callbacks/abstraktioner, eller uppstår ytterligare synkroniseringsrisk? Endast ett nettobättre och mätbart alternativ får gå vidare. Radantal, filstorlek, funktionens ålder, stil, AI-misstanke eller önskan om symmetriska moduler är **aldrig tillräckliga skäl**.
+5. 4A levererar en **versionshanterad revisionsrapport** med spårbara KEEP-/kandidatbeslut. Den får avslutas utan kod-PR. Att hitta ett nytt möjligt område ger bara en granskningspost, **inte** automatiskt utökat implementationsscope.
 
-**Förbud:** ingen total frontend-omskrivning, ny ogrundad state management, parallell importmodell eller ny paketmotor. Ingen kod raderas på grund av storlek/ålder/AI-misstanke utan verifierad inverkan.
+### Avgränsade områden att granska – inte automatiska arbetsorder
 
-**Acceptans:** uppmätt minskning av motiverade ansvarskonflikter och duplicering; oförändrad projektsemantik, Save/Open, import och protokollbeteende.
+| Område | Bekräftad utgångspunkt / fråga att pröva | Tillåten riktning | Grundbeslut |
+|---|---|---|---|
+| `web/app.js` | Entrypoint och sammanhållande projektägare; fortfarande omfattande rendering och UI-händelser. `renderDoraSession()` hanterar flera presentationsdelar. | **Endast ren, självständig DORA-presentation** eller annan lika väl belagd ren visningsfunktion med få explicita argument; behåll projekt, revisionsräknare, mutation, val, handlers och samordning i befintlig ägare. Följ den redan etablerade ICMP-panelmodellen om den faktiskt förenklar. | INVESTIGATE |
+| `web/features/projects/import-review.js` | Granskningsflödet har redan ett gemensamt ägarskap för källor, val, proveniens, generationer och asynkrona skydd. | Högst en **ren tabell-/diagnostikrenderer** om oberoende data och tydlig gräns kan visas. **Dela inte granskningsläget eller dess controllers** enbart för att modulen är lång. | KEEP; villkorlig utredning |
+| `network_core/import_plan.py` | Sammanhängande claims, källursprung, konflikter, beroenden och kandidatbygge; inspektion, evidens och källverifiering är redan separerade. | **Ingen större uppdelning under 4A/4B**. Om en verifierad duplicerad *ren regel* påvisas: dokumentera den för separat riskbedömning **efter** oberoende kontrakts-/provenienstester. | KEEP / hög regressionsrisk |
+| `network_core/server.py` | Explicit HTTP-gräns och routes delegerar faktiskt protokollarbete till befintliga moduler. | **Ingen generell router-/dispatch-omskrivning**, ingen ny API-abstraktionsstack. Endast konkret reproducerat gränsproblem kan föreslås separat. | KEEP |
+| `tests/browser_smoke.py` | Verkliga Chromium-flöden och regressionskontroller är omfattande och delvis samlade i en lång körfunktion. | Möjlig **testorganisatorisk** uppdelning som *egen* liten PR, alternativt QUALITY-010, bara om alla scenarier, negativa fall, DIRECT_HTTP, riktiga filer, omstart och körningssemantik bevaras exakt. Aldrig ersätta browser med stubs för att minska testtid. | INVESTIGATE; inte produktionsrefaktor |
+| Befintliga `network_core`-protokollmoduler, lagring, sessionregister och `web/features/sessions/*` | Ethernet, ARP, IPv4, ICMP, DHCP, routing, Save/Open och livscykelcontrollers har redan separata ansvar och regressioner. | **Ingen ommodularisering utan individuellt reproducerad defekt eller verifierad ansvarskonflikt.** Problem i protokollsemantik hör först till QUALITY-003; race, datatapp och serverrobusthet hör till QUALITY-005. | KEEP |
+
+Ovanstående är **undersökningsprioriteringar, inte bekräftade designfel**. Tidigare uppmätta radantal är endast bakgrundsdata, aldrig ett minskningsmål. Övriga moduler har **KEEP som standard**. Om 4A upptäcker en hittills okänd allvarlig defekt ska den dokumenteras med exakt reproduktion, klassificeras efter risk och hanteras enligt planens ordning för P0/P1 – inte användas för att smyga in en bred refaktorering.
+
+### 4B–4C – Strikt villkorade små ändringar, inte generell ombyggnad
+
+**Startgrind:** 4A måste först visa minst ett verifierat avgränsat problem och en smal ändring som *mätbart* förbättrar läsbarhet, ansvarsgräns, testbarhet eller faktisk regelduplicering. För varje förslag krävs en kort förändringsspecifikation: konkret problem, exakt scope (filer/funktioner), varför KEEP inte räcker, före-/efterberoenden, mätbar vinst, risker, negativa tester, och en rollback-plan. **Utan detta: inga 4B-/4C-kodändringar.**
+
+- Tillåt **högst ett sammanhängande ansvar per liten PR**: exempelvis extraktion av en *ren* renderer med explicita argument och utan egen kopia av projekt-/sessionstillstånd. Behåll eventbindning och ägarskap där de hör hemma. Om den nya modulen behöver många callbacks, nya state managers, dubbla revisioner eller ökar beroenden: **avbryt och behåll ursprungskoden**.
+- Gemensam hjälpfunktion får införas **endast för dokumenterad reell duplicering**, med semantiskt identiska kontrakt. Samma metodnamn, liknande kod eller upprepat formulärutseende är inte tillräckligt. Ingen opportunistisk "cleanup" i närliggande kod.
+- **Uttryckligt förbjudet inom denna etapp:** massflytt, automatiska split-by-lines-verktyg, omskrivning från grunden, nya bibliotek/ramverk eller state-managementsystem, alternativa datamodeller, ny motor, gemensam allmän eventbus, generisk serverrouter, migration av projektformat, ändrade protokoll-/importregler eller ändrad användarupplevelse.
+- **Förbjuden förlust:** inga borttagna valideringar, felkoder, negativa tester, stale-/race-guards, identiteter, proveniensfält, bytes-/SHA-256-kontrakt, sessionslivscykler, visuella port-/kabelförbindelser, keyboard-/pointerbeteenden eller explicita Save/Open-grindar.
+- `REWRITE`, `DELETE` eller omstrukturering av motor-/importkärnan kräver **en ny separat uttrycklig användarorder med eget verifierat kontrakt** och ingår inte i QUALITY-004 genom implicit mandat.
+- Om en ny idé eller ett oklart problem uppstår: markera **NOT_VERIFIED**, dokumentera och fortsätt inte med implementation på antaganden. Detta gäller även sådant som inte uttryckligen räknas upp i tabellen.
+
+### 4D – Bevis för ekvivalens och tydlig stoppregel
+
+Före en eventuell kod-PR: etablera referensutfall, riktade positiva och negativa tester på det *gamla* beteendet samt mätningar som visar den avsedda strukturella vinsten. Efter ändring: verifiera **samma** publika beteende och felbeteende, inklusive identiska kanoniska projekt-/källfakta, Save/Open och SHA-256, CSV/XLSX/ODS/JSON-import, proveniens, VLAN/ARP/IPv4/ICMP/DHCP, sessionsinvalidation, sena HTTP-svar och faktisk Chromium-interaktion där relevanta.
+
+Kör minst `python3 -m unittest discover -s tests -p 'test_*.py' -v`, `npm run check` och `python3 tests/browser_smoke.py`; för gränser som berörs tillkommer motsvarande riktade race-, import-, binär-/X11- eller integrationsregressioner. Inga tester får raderas, försvagas, hoppas över eller ersättas med mockframgång. Samma CI- och branchskyddsgrindar som i avsnitt 16 gäller exakt PR-HEAD.
+
+**Omedelbar stoppregel:** om extraktionen ändrar beteende, inför konkurrerande tillstånd, försvagar en garanti, ökar komplexiteten utan bevisad nytta eller saknar jämförbart testunderlag, ska kodändringen återtas och området klassificeras KEEP / NOT_VERIFIED. Grön CI ensam är inte arkitekturekvivalens.
+
+**Acceptans:** en publicerad 4A-rapport med spårbar ansvarskarta och motiverade KEEP-beslut räcker om inga säkra förbättringar finns. Om små kodändringar verkligen görs krävs dessutom uppmätt *minskning* av det angivna konkreta problemet, beteendeekvivalens, full regression och dokumentation av kvarstående risker. **QUALITY-004 får inte ges "PASS" på grund av antal flyttade funktioner, färre kodrader eller fler moduler.**
 
 ## 9. QUALITY-005 – Dataintegritet, samtidighet och robusthet
 
