@@ -5,13 +5,16 @@ system clipboard mechanism that headless browser smoke cannot reproduce.
 """
 from __future__ import annotations
 
-import json
 import subprocess
+import sys
 import tempfile
 import threading
 from pathlib import Path
 
 from playwright.sync_api import sync_playwright
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 
 from network_core.server import LabHTTPServer
 from network_core.storage import ProjectStore
