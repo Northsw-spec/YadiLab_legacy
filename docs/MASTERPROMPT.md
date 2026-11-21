@@ -46,12 +46,14 @@ Håll en enda auktoritativ nätverksmodell, en importkedja per explicit stödd f
 
 Undvik konkurrerande representationsmodeller och speciallösningar som utvecklas till separata produkter inuti samma app. Dokumentationsfakta, konfiguration och simulerat tillstånd ska hållas isär men knytas till samma kanoniska ID:n.
 
-Bedöm granskad kod enligt:
+Bedöm granskad kod enligt (**granskningsetiketter, inte kodändringstillstånd**):
 - **KEEP:** korrekt, nödvändig, begriplig och verifierad.
 - **REWRITE:** funktionen behövs men implementationen är felaktig eller onödigt komplex.
 - **DELETE:** överflödig, icke-funktionell eller ersatt kod utan legitimt kvarvarande syfte.
 
-Radera inte kod bara på grund av storlek, ålder eller misstanke om AI-generering; styrk först bedömningen med beteende och beroenden. När en ersättare fungerar ska den gamla implementationen avvecklas, inte permanent behållas som en andra väg.
+**KEEP är standard.** Etiketterna REWRITE och DELETE ger inte i sig tillstånd att ändra eller ta bort kod. För alla QUALITY-etapper gäller det operativa skyddskontraktet i `docs/QUALITY_IMPROVEMENT_PLAN.md` avsnitt 1A. Bred omskrivning, kontraktsbrott, försvagade tester/CI och borttagning kräver ett separat uttryckligt uppdrag med evidens och rollbackplan.
+
+Radera inte kod bara på grund av storlek, ålder eller misstanke om AI-generering; styrk först bedömningen med beteende och beroenden. **Endast efter ett separat uttryckligt godkänt ersättningsuppdrag med verifierad beteendeekvivalens** får en ersatt implementation avvecklas. Bevara inte parallella vägar efter ett sådant godkänt byte; genomför däremot aldrig borttagningen enbart för att en tänkt ersättare ser bättre ut.
 
 ## 4. Produktnamn och neutral identitet
 
@@ -130,9 +132,9 @@ Skapa inte presentationsgrupper eller syntetiska länkar som misstas för verkli
 
 ## 9. Dokumentationsimport
 
-**Bindande kontrakt för nästa etapp:** [docs/IMPORT_SOURCE_CONTRACT.md](IMPORT_SOURCE_CONTRACT.md). Läs det före all ändring av dokumentationsimport. Det ersätter vaga äldre förslag om att automatiskt tolka ”godtyckliga” eller namnlösa konsultstandarder; det ersätter **inte** redan implementerade och testade import- eller lagringskontrakt.
+**Bindande kontrakt för eventuell fortsatt importutveckling:** [docs/IMPORT_SOURCE_CONTRACT.md](IMPORT_SOURCE_CONTRACT.md). Läs det före all ändring av dokumentationsimport. Det ersätter vaga äldre förslag om att automatiskt tolka ”godtyckliga” eller namnlösa konsultstandarder; det ersätter **inte** redan implementerade och testade import- eller lagringskontrakt.
 
-Nu finns verifierade strikta CSV-, XLSX-, ODS-, JSON- och projektvägar med explicit schema och gemensam validering. Nästa utvecklingsleverans är **4A: skrivskyddad, källtrogen förhandsvisning** av tabeller. 4A får inte bygga en kandidatmodell, okontrollerad semantisk mappning eller ett nytt Save-flöde. Fortsatt mappning (4B–4D) kräver de separata verifieringsgrindarna i importspecificeringen.
+Strikta CSV-, XLSX-, ODS-, JSON- och projektvägar samt de historiska importetapperna 4A–4D är redan integrerade i kodbasen. **Tidigare ordalydelse om att 4A är nästa byggsteg är inaktuell och får inte användas som arbetsorder.** Kontrollera faktisk källkod och teststatus. Kravet på fullständig och källtrogen projektimport är ett separat **målkontrakt som ännu inte automatiskt är verifierat**; dess fortsatta granskning hör till QUALITY-006 och får inte innebära heuristisk mappning, påhittade kablar eller ett nytt parallellt Save-flöde. En särskilt godkänd och evidensbaserad ändring krävs för nytt importbeteende.
 
 Alla importer och framtida adaptrar ska använda samma kanoniska projektvalidering och bevara referensidentiteter. Inga antaganden om fysiska länkar, enheter, portbindningar, topologi eller nätverksreachability tillåts. Okänd, tvetydig eller icke representerbar källdata får inte tyst kastas bort. Fullständig validering och uttryckligt arbetsytegodkännande föregår ändring; Save är separat.
 
@@ -217,7 +219,7 @@ Rapportera oavsiktligt upptäckta allvarliga problem utan att automatiskt lämna
 
 **FAS 4 — Felsökningsmotor:** definierad felinjicering, diagnostiska tabeller, observationsspår, felsökningsövningar, återställning.
 
-**FAS 5 — Dokumentationsimport:** de strikta CSV/XLSX/ODS-importörerna är redan implementerade. Nästa leverans är en separat, skrivskyddad källförhandsvisning (4A) enligt `docs/IMPORT_SOURCE_CONTRACT.md`. Därefter endast godkända, evidensbundna mappningsetapper 4B–4D.
+**FAS 5 — Dokumentationsimport (historisk funktionsordning):** strikta CSV/XLSX/ODS-importörer och de tidigare gransknings-/mappningsetapperna 4A–4D är integrerade. Den här fastexten är **inte en ny order att återskapa 4A–4D**. Gällande vidare verifiering och avgränsade korrigeringar styrs av QUALITY-006 och `docs/IMPORT_SOURCE_CONTRACT.md`.
 
 **FAS 6 — Avancerade protokoll:** DHCP, DNS, NAT, ACL, brandväggsregler, IPv6 och avancerad routing endast efter behov och korrekt verifiering.
 

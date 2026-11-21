@@ -40,7 +40,7 @@ Den enda aktuella etappindelade kvalitetsfärdplanen finns i [docs/QUALITY_IMPRO
 ## Scope och process
 
 - Fokus är korrekt funktionalitet, begripliga användarflöden och borttagning av onödig eller felaktig kod. Starta inte pentest eller separata säkerhetshärdningsprojekt utan användarens begäran.
-- Gör så små verifierbara ändringar som möjligt. Ha bara en aktiv utvecklingsgren/PR.
+- Gör så små verifierbara ändringar som möjligt. Ha bara en aktiv utvecklingsgren/PR. **KEEP är standard** för fungerande kod; varje QUALITY-etapp måste följa tillståndsgrindarna i kvalitetsplanens avsnitt 1A. Etappnamn, REWRITE/DELETE-etiketter, radantal eller grönt CI ger aldrig i sig tillstånd till bred refaktorering, kontraktsändring eller borttagen funktion.
 - Kör `python3 -m unittest discover -s tests -p 'test_*.py' -v`, `npm run check` och `python3 tests/browser_smoke.py` före kodleverans när miljön tillåter.
 - Om webbläsaren blockerar lokal HTTP kan browser_smoke använda sin uttryckligt märkta bro, men det är **inte** bevis för normal direkt HTTP i den miljön.
 - **Stående användargodkännande för automatisk merge:** Merga varje färdig och avgränsad PR automatiskt via GitHubs normala mergeflöde när den exakta PR-HEAD har PASS på alla obligatoriska CI-kontroller, negativa/funktionella tester är verifierade, PR är konfliktfri och mergebar, inga blockerande reviews finns och `main` fortfarande är förväntad bas. Använd squash när lämpligt. Begär inte nytt mergegodkännande per PR. **Merga aldrig** vid FAIL/PENDING/okänd CI-status, konflikter, oklara ändringar, obehörighet eller när branchskydd skulle behöva kringgås. Rapportera hindret i stället. Automatiken innebär ett beslut vid varje körning, inte ett påstående om obevakad bakgrundskörning.
@@ -55,7 +55,7 @@ Den enda aktuella etappindelade kvalitetsfärdplanen finns i [docs/QUALITY_IMPRO
 
 ## Styrd importspecificering för etapp 4
 
-Vid arbete med dokumentationsläsning eller import måste `docs/IMPORT_SOURCE_CONTRACT.md` läsas före design, kodning, PR och slutsatser. Etapp 4A är nästa godkända byggsteg; senare steg har uttryckliga startgrindar. Dokumentet reglerar **hur** okända externa tabeller ska inspekteras och när någon nätverksmappning får byggas. Chatthypoteser och forskningsuppsatser är inte importkontrakt. Nuvarande stödda CSV/XLSX/ODS-format förblir oförändrade under 4A.
+Vid arbete med dokumentationsläsning eller import måste `docs/IMPORT_SOURCE_CONTRACT.md` läsas före design, kodning, PR och slutsatser. De historiska importetapperna 4A–4D har redan integrerats; **4A är inte längre ett nästa byggsteg och får inte genomföras om av misstag**. Deras blotta existens bevisar inte att fullständighets-/provenienskontraktet är uppfyllt. Gällande vidare verifiering sker enligt QUALITY-006 i `docs/QUALITY_IMPROVEMENT_PLAN.md`. Chatthypoteser och forskningsuppsatser är inte importkontrakt; nya importbeteenden får inte gissas eller införas som parallell kodväg.
 
 ## Explicit CSV-import
 
