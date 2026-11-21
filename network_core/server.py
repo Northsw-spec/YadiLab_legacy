@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import errno
 from html import escape
 import json
 import mimetypes
@@ -40,6 +41,8 @@ from .storage import ProjectConflictError, ProjectStore
 
 WEB = Path(__file__).resolve().parent.parent / "web"
 MAX_BODY = 8 * 1024 * 1024
+DEFAULT_PORT = 8765
+DEFAULT_PORT_CANDIDATES = 10
 
 
 class LabHTTPServer(ThreadingHTTPServer):
@@ -58,10 +61,16 @@ class LabHTTPServer(ThreadingHTTPServer):
         self.icmp_investigations = IcmpInvestigationRegistry(clock=clock)
         self._cleanup_stop = Event()
         self._cleanup_interval = cleanup_interval
-        super().__init__(address, Handler)
+        # ThreadingHTTPServer may call server_close() itself when bind fails.
+        # Construct the worker before binding, but start it only after success.
         self._cleanup_thread = Thread(target=self._cleanup_loop, name="session-idle-cleanup",
                                       daemon=True)
-        self._cleanup_thread.start()
+        super().__init__(address, Handler)
+        try:
+            self._cleanup_thread.start()
+        except BaseException:
+            self.server_close()
+            raise
 
     def _cleanup_loop(self) -> None:
         while not self._cleanup_stop.wait(self._cleanup_interval):
@@ -71,7 +80,10 @@ class LabHTTPServer(ThreadingHTTPServer):
 
     def server_close(self) -> None:
         self._cleanup_stop.set()
-        self._cleanup_thread.join(timeout=CLEANUP_JOIN_SECONDS)
+        # A failed socket bind leaves the cleanup thread unstarted. Never mask
+        # EADDRINUSE with "cannot join thread before it is started".
+        if self._cleanup_thread.is_alive():
+            self._cleanup_thread.join(timeout=CLEANUP_JOIN_SECONDS)
         super().server_close()
         if self._cleanup_thread.is_alive():
             raise RuntimeError("session cleanup worker did not stop")
@@ -515,13 +527,33 @@ class Handler(BaseHTTPRequestHandler):
 
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=f"{config.APP_NAME}: local canonical network lab")
-    parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument("--port", type=int, default=None,
+                        help="local TCP port; default 8765 with automatic fallback if busy")
     parser.add_argument("--data-dir", type=Path, default=Path.home() / ".local" / "share" / "network-projects")
     parser.add_argument("--no-browser", action="store_true")
     args = parser.parse_args(argv)
-    if not 0 <= args.port <= 65535:
+    if args.port is not None and not 0 <= args.port <= 65535:
         parser.error("port must be between 0 and 65535")
-    server = LabHTTPServer(("127.0.0.1", args.port), ProjectStore(args.data_dir))
+    # A user-specified port is exact and never silently substituted. Only the
+    # default port may fall back to a short, deterministic localhost range.
+    candidates = ([args.port] if args.port is not None
+                  else range(DEFAULT_PORT, min(65536, DEFAULT_PORT + DEFAULT_PORT_CANDIDATES)))
+    server = None
+    for candidate in candidates:
+        try:
+            server = LabHTTPServer(("127.0.0.1", candidate), ProjectStore(args.data_dir))
+            break
+        except OSError as error:
+            if error.errno != errno.EADDRINUSE:
+                parser.exit(1, f"Unable to start local server on port {candidate}: {error}\n")
+            if args.port is not None:
+                parser.exit(2, f"Port {candidate} is already in use. "
+                            f"Try --port {candidate + 1 if candidate < 65535 else 0}.\n")
+    if server is None:
+        parser.exit(2, "Ports in the default range are busy. "
+                    "Use --port PORT to choose an available port.\n")
+    if args.port is None and server.server_port != DEFAULT_PORT:
+        print(f"Port {DEFAULT_PORT} is busy; using port {server.server_port}.", file=sys.stderr)
     url = f"http://127.0.0.1:{server.server_port}/"
     print(f"{config.APP_NAME} {__version__} at {url}", flush=True)
     print(f"Projects stored in {server.store.root}", flush=True)
