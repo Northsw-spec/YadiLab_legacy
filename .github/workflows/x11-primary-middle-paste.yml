@@ -1,8 +1,8 @@
-name: Linux X11 PRIMARY middle-paste regression
+name: Linux X11 PRIMARY middle-paste regression (manual)
+# Optional focused rerun for debugging. The REQUIRED release/PR gate is
+# .github/workflows/ci.yml -> unit-tests -> Real X11 PRIMARY regression.
 on:
-  push:
-    branches:
-      - fix/canvas-middle-primary-selection-paste
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
