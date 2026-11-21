@@ -156,17 +156,118 @@ function hostIpv4(cidr) {
   return /^\d{1,3}(?:\.\d{1,3}){3}$/.test(ip) ? ip : null;
 }
 
-function topologyIpv4Choices(target) {
-  const portDot = target.closest?.('[data-port-node][data-port-id]');
-  const nodeElement = target.closest?.('[data-node-id]');
-  if (!nodeElement) return [];
-  const node = project.nodes.find(item => item.id === nodeElement.dataset.nodeId);
+function topologyIpv4Choices() {
+  // The action belongs to the selected node, never an arbitrary hovered object.
+  if (selection?.type !== 'node') return [];
+  const node = project.nodes.find(item => item.id === selection.id);
   if (!node) return [];
-  const ports = portDot
-    ? node.ports.filter(port => port.id === portDot.dataset.portId)
-    : node.ports;
-  return ports.map(port => ({name:port.name, ip:hostIpv4(port.ipv4)}))
+  return node.ports.map(port => ({name:port.name, ip:hostIpv4(port.ipv4)}))
     .filter(item => item.ip !== null);
+}
+
+
+/* Address field bindings are a UI projection of explicitly documented ports.
+   A pasted From value selects one unambiguous port; it never creates an IP
+   assignment or changes the canonical project. DHCP clients use MAC, not IP. */
+const ADDRESS_BINDINGS = [
+  {select:'probe-source', input:'probe-from-ip', type:'ipv4'},
+  {select:'arp-source', input:'arp-from-ip', type:'ipv4'},
+  {select:'ipv4-source', input:'ipv4-from-ip', type:'ipv4'},
+  {select:'ping-source', input:'ping-from-ip', type:'ipv4'},
+  {select:'trouble-source', input:'trouble-from-ip', type:'ipv4'},
+  {select:'icmp-investigation-source', input:'icmp-investigation-from-ip', type:'ipv4'},
+  {select:'session-source', input:'session-from-ip', type:'ipv4'},
+  {select:'session-source', input:'session-from-mac', type:'mac'},
+  {select:'dhcp-client', input:'dhcp-from-mac', type:'mac'},
+  {select:'dhcp-server', input:'dhcp-to-ip', type:'ipv4'},
+  {select:'dora-client', input:'dora-from-mac', type:'mac'},
+  {select:'dora-server', input:'dora-to-ip', type:'ipv4'},
+];
+
+function portForAddressValue(value) {
+  if (!value) return null;
+  let ids;
+  try {ids = JSON.parse(value);} catch {return null;}
+  if (!Array.isArray(ids) || ids.length !== 2) return null;
+  const node = project.nodes.find(item => item.id === ids[0]);
+  return node?.ports.find(port => port.id === ids[1]) || null;
+}
+function normalizedAddress(port, type) {
+  if (!port) return null;
+  return type === 'mac'
+    ? (typeof port.mac === 'string' ? port.mac.trim().toUpperCase() || null : null)
+    : hostIpv4(port.ipv4);
+}
+function sameAddress(a, b) {
+  return Boolean(a && b && String(a).trim().toUpperCase() === String(b).trim().toUpperCase());
+}
+function updateBoundAddress(binding) {
+  const selector = $(binding.select);
+  const field = $(binding.input);
+  const status = $(binding.input + '-status');
+  const expected = normalizedAddress(portForAddressValue(selector.value), binding.type);
+  if (field.dataset.manual !== 'true') field.value = expected || '';
+  const valid = sameAddress(field.value, expected);
+  field.setAttribute('aria-invalid', String(!valid && field.value.trim() !== ''));
+  status.textContent = valid ? 'Matchar ett dokumenterat gränssnitt.'
+    : !expected ? 'Den valda porten saknar dokumenterad ' + (binding.type === 'mac' ? 'MAC' : 'IPv4') + '.'
+    : 'Adress måste matcha en dokumenterad port. Välj porten eller klistra in rätt adress.';
+  return valid;
+}
+function syncBoundAddresses() {
+  for (const binding of ADDRESS_BINDINGS) updateBoundAddress(binding);
+}
+function requireBoundAddresses(inputIds) {
+  for (const id of inputIds) {
+    const binding = ADDRESS_BINDINGS.find(item => item.input === id);
+    if (!binding) throw new Error('Missing address binding for ' + id);
+    if (!updateBoundAddress(binding)) {
+      notify('Från/To-avvisning: ' + $(id + '-status').textContent, true);
+      $(id).focus();
+      return false;
+    }
+  }
+  return true;
+}
+function setupAddressBindings() {
+  for (const binding of ADDRESS_BINDINGS) {
+    const selector = $(binding.select);
+    const field = $(binding.input);
+    selector.addEventListener('change', () => {
+      if (binding.selectingFromInput) return;
+      field.dataset.manual = 'false';
+      updateBoundAddress(binding);
+    });
+    field.addEventListener('input', () => {
+      field.dataset.manual = 'true';
+      const raw = field.value.trim();
+      const options = [...selector.options].filter(option =>
+        sameAddress(normalizedAddress(portForAddressValue(option.value), binding.type), raw));
+      if (options.length === 1 && selector.value !== options[0].value) {
+        binding.selectingFromInput = true;
+        try {
+          selector.value = options[0].value;
+          selector.dispatchEvent(new Event('change', {bubbles:true}));
+        } finally {
+          binding.selectingFromInput = false;
+        }
+      }
+      if (options.length > 1) {
+        const status = $(binding.input + '-status');
+        status.textContent = 'Adressen är inte unik. Välj avsändargränssnitt uttryckligen.';
+        field.setAttribute('aria-invalid','true');
+      } else {
+        updateBoundAddress(binding);
+      }
+      if (binding.input === 'probe-from-ip') {
+        diagnosticRuns.ping += 1; forgetJourney();
+      } else if (['arp-from-ip','ping-from-ip','ipv4-from-ip'].includes(binding.input)) {
+        const kind = binding.input.split('-')[0];
+        clearDiagnostic(kind);
+      }
+    });
+  }
+  syncBoundAddresses();
 }
 
 function hideTopologyMenu() {
@@ -199,7 +300,14 @@ function setupTopologyContextMenu() {
   const menu = $('canvas-context-menu');
   svg.addEventListener('contextmenu', event => {
     event.preventDefault();
-    const choices = topologyIpv4Choices(event.target);
+    const hit = event.target.closest?.('[data-node-id]');
+    if (!hit) {hideTopologyMenu();return;}
+    if (selection?.type !== 'node' || selection.id !== hit.dataset.nodeId) {
+      selection = {type:'node',id:hit.dataset.nodeId};
+      pendingPort = null;
+      render();
+    }
+    const choices = topologyIpv4Choices();
     menu.replaceChildren();
     if (choices.length) {
       for (const {name, ip} of choices) {
@@ -1646,6 +1754,7 @@ function render() {
   renderPing();
   renderTroubleshooting();
   renderIcmpInvestigation();
+  syncBoundAddresses();
   updateSaveIndicator();
   } finally {
     rendering = false;
@@ -1902,6 +2011,7 @@ function repairInvestigation() { void investigation.repair(); }
 function stopInvestigation() { void investigation.stop(); }
 
 function startDoraSession() {
+  if (!requireBoundAddresses(['dora-from-mac','dora-to-ip'])) return;
   if (doraBusy) return;
   const [client, server, poolStart, poolEnd] = doraSessionInput();
   if (!client || !server || !poolStart || !poolEnd) {
@@ -1913,6 +2023,7 @@ function startDoraSession() {
     () => JSON.stringify(doraSessionInput()));
 }
 function runDoraSession() {
+  if (!requireBoundAddresses(['dora-from-mac','dora-to-ip'])) return;
   const [client, , , , rawTransaction, rawLease] = doraSessionInput();
   const transactionId = sessionInteger(rawTransaction, 1, 4294967295);
   const leaseSeconds = sessionInteger(rawLease, 60, 604800);
@@ -1948,6 +2059,7 @@ function setDoraLinkFault(disabled) {
   void doraSession.linkFault(linkId, disabled, () => $('dora-session-fault-link').value);
 }
 function renewDoraSession() {
+  if (!requireBoundAddresses(['dora-from-mac','dora-to-ip'])) return;
   const [client, , , , rawTransaction] = doraSessionInput();
   const transactionId = sessionInteger(rawTransaction, 1, 4294967295);
   if (!client || transactionId === null) {
@@ -1970,6 +2082,7 @@ function resetDoraSession() { void doraSession.reset(); }
 function stopDoraSession() { void doraSession.stop(); }
 
 async function runDora() {
+  if (!requireBoundAddresses(['dora-from-mac','dora-to-ip'])) return;
   if (doraBusy) return;
   const currentInputs = () => [
     $('dora-client').value, $('dora-server').value,
@@ -2018,6 +2131,7 @@ async function runDora() {
 }
 
 async function runDhcp() {
+  if (!requireBoundAddresses(['dhcp-from-mac','dhcp-to-ip'])) return;
   if (dhcpBusy) return;
   const currentInputs = () => [
     $('dhcp-client').value, $('dhcp-server').value,
@@ -2066,7 +2180,10 @@ async function runDhcp() {
 function diagnosticInputs(kind) {
   return diagnosticFields[kind].map(id => $(id).value.trim());
 }
-function beginDiagnostic(kind, readInputs = () => diagnosticInputs(kind)) {
+function beginDiagnostic(kind, readInputs = () => [
+  ...diagnosticInputs(kind),
+  ...(ADDRESS_BINDINGS.filter(binding => binding.input === kind + '-from-ip').map(binding => $(binding.input).value.trim())),
+]) {
   return {kind, run: ++diagnosticRuns[kind], workspaceRevision, editRevision,
     snapshot: JSON.stringify(project), inputs: readInputs(), readInputs};
 }
@@ -2089,6 +2206,7 @@ function clearDiagnostic(kind) {
   }
 }
 async function runArp() {
+  if (!requireBoundAddresses(['arp-from-ip'])) return;
   const [selected, targetIpv4] = diagnosticInputs('arp');
   if (!selected) return;
   const context = beginDiagnostic('arp');
@@ -2116,6 +2234,7 @@ async function runArp() {
 
 function startSimulationSession() { void simulationSession.start(); }
 function runSimulationOperation(operation) {
+  if (!requireBoundAddresses([operation === 'arp' ? 'session-from-ip' : 'session-from-mac'])) return;
   const selected = $('session-source').value;
   if (!selected) return;
   const [sourceNode, sourcePort] = JSON.parse(selected);
@@ -2140,6 +2259,7 @@ function icmpInvestigationStartInputs() {
   ]);
 }
 function startIcmpInvestigation() {
+  if (!requireBoundAddresses(['icmp-investigation-from-ip'])) return;
   const selected = $('icmp-investigation-source').value;
   const destinationIpv4 = $('icmp-investigation-destination').value.trim();
   const ttl = sessionInteger($('icmp-investigation-ttl').value.trim(), 2, 255);
@@ -2190,6 +2310,7 @@ function repairIcmpInvestigation() { void icmpInvestigation.repair(); }
 function stopIcmpInvestigation() { void icmpInvestigation.stop(); }
 
 async function runTroubleshooting() {
+  if (!requireBoundAddresses(['trouble-from-ip'])) return;
   const selected = $('trouble-source').value;
   const kind = $('trouble-type').value;
   if (!selected) return;
@@ -2259,9 +2380,10 @@ async function runTroubleshooting() {
 }
 
 async function runPing({quick = false} = {}) {
+  if (!requireBoundAddresses([quick ? 'probe-from-ip' : 'ping-from-ip'])) return;
   const readInputs = quick
     ? () => [$('probe-source').value, $('probe-destination').value.trim(),
-        $('probe-ttl').value.trim(), '1', '1']
+        $('probe-ttl').value.trim(), '1', '1', $('probe-from-ip').value.trim()]
     : () => diagnosticInputs('ping');
   const [selected, destinationIpv4, rawTtl, rawIdentifier, rawSequence] = readInputs();
   if (!selected) return;
@@ -2295,6 +2417,7 @@ async function runPing({quick = false} = {}) {
 }
 
 async function runIPv4Trace() {
+  if (!requireBoundAddresses(['ipv4-from-ip'])) return;
   const [selected, destinationIpv4, rawTtl] = diagnosticInputs('ipv4');
   if (!selected) return;
   const context = beginDiagnostic('ipv4');
@@ -2574,6 +2697,7 @@ window.addEventListener('beforeunload', event => {
 });
 setupWorkspacePanels();
 setupTopologyContextMenu();
+setupAddressBindings();
 render();
 canvas.fit();
 refreshSavedProjects();
