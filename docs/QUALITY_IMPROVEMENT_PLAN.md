@@ -283,7 +283,9 @@ Kör minst `python3 -m unittest discover -s tests -p 'test_*.py' -v`, `npm run c
 
 **Syfte:** endast annonsera plattformar som faktiskt verifierats.
 
-**Verifierad nulägesrisk:** `network_core/storage.py` importerar Unix-specifika `fcntl`; detta är **inte** en bekräftelse på fungerande Windows-stöd. Linux-binärer från separata bygg-/artifact-branches bevisar inte att varje framtida main-SHA är releasetestad. Det särskilda X11 PRIMARY-testet finns i `tests/browser_primary_selection_x11.py`, men workflow `x11-primary-middle-paste.yml` triggas endast av den historiska PR-branchen och ingår därmed **inte** i ordinarie main-CI. Ange den luckan som NOT_VERIFIED för varje ny release-SHA tills den testats på just den aktuella koden.
+**Verifierad plattformsrisk:** `network_core/storage.py` importerar Unix-specifika `fcntl`; detta är **inte** en bekräftelse på fungerande Windows-stöd. Linux-binärer från separata bygg-/artifact-branches bevisar inte att varje framtida main-SHA är releasetestad.
+
+**X11-regressionens CI-grind (PR #86):** Den historiska branchbundna X11-testningen var inte en del av obligatorisk `main`-CI. Denna avgränsade QA-ändring placerar nu `xvfb-run -a python3 tests/browser_primary_selection_x11.py` i den redan obligatoriska GitHub Actions-jobben `unit-tests` i `.github/workflows/ci.yml`, för både `push` och `pull_request`. Det äldre workflowet är manuell diagnostik, inte en alternativ kvalitetsgrind. Ett FAIL/SKIP i det riktiga X11-testet får **inte** klassificeras som PASS även om headless Chromium är grönt. **Status: IMPLEMENTED IN PR #86; VERIFICATION PENDING** tills teststeget har SUCCESS på exakt slutlig PR-HEAD **och** efterföljande merge-SHA på `main`. Inga framtida release-SHA är automatiskt verifierade av äldre körningar.
 
 Definiera uttryckligt supportkontrakt för Linux, Windows om avsett, webbläsare, Python, lokalt filsystem, installation, uppstart, nedstängning och uppgradering.
 
