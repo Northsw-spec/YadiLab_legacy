@@ -129,3 +129,5 @@
   .canvas-tools{gap:5px}
   .probe-panel{top:8px;left:8px;width:calc(100% - 16px)}
 }
+
+@media (max-width:950px){.workspace > .left-panel,.workspace > .right-panel{grid-template-columns:minmax(0,1fr)}}
