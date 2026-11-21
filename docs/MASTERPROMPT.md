@@ -53,7 +53,7 @@ Bedöm granskad kod enligt (**granskningsetiketter, inte kodändringstillstånd*
 
 **KEEP är standard.** Etiketterna REWRITE och DELETE ger inte i sig tillstånd att ändra eller ta bort kod. För alla QUALITY-etapper gäller det operativa skyddskontraktet i `docs/QUALITY_IMPROVEMENT_PLAN.md` avsnitt 1A. Bred omskrivning, kontraktsbrott, försvagade tester/CI och borttagning kräver ett separat uttryckligt uppdrag med evidens och rollbackplan.
 
-Radera inte kod bara på grund av storlek, ålder eller misstanke om AI-generering; styrk först bedömningen med beteende och beroenden. När en ersättare fungerar ska den gamla implementationen avvecklas, inte permanent behållas som en andra väg.
+Radera inte kod bara på grund av storlek, ålder eller misstanke om AI-generering; styrk först bedömningen med beteende och beroenden. **Endast efter ett separat uttryckligt godkänt ersättningsuppdrag med verifierad beteendeekvivalens** får en ersatt implementation avvecklas. Bevara inte parallella vägar efter ett sådant godkänt byte; genomför däremot aldrig borttagningen enbart för att en tänkt ersättare ser bättre ut.
 
 ## 4. Produktnamn och neutral identitet
 
