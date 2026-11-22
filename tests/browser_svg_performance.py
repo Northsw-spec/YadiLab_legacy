@@ -122,6 +122,13 @@ def run():
                 assert a["domChildren"]==b["domChildren"],f"DOM object count changed for {n}/{e}"
                 assert a["port"]==b["port"] and a["selected"]==b["selected"],"Pointer semantics differ"
                 assert a["heapUsedBytes"] is not None and b["heapUsedBytes"] is not None
+                if n == 2000:
+                    # Includes only JS heap after explicit Chromium GC, not native
+                    # SVG memory; avoid accepting a major retained-heap regression.
+                    assert b["heapUsedBytes"] <= 1.25*a["heapUsedBytes"],(
+                        "Large topology retained JS heap regressed",a["heapUsedBytes"],b["heapUsedBytes"])
+                    assert b["zoomMs"] <= 1.35*a["zoomMs"],(
+                        "Large topology viewport interaction regressed",a["zoomMs"],b["zoomMs"])
                 assert a["port"]=={"node":"N00000","port":"p0"},a["port"]
                 assert a["selected"]=={"type":"link","id":"L0"},a["selected"]
                 assert a["port"]["node"] in (data["baseline"]["port"]["node"],),a["port"]
