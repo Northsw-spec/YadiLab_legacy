@@ -1,0 +1,35 @@
+name: ELK layout focused acceptance
+on:
+  push:
+    branches:
+      - feature/elk-preview-2026-11-22
+  pull_request:
+    paths:
+      - 'web/features/layout/**'
+      - 'web/canvas.js'
+      - 'web/app.js'
+      - 'tests/browser_elk_layout.py'
+permissions:
+  contents: read
+jobs:
+  elk-layout:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: JavaScript safety contract and adapter negative tests
+        run: |
+          node --check web/features/layout/elk.js
+          node --test tests/elk_layout_adapter_test.mjs
+      - name: Install Chromium acceptance dependencies
+        run: |
+          python3 -m pip install playwright==1.57.0
+          python3 -m playwright install --with-deps chromium
+      - name: Full real HTTP Chromium ELK UI acceptance
+        run: python3 tests/browser_elk_layout.py
