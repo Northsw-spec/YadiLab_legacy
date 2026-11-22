@@ -5,7 +5,7 @@
 **Baseline:** `main@fda26052be5ba5376e64793cb780079f7e841718`, `web/canvas.js` hämtad med `git show`.  
 **Experiment:** `perf/svg-indexed-render-2026-11-22`, `elkjs` och befintlig projekt-/importsemantik lämnas orörda.  
 **Mätmiljö:** GitHub Actions Ubuntu 24.04, riktig headless Chromium, Node 22 och Playwright 1.57.0.  
-**Bevis:** [Chromium-mätning 45051779956](https://github.com/Northsw-spec/YadiLab/actions/runs/45051779956).
+**Bevis:** [Chromium-mätning 45051779956](https://github.com/Northsw-spec/topologieditorn/actions/runs/45051779956).
 
 ## Teknisk förändring
 
@@ -25,7 +25,7 @@ Median av tre upprepade synkrona `TopologyCanvas.setData()`-anrop efter uppvärm
 | 500 noder, 750 kablar | 46,4 ms | 21,4 ms | 2,17× | 8 020 |
 | 2 000 noder, 5 000 kablar | 965,3 ms | 121,3 ms | **7,96×** | 44 030 |
 
-Testen är syntetiska men utgår från YadiLabs verkliga Canvas, ritmått och deklarerade port-/kabelobjekt. Källprojekten verifierades oförändrade.
+Testen är syntetiska men utgår från topologieditorns verkliga Canvas, ritmått och deklarerade port-/kabelobjekt. Källprojekten verifierades oförändrade.
 
 ## Visualisering, semantik och minne
 
