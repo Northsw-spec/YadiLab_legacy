@@ -143,6 +143,9 @@ export class TopologyCanvas {
     this.view = {x: -30, y: -30, w: 1200, h: 740};
     // Full ELK layouts can be far wider than the former fixed 9000-unit zoom cap.
     this.zoomOutLimit = 9000;
+    // Coalesce high-frequency pointer/wheel input to at most one SVG viewBox
+    // update per animation frame. Programmatic zoom and Fit remain immediate.
+    this.pendingViewFrame = null;
     this.project = null;
     this.presentation = null;
     this.selected = null;
@@ -214,7 +217,7 @@ export class TopologyCanvas {
         if (!rect.width || !rect.height) return;
         this.view.x = current.start.x - (event.clientX - current.x) * this.view.w / rect.width;
         this.view.y = current.start.y - (event.clientY - current.y) * this.view.h / rect.height;
-        this.setView(rect);
+        this.queueView();
       } else if (current.kind === 'node') {
         const world = this.toWorld(event.clientX, event.clientY);
         const x = Math.round(current.nodeX + world.x - current.worldX);
@@ -229,7 +232,10 @@ export class TopologyCanvas {
     const finish = event => {
       if (!this.interaction || this.interaction.pointerId !== event.pointerId) return;
       if (this.interaction.kind === 'node') onEndMove();
-      else if (this.interaction.kind === 'pan') releaseMiddleGesture();
+      else if (this.interaction.kind === 'pan') {
+        this.flushView();
+        releaseMiddleGesture();
+      }
       svg.classList.remove('middle-panning');
       this.interaction = null;
       try { if (svg.hasPointerCapture(event.pointerId)) svg.releasePointerCapture(event.pointerId); } catch (_) { /* browser already released */ }
@@ -239,7 +245,10 @@ export class TopologyCanvas {
     svg.addEventListener('lostpointercapture', event => {
       if (this.interaction?.pointerId !== event.pointerId) return;
       const wasNode = this.interaction.kind === 'node';
-      if (this.interaction.kind === 'pan') releaseMiddleGesture();
+      if (this.interaction.kind === 'pan') {
+        this.flushView();
+        releaseMiddleGesture();
+      }
       this.interaction = null;
       svg.classList.remove('middle-panning');
       if (wasNode) onEndMove();
@@ -251,11 +260,14 @@ export class TopologyCanvas {
     }
     svg.addEventListener('wheel', event => {
       event.preventDefault();
-      this.zoom(event.deltaY < 0 ? 1.12 : 1 / 1.12, event.clientX, event.clientY);
+      this.zoom(event.deltaY < 0 ? 1.12 : 1 / 1.12,
+        event.clientX, event.clientY, true);
     }, {passive: false});
   }
 
   capture(event, state) {
+    // Align the visible camera before a new gesture acquires pointer capture.
+    this.flushView();
     this.interaction = {...state, pointerId: event.pointerId};
     this.svg.setPointerCapture(event.pointerId);
   }
@@ -327,15 +339,34 @@ export class TopologyCanvas {
       y: this.view.y + (clientY - rect.top) / Math.max(1, rect.height) * this.view.h};
   }
 
+  queueView() {
+    if (this.pendingViewFrame != null) return;
+    this.pendingViewFrame = requestAnimationFrame(() => {
+      this.pendingViewFrame = null;
+      this.setView();
+    });
+  }
+
+  flushView() {
+    if (this.pendingViewFrame == null) return;
+    cancelAnimationFrame(this.pendingViewFrame);
+    this.pendingViewFrame = null;
+    this.setView();
+  }
+
   setView(rect = this.svg.getBoundingClientRect()) {
-    // Read CSS geometry before writing viewBox. Reading it afterwards forced
-    // expensive synchronous SVG layout for every gesture on large diagrams.
-    // Callers that already measured the viewport pass the same rectangle.
+    // A synchronous Fit or toolbar zoom supersedes any pending gesture frame.
+    if (this.pendingViewFrame != null) {
+      cancelAnimationFrame(this.pendingViewFrame);
+      this.pendingViewFrame = null;
+    }
+    // Geometry is measured before viewBox mutation. A gesture batch writes at
+    // most once per animation frame even if dozens of input events arrive.
     this.svg.setAttribute('viewBox', `${this.view.x} ${this.view.y} ${this.view.w} ${this.view.h}`);
     this.callbacks.onScale(Math.round((rect.width || 900) / this.view.w * 100));
   }
 
-  zoom(factor, x, y) {
+  zoom(factor, x, y, fromWheel = false) {
     const rect = this.svg.getBoundingClientRect();
     const point = this.toWorld(x ?? (rect.left + this.svg.clientWidth / 2),
       y ?? (rect.top + this.svg.clientHeight / 2), rect);
@@ -346,7 +377,8 @@ export class TopologyCanvas {
     const fx = (point.x - this.view.x) / this.view.w;
     const fy = (point.y - this.view.y) / this.view.h;
     this.view = {x: point.x - fx * w, y: point.y - fy * h, w, h};
-    this.setView(rect);
+    if (fromWheel) this.queueView();
+    else this.setView(rect);
   }
 
   fit() {
