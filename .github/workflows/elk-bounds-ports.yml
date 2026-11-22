@@ -25,6 +25,8 @@ jobs:
           npm ls elkjs
       - name: Run 2000-node / 5000-link bounds experiments
         run: timeout 240s node --max-old-space-size=4096 research/elk_bounds_experiment.mjs
+      - name: Independent YadiLab model validation and real Save/Open for accepted candidate
+        run: PYTHONPATH=. python3 research/elk_bounds_native_validator.py
       - name: Reject out-of-bounds, overlapped, or incomplete alternatives
         run: |
           node --input-type=module <<'JS'
@@ -33,13 +35,18 @@ jobs:
           const found=Object.entries(d.scenarios).filter(([n,x])=>x.fullRectFits&&x.rectOverlaps===0&&x.identitiesPreserved);
           console.log('BOUND_PASS_CANDIDATES',JSON.stringify(found.map(([n,x])=>({name:n,width:x.layoutBounds.width,height:x.layoutBounds.height,durationMs:x.durationMs}))));
           if(!found.length) {console.error('BOUND_FAIL: No safe strategy for this corpus');process.exit(1);}
+          const native=JSON.parse(fs.readFileSync('research/elk-results/bounds_native_validator.json'));
+          if(native.verdict!=='PASS'||!native.saveOpen||native.rectOverlaps!==0)process.exit(1);
           JS
       - name: Upload independent bounds evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: elk-bounds-results
-          path: research/elk-results/bounds.json
+          path: |
+            research/elk-results/bounds.json
+            research/elk-results/wrapped_candidate.json
+            research/elk-results/bounds_native_validator.json
           if-no-files-found: warn
 
   elk-ports:
@@ -60,6 +67,12 @@ jobs:
           npm ls elkjs
       - name: Compare ELK full routing and YadiLab's existing port formula
         run: timeout 240s node --max-old-space-size=4096 research/elk_ports_experiment.mjs
+      - name: Install browser acceptance prerequisites
+        run: |
+          python3 -m pip install playwright==1.57.0
+          python3 -m playwright install --with-deps chromium
+      - name: Real Chromium ELK edge sections, SVG ports and animation
+        run: python3 research/elk_ports_svg_browser.py
       - name: Strict port and section geometry gate
         run: |
           node --input-type=module <<'JS'
@@ -73,11 +86,20 @@ jobs:
               JSON.stringify(modes.map(m=>({mode:m,metrics:c[m]}))));
             if(!good)process.exitCode=1;
           }
+          const ui=JSON.parse(fs.readFileSync('research/elk-results/ports_browser.json'));
+          if(Object.keys(ui.errors).length||ui.externalRequests.length)process.exitCode=1;
+          for(const c of Object.values(ui.cases)){
+            if(c.dotErrors!==0||c.endErrors!==0||!c.markerVisible||!c.playbackProgress)process.exitCode=1;
+          }
           JS
       - name: Upload independent port evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: elk-port-results
-          path: research/elk-results/ports.json
+          path: |
+            research/elk-results/ports.json
+            research/elk-results/ports_browser.json
+            research/elk-results/fixed_port_tree.png
+            research/elk-results/fixed_port_ring.png
           if-no-files-found: warn
