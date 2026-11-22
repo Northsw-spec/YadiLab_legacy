@@ -53,6 +53,16 @@ An imported project with historical evidence can therefore correctly report
 replay and immutable receipt remain valid. The historical import
 `node_layout()` function must not be changed in place.
 
+## Large topology navigation
+
+The old fixed 9,000-unit maximum viewBox width was only appropriate for small
+projects. After **Anpassa** (Fit), the camera now bases its zoom-out limit on
+the full current canvas extent, including an ELK preview. The first wheel step
+must zoom smoothly without jumping to a much smaller viewport; the world point
+under the cursor must stay fixed. The zoom-out limit is reset when Fit is used
+for a smaller or newly opened project, so huge extents do not leak between
+workspaces. This changes only camera geometry, never node coordinates or links.
+
 ## Layout rules and failure conditions
 
 - ELK Layered, orthogonal routing, `MULTI_EDGE` wrapping and a pinned
