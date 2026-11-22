@@ -95,6 +95,14 @@ test('abort kills the layout worker and does not modify the project', async () =
   assert.equal(JSON.stringify(src),before);
   assert.equal(ELKClass.last.stopped,true);
 });
+test('ELK cannot rewrite virtual port identity or fixed offset', async () => {
+  const src=fixture(),before=JSON.stringify(src);
+  const ELKClass=fakeClass({mutate:(out,pass)=>{
+    if(pass===2)out.children[0].ports[0].x += 5;
+  }});
+  await assert.rejects(computeElkPreview(src,{ELKClass,requireWorker:false}),/FIXED_POS/);
+  assert.equal(JSON.stringify(src),before);
+});
 test('empty topology cannot produce an implicit network', async () => {
   const src=fixture();src.nodes=[];src.links=[];
   await assert.rejects(computeElkPreview(src,{ELKClass:fakeClass(),requireWorker:false}),/1–2 000/);
