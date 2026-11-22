@@ -23,6 +23,7 @@ try:
     with sync_playwright() as pw:
         browser=pw.chromium.launch(headless=True)
         page=browser.new_page(viewport={"width":1400,"height":900})
+        page.set_default_timeout(60000)
         page.on("worker",lambda worker: result["environment"].setdefault("worker_events",[]).append(worker.url))
         page.on("request",lambda request: result["environment"]["external_requests"].append(request.url)
           if not request.url.startswith("http://127.0.0.1:8765/") else None)
@@ -105,7 +106,7 @@ try:
                   return {nodes:n,links:links.length,jsSvgRebuildMs:jsMs,throughNextPaintMs:endMs,
                     pathCount:document.querySelectorAll('path.network-edge').length,
                     portCircleCount:document.querySelectorAll('circle.port-dot').length};
-                }""",[n,links],timeout=60000)
+                }""",[n,links])
                 result["tests"][key]=rendered
             except Exception as exc:result["errors"][key]=str(exc)
         browser.close()
