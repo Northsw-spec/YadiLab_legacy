@@ -1850,6 +1850,7 @@ function render() {
   try {
   if (getSelected() === null) selection = null;
   if (lastJourney && lastJourney.snapshot !== JSON.stringify(project)) forgetJourney();
+  $('layout-preview').disabled = elkBusy || project.nodes.length === 0;
   $('breadcrumb').textContent = project.name;
   $('count-nodes').textContent = String(project.nodes.length);
   $('count-links').textContent = String(project.links.length);
