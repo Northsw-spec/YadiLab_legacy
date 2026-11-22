@@ -1,0 +1,47 @@
+name: SVG camera viewport performance
+on:
+  push:
+    branches:
+      - perf/svg-camera-raf-2026-11-22
+  pull_request:
+    paths:
+      - 'web/canvas.js'
+      - 'tests/browser_camera_performance.py'
+      - 'tests/canvas_zoom_bounds_test.mjs'
+permissions:
+  contents: read
+jobs:
+  camera-benchmark:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Pinned original camera baseline
+        run: |
+          git show 809d93d9e6a1edf4bb56923e2715dc289499d4bd:web/canvas.js > web/canvas-baseline.mjs
+          test -s web/canvas-baseline.mjs
+      - name: Run camera safety tests
+        run: |
+          node --check web/canvas.js
+          node --test tests/canvas_zoom_bounds_test.mjs
+      - name: Install real Chromium
+        run: |
+          python3 -m pip install playwright==1.57.0
+          python3 -m playwright install --with-deps chromium
+      - name: Differential pan and zoom benchmark
+        run: python3 tests/browser_camera_performance.py
+      - name: Preserve reproducible benchmark measurements
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: svg-camera-performance
+          path: research/camera-perf-results/camera.json
+          if-no-files-found: warn
