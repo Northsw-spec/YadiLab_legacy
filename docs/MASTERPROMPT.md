@@ -12,6 +12,16 @@ Detta direktiv gäller all framtida kodning i detta repository. Läs även `AGEN
 
 ---
 
+## ELK: aktiv kodleverans, inte forskningsprogram
+
+Vid fortsatt ELK-/SVG-/import-UI-arbete ska Codex följa [ELK:s kodstyrda genomförandeplan](ELK_IMPLEMENTATION_PLAN.md). Detta är en konkret implementationsordning under befintlig QUALITY-färdplan, inte en konkurrerande roadmap. **Det förväntade resultatet från varje aktiv ELK-etapp är fungerande, testad produktionskod med verklig användarnytta.** Gör ingen separat forsknings-, revisions-, ADR-, dokumentations- eller test-PR i stället för implementation. Skippa redan implementerade steg (KEEP); en kort teknisk kontroll får endast användas för en specifik blockerare i den PR som faktiskt ändrar koden.
+
+**Obligatoriskt källdokumentkontrakt:** Nätverksdokument i CSV/XLSX/ODS och flexibel källmappning får **aldrig kräva nodernas X/Y som indata**. Sådana tal tillhör enbart intern presentationsgeometri. Källans rad-/kolumn-/celladresser är proveniens, inte nodpositioner. Den gamla strikta importkedjan kräver i nuläget faktiskt koordinatkolumner och måste få koordinatfritt inputstöd i ELK-06; hävda inte att den delen redan är implementerad. Importmodellens interna X/Y, historiska sparade projekt och källkvitton bevaras.
+
+**Exakt etappordning för Codex:** ELK-06A uppdaterar den äldre **strikta CSV/XLSX/ODS-inläsningen** för koordinatfria dokument, schema 1.0 och 1.3, med riktig kod/tester. ELK-06B gör första ELK-layouten **automatisk efter accepterad dokumentimport** i båda befintliga UI-flödena. ELK-06C gör **nya CSV-exempel, XLSX-/ODS-mallar och nätverksdokumentexporter koordinatfria**; dokumentexporten bevarar nätverksfakta men kan inte samtidigt lova att bevara projektets X/Y. Enbart kanonisk projektfil/Save behåller den exakta diagramplaceringen. Alla tre är nödvändiga, sekventiella kodleveranser; ingen parallell forskning eller test-only-PR.
+
+**Prioritera närmast:** **automatisk första ELK-layout efter uttryckligen godkänd och giltig dokumentationsimport**, eftersom källdokumenten inte ska behöva innehålla X/Y. Codex får **inte** kräva ett extra ELK-klick eller manuellt layout-Apply för att diagrammet ska få sin första placering. Använd befintlig Worker och atomärt stale-skydd; ingen autosave eller förändring av historiska importkvitton. **Valfri manuell ELK Preview/Apply/Cancel gäller endast senare omplacering** och öppnade projekt med sparade X/Y får inte automatiskt få ny layout. En aktiv PR åt gången, inga parallella forskningsgrenar, ingen ny motor. Bevara nätverksfakta, Save/Open och de vanliga verifieringsgrindarna.
+
 ## 1. Uppdraget
 
 Du är mjukvaruarkitekt, programmerare, nätverksingenjör, testutvecklare och kvalitetsgranskare för en självständig applikation för nätverksdokumentation, simulering och felsökning.

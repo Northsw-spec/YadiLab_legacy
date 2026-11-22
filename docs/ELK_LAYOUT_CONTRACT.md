@@ -2,7 +2,18 @@
 
 ## Purpose and boundaries
 
-Automatic layout is opt-in. It is never a network import engine or an
+Automatic **manual re-layout of an existing diagram** is opt-in. The **initial**
+ELK placement after an explicitly accepted, validated network-document import
+is mandatory and automatic (ELK-06 target, **not yet implemented on this baseline**).
+External CSV/XLSX/ODS network documents must not be required to contain node
+X/Y columns. Source cell coordinates identify original facts, not SVG geometry.
+The legacy strict four-table importer currently requires those columns, as do
+its schema-1.0/1.3 workbook paths. ELK-06A must fix that input requirement.
+ELK-06B must then automatically produce the first validated layout after
+accepted document import, and ELK-06C must remove X/Y from new documentary
+XLSX/ODS exports and templates (preserving canonical project Save/Open).
+These are planned code deliverables, not claims that today's code already works.
+ELK is never a network import engine or an
 authority for cables, ports, IP addresses, routing, simulation, or topology.
 The layout engine receives only already-declared `project.links` with both
 canonical node/port endpoints. It can position existing nodes and suggest
@@ -21,7 +32,13 @@ timeouts, aborts, unknown graph objects, invalid coordinates and invalid
 port/edge geometry reject the entire proposal. There is no silent
 main-thread fallback.
 
-## Exactly what happens in the UI
+## Current manual re-layout flow for existing diagrams
+
+The following steps describe **already implemented** voluntary
+Preview/Apply/Cancel. They are **not** the target flow after accepting a new
+network-document import. ELK-06 must automatically perform the first layout
+and display the result without an extra Preview/Apply click; it must still
+require separate Save.
 
 1. The user explicitly requests **Föreslå ELK-layout**.
 2. A snapshot of the canonical project is supplied to a two-pass ELK

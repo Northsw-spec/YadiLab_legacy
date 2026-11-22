@@ -1,5 +1,7 @@
 # Downloadable schema 1.3 workbook templates and diagnostics (PR #26)
 
+> **Historiska mallar före ELK-06C:** Nuvarande nedladdningsbara XLSX-/ODS-demomallar har fortfarande X/Y-kolumner i `Devices` eftersom de följer det gamla strikta schema-1.3-kontraktet. **Detta är en känd kodlucka**, inte ett krav att användaren ska mäta eller ange koordinater. [ELK-06A](ELK_IMPLEMENTATION_PLAN.md) öppnar koordinatfri inläsning, **06B** lägger på automatisk första ELK-layout och **06C** ändrar verkliga mallbytes och tester så nya mallar inte innehåller X/Y. Endast projektfilens Save/Export bevarar exakt diagramposition.
+
 ## How to use
 
 In Builder, under **Sparade projekt**, choose **Excel-mall (.xlsx)** or **Calc-mall (.ods)**. These are real files delivered by the local server at:
