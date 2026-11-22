@@ -243,10 +243,10 @@ export async function computeElkPreview(source, {
   const run = graph => Promise.race([instance.layout(graph), stop]);
   try {
     const first = graphFor(input, data);
-    const preliminary = validateGraph(first.graph, await run(first.graph), data.nodeIds, data.sortedLinks);
+    const preliminary = validateGraph(first.graph, await run(structuredClone(first.graph)), data.nodeIds, data.sortedLinks);
     const sides = chooseSides(data, preliminary);
     const second = graphFor(input, data, sides);
-    const result = makeProposal(input, data, second, await run(second.graph), sides);
+    const result = makeProposal(input, data, second, await run(structuredClone(second.graph)), sides);
     if (before !== JSON.stringify(source)) fail('projektet ändrades under beräkningen');
     return result;
   } finally {
