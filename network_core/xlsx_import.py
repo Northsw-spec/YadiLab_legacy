@@ -17,6 +17,7 @@ import zipfile
 import xml.etree.ElementTree as ET
 
 from .spreadsheet_schema import KNOWN_SHEETS, columns_for_sheets, import_spreadsheet_tables
+from .csv_import import device_columns
 from .model import ProjectValidationError
 
 NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
@@ -133,6 +134,7 @@ def _table(archive: zipfile.ZipFile, part: str, name: str,
         if col.get("hidden") in ("true", "1"):
             _fail(name, "hidden columns not importable")
     rows = []
+    width = len(columns)
     expected_row = 1
     for item in data:
         if item.tag != f"{{{NS}}}row":
@@ -152,19 +154,28 @@ def _table(archive: zipfile.ZipFile, part: str, name: str,
             if not ref:
                 _fail(name, "cell missing explicit reference")
             col = _index(ref, expected_row, name)
-            if col >= len(columns) or col in fields:
+            if col >= width or col in fields:
                 _fail(name, f"duplicate/out-of-range column {ref}")
             # Column meaning is determined by the first, literal header row.
             field = rows[0][col] if rows and col < len(rows[0]) else "header"
             fields[col] = _cell(cell, shared, f"{name}!{ref}", field)
         if not fields:
             _fail(name, f"empty formatted row {expected_row} is not a record")
-        rows.append([fields.get(i, "") for i in range(len(columns))])
+        if not rows and name == "Devices":
+            header = [fields.get(i, "") for i in range(width)]
+            while header and not header[-1]:
+                header.pop()
+            selected = device_columns(header)
+            if selected is None:
+                _fail(f"{name}!1 (header)", "expected exactly id,label,kind,zoneId or id,label,kind,x,y,zoneId (any order)")
+            width = len(selected)
+        rows.append([fields.get(i, "") for i in range(width)])
         expected_row += 1
     if not rows:
         _fail(name, "missing header row")
     header = rows[0]
-    if len(set(header)) != len(header) or set(header) != set(columns):
+    if (device_columns(header) is None if name == "Devices" else
+            len(set(header)) != len(header) or set(header) != set(columns)):
         _fail(f"{name}!1 (header)", "expected exactly the named columns (any order)")
     # Type-check data against the actual header's column order, independent
     # of cell XML formatting and implicit empty cells.

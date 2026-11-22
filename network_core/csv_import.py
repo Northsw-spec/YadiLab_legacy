@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import csv
 import io
+import math
 from typing import Any
 
 from .model import ProjectValidationError, validate_project
@@ -18,6 +19,17 @@ TABLES = {
     "Links.csv": ("id", "aNode", "aPort", "bNode", "bPort", "enabled"),
     "Zones.csv": ("id", "label"),
 }
+DEVICE_COLUMNS = ("id", "label", "kind", "zoneId")
+DEVICE_HEADERS = (DEVICE_COLUMNS, TABLES["Devices.csv"])
+
+
+def device_columns(header: list[str]) -> tuple[str, ...] | None:
+    """Select only the two complete, explicit Devices header contracts."""
+    if len(header) == len(set(header)):
+        for columns in DEVICE_HEADERS:
+            if len(header) == len(columns) and set(header) == set(columns):
+                return columns
+    return None
 
 
 def _invalid(where: str, reason: str) -> None:
@@ -34,6 +46,10 @@ def _read_table(name: str, text: str, columns: tuple[str, ...] | None = None) ->
     reader = csv.reader(io.StringIO(text, newline=""), strict=True)
     try:
         header = next(reader)
+        if name == "Devices.csv":
+            columns = device_columns(header)
+            if columns is None:
+                _invalid(f"{name} header row 1", "expected exactly id,label,kind,zoneId or id,label,kind,x,y,zoneId (any order)")
         expected = set(columns if columns is not None else TABLES[name])
         if len(header) != len(expected) or len(set(header)) != len(header) or set(header) != expected:
             _invalid(f"{name} header row 1", f"expected exactly these columns (any order): {', '.join(columns if columns is not None else TABLES[name])}")
@@ -102,13 +118,22 @@ def import_csv_tables(value: Any) -> dict:
     for row in zones:
         project["zones"].append({"id": row["id"], "label": row["label"]})
     index: dict[str, dict] = {}
+    # Temporary model geometry is presentation data, derived only from sorted
+    # declared IDs. ELK-06B will replace it after an accepted import.
+    ids = sorted(row["id"] for row in devices)
+    columns = 1 + math.isqrt(len(ids) - 1)
+    positions = {identity: (110 + 260 * (ordinal % columns),
+                            110 + 220 * (ordinal // columns))
+                 for ordinal, identity in enumerate(ids)}
     for row in devices:
         identity = row["id"]
         if identity in index:
             _invalid("Devices.csv", f"duplicate node ID {identity!r}")
+        x, y = (positions[identity] if "x" not in row else
+                (_coordinate(row["x"], f"Devices.csv {identity}.x"),
+                 _coordinate(row["y"], f"Devices.csv {identity}.y")))
         node = {"id": identity, "label": row["label"], "kind": row["kind"],
-                "x": _coordinate(row["x"], f"Devices.csv {identity}.x"),
-                "y": _coordinate(row["y"], f"Devices.csv {identity}.y"),
+                "x": x, "y": y,
                 "zoneId": row["zoneId"] or None, "ports": []}
         index[identity] = node
         project["nodes"].append(node)

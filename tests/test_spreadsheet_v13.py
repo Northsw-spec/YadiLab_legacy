@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import base64
+import csv
 import copy
 import hashlib
+import io
 import json
 import tempfile
 import threading
@@ -43,6 +45,45 @@ def change(sheet, old, new):
 
 
 class Spreadsheet13Tests(unittest.TestCase):
+    def test_real_coordinate_free_workbooks_preserve_network_facts(self):
+        from test_csv_import import DEV, PORTS, LINKS, ZONES
+        for version, original in (("1.0", {"Devices": DEV, "Interfaces": PORTS,
+                                          "Links": LINKS, "Zones": ZONES}),
+                                  ("1.3", TABLES_13)):
+            tables = copy.deepcopy(original)
+            records = list(csv.DictReader(io.StringIO(tables["Devices"])))
+            output = io.StringIO()
+            writer = csv.DictWriter(output, fieldnames=["zoneId", "kind", "label", "id"],
+                                    lineterminator="\n")
+            writer.writeheader()
+            writer.writerows({k: row[k] for k in writer.fieldnames} for row in records)
+            tables["Devices"] = output.getvalue()
+            for ext, raw, importer in formats(tables):
+                with self.subTest(version=version, ext=ext):
+                    project = importer(request(raw, ext))
+                    self.assertEqual(project["schemaVersion"], version)
+                    self.assertEqual(len(project["links"]), len(original["Links"].splitlines()) - 1)
+                    self.assertTrue(all(0 <= n["x"] <= 100000 and 0 <= n["y"] <= 100000
+                                        for n in project["nodes"]))
+                    if version == "1.3":
+                        expected = expected_v13()
+                        for actual, former in zip(project["nodes"], expected["nodes"]):
+                            for key in ("id", "kind", "zoneId", "ports", "staticRoutes"):
+                                if key in former:
+                                    self.assertEqual(actual[key], former[key])
+                        self.assertEqual(project["links"], expected["links"])
+
+    def test_coordinate_free_workbook_bad_headers_rejected(self):
+        tables = copy.deepcopy(TABLES_13)
+        tables["Devices"] = "id,label,kind,zoneId\nha,Host,host,office\n"
+        for header in ("id,label,kind,x,zoneId", "id,label,kind,y,zoneId",
+                       "id,label,kind,zoneId,zoneId", "id,label,kind,unknown"):
+            bad = dict(tables)
+            bad["Devices"] = bad["Devices"].replace("id,label,kind,zoneId", header)
+            for ext, raw, importer in formats(bad):
+                with self.subTest(header=header, ext=ext), self.assertRaises(ProjectValidationError):
+                    importer(request(raw, ext))
+
     def test_both_real_zip_formats_produce_exact_same_canonical_13_model(self):
         expected = expected_v13()
         for ext, raw, importer in formats(TABLES_13):

@@ -13,6 +13,7 @@ import zipfile
 import xml.etree.ElementTree as ET
 
 from .spreadsheet_schema import KNOWN_SHEETS, columns_for_sheets, import_spreadsheet_tables
+from .csv_import import device_columns
 from .model import ProjectValidationError
 
 OFFICE = "urn:oasis:names:tc:opendocument:xmlns:office:1.0"
@@ -156,7 +157,7 @@ def _row(row: ET.Element, name: str, row_index: int, header: list[str] | None,
     }:
         _fail(where, "unsupported row attributes")
     times = _count(row, "number-rows-repeated", where, 1048576)
-    width = len(columns)
+    width = len(columns) if header is None else len(header)
     values: list[str] = []
     for cell in row:
         field = (header[len(values)] if header is not None and len(values) < width else "header")
@@ -206,7 +207,15 @@ def _sheet(sheet: ET.Element, name: str, columns: tuple[str, ...]) -> str:
             continue
         if child.tag != _q(TABLE, "table-row"):
             _fail(where, "merged cells, table groups, database ranges or other data unsupported")
-        values, times = _row(child, name, row_index, rows[0] if rows else None, columns)
+        values, times = _row(child, name, row_index, rows[0] if rows else None,
+                             columns if not rows else tuple(rows[0]))
+        if not rows and name == "Devices":
+            while values and not values[-1]:
+                values.pop()
+            selected = device_columns(values)
+            if selected is None:
+                _fail(f"{name}!1 (header)", "expected exactly id,label,kind,zoneId or id,label,kind,x,y,zoneId (any order)")
+            width = len(selected)
         row_index += times
         if row_index > 1048577:
             _fail(where, "too many physical sheet rows")
@@ -224,7 +233,8 @@ def _sheet(sheet: ET.Element, name: str, columns: tuple[str, ...]) -> str:
         rows.append(values)
     if not rows:
         _fail(where, "missing header")
-    if len(set(rows[0])) != width or set(rows[0]) != set(columns):
+    if (device_columns(rows[0]) is None if name == "Devices" else
+            len(set(rows[0])) != width or set(rows[0]) != set(columns)):
         _fail(f"{name}!1 (header)", "expected exactly the named columns (any order)")
     output = io.StringIO(newline="")
     writer = csv.writer(output, lineterminator="\n")
