@@ -71,6 +71,58 @@ try:
             }""")
         except Exception as exc:result["errors"]["H5_worker_raf"]=str(exc)
 
+        # H2: end-to-end node-only ELK positions on actual unchanged YadiLab SVG.
+        try:
+            result["tests"]["H2_actual_elk_canvas_47"]=page.evaluate("""async ()=>{
+              const {TopologyCanvas}=await import('/web/canvas.js');
+              const svg=document.querySelector('#topology');
+              let canvas=window.__yadiCanvas;
+              if(!canvas)canvas=window.__yadiCanvas=new TopologyCanvas(svg,{
+                onSelect:()=>{},onPort:()=>{},onMove:()=>{},onEndMove:()=>{},onScale:()=>{}});
+              const nodes=Array.from({length:47},(_,i)=>({
+                id:'N'+i,label:'N'+i,kind:'switch',x:0,y:0,zoneId:null,ports:[]}));
+              const links=[];
+              for(let i=1;i<nodes.length;i++){
+                const a=nodes[Math.floor((i-1)/2)],b=nodes[i];
+                const ap='p'+a.ports.length,bp='p'+b.ports.length;
+                a.ports.push({id:ap,name:ap,enabled:true,ipv4:null});
+                b.ports.push({id:bp,name:bp,enabled:true,ipv4:null});
+                links.push({id:'L'+i,a:{node:a.id,port:ap},b:{node:b.id,port:bp},enabled:true});
+              }
+              const elkGraph={id:'g',layoutOptions:{'elk.algorithm':'layered',
+                'elk.direction':'RIGHT','elk.edgeRouting':'ORTHOGONAL'},
+                children:nodes.map(n=>({id:n.id,width:202,height:Math.max(96,78+n.ports.length*23)})),
+                edges:links.map(l=>({id:l.id,sources:[l.a.node],targets:[l.b.node]}))};
+              const elk=new ELK({workerUrl:'/node_modules/elkjs/lib/elk-worker.js'});
+              const layout=await elk.layout(elkGraph);elk.terminateWorker();
+              const xy=new Map(layout.children.map(n=>[n.id,{x:Math.round(n.x),y:Math.round(n.y)}]));
+              const placed=nodes.map(n=>({...n,...xy.get(n.id)}));
+              const p={schemaVersion:'1.0',name:'synthetic 47 tree',zones:[],nodes:placed,links};
+              canvas.setData(p,null,null,[]);canvas.fit();
+              function dot(ep){
+                const elem=svg.querySelector('[data-port-node="'+ep.node+'"][data-port-id="'+ep.port+'"]');
+                if(!elem)throw Error('Missing SVG port dot');
+                const match=elem.closest('g').getAttribute('transform').match(/translate\(([\d.-]+) ([\d.-]+)\)/);
+                return {x:Number(match[1])+Number(elem.getAttribute('cx')),
+                  y:Number(match[2])+Number(elem.getAttribute('cy'))};
+              }
+              let maxPortPointError=0,missingCablePaths=0;
+              for(const link of links){
+                const path=svg.querySelector('path.network-edge[data-link-id="'+link.id+'"]');
+                if(!path){missingCablePaths++;continue;}
+                const start=path.getPointAtLength(0),end=path.getPointAtLength(path.getTotalLength());
+                for(const [a,b] of [[start,dot(link.a)],[end,dot(link.b)]]){
+                  maxPortPointError=Math.max(maxPortPointError,Math.hypot(a.x-b.x,a.y-b.y));
+                }
+              }
+              return {renderedNodes:svg.querySelectorAll('g.network-node').length,
+                renderedLinks:svg.querySelectorAll('path.network-edge').length,
+                missingCablePaths,maxPortPointError,workerBasedElk:true,
+                warning:'synthetic 47-node tree, not the original XLSX'};
+            }""")
+            page.locator("#topology").screenshot(path=str(OUT/"elk_node_only_47.png"))
+        except Exception as exc:result["errors"]["H2_actual_elk_canvas_47"]=str(exc)
+
         # H10: use YadiLab's original canvas.js (not a replacement renderer).
         for n, links in [(47,46),(500,750),(2000,5000)]:
             key="H10_actual_svg_render_"+str(n)
