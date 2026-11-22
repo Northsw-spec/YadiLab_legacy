@@ -4,6 +4,9 @@ const NS = 'http://www.w3.org/2000/svg';
 const WIDTH = 202;
 const HEAD = 66;
 const PORT_ROW = 23;
+// Events processed within this small interval are a single input burst.
+// Separate, frame-spaced gestures update the view immediately.
+const GESTURE_BURST_MS = 6;
 const HEIGHT = node => Math.max(96, HEAD + node.ports.length * PORT_ROW + 12);
 const svgElement = (tag, attributes = {}) => {
   const el = document.createElementNS(NS, tag);
@@ -147,6 +150,7 @@ export class TopologyCanvas {
     // before the next frame are reduced to one final viewBox commit.
     this.pendingViewFrame = null;
     this.viewDirty = false;
+    this.lastGesturePaintAt = null;
     this.project = null;
     this.presentation = null;
     this.selected = null;
@@ -342,18 +346,23 @@ export class TopologyCanvas {
 
   queueView(rect) {
     if (this.pendingViewFrame != null) {
-      // Camera world coordinates still track all input events immediately;
-      // only the SVG repaint is coalesced.
       this.viewDirty = true;
       return;
     }
-    // Paint first input immediately, so one event per frame behaves like the
-    // original camera and never waits an extra frame before showing motion.
+    // A single pointer/wheel event should never wait for an extra rAF frame.
+    // Only a subsequent event processed in the same short burst is deferred.
+    const now = performance.now();
+    if (this.lastGesturePaintAt != null &&
+        now - this.lastGesturePaintAt < GESTURE_BURST_MS) {
+      this.viewDirty = true;
+      this.pendingViewFrame = requestAnimationFrame(() => {
+        this.pendingViewFrame = null;
+        if (this.viewDirty) this.setView();
+      });
+      return;
+    }
     this.setView(rect);
-    this.pendingViewFrame = requestAnimationFrame(() => {
-      this.pendingViewFrame = null;
-      if (this.viewDirty) this.setView();
-    });
+    this.lastGesturePaintAt = performance.now();
   }
 
   flushView() {
@@ -370,8 +379,9 @@ export class TopologyCanvas {
       this.pendingViewFrame = null;
     }
     this.viewDirty = false;
-    // Geometry is measured before viewBox mutation. A gesture batch writes
-    // immediately once, then at most once more for a burst in the same frame.
+    this.lastGesturePaintAt = null;
+    // Geometry is measured before viewBox mutation. Isolated events paint
+    // immediately; bursts commit their final virtual view in one rAF.
     this.svg.setAttribute('viewBox', `${this.view.x} ${this.view.y} ${this.view.w} ${this.view.h}`);
     this.callbacks.onScale(Math.round((rect.width || 900) / this.view.w * 100));
   }
