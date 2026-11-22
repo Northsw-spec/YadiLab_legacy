@@ -1,4 +1,4 @@
-"""Independent Python/real YadiLab acceptance for ELK 2000/5000 coordinate proposal."""
+"""Independent Python/real topology editor acceptance for ELK 2000/5000 coordinate proposal."""
 import json, hashlib, tempfile, copy
 from pathlib import Path
 from network_core.model import validate_project, ProjectValidationError

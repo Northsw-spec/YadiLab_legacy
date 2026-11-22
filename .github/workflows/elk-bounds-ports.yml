@@ -25,7 +25,7 @@ jobs:
           npm ls elkjs
       - name: Run 2000-node / 5000-link bounds experiments
         run: timeout 240s node --max-old-space-size=4096 research/elk_bounds_experiment.mjs
-      - name: Independent YadiLab model validation and real Save/Open for accepted candidate
+      - name: Independent topology editor model validation and real Save/Open for accepted candidate
         run: PYTHONPATH=. python3 research/elk_bounds_native_validator.py
       - name: Reject out-of-bounds, overlapped, or incomplete alternatives
         run: |
@@ -65,7 +65,7 @@ jobs:
           node --check research/elk_ports_experiment.mjs
           sha256sum node_modules/elkjs/lib/elk-worker.js
           npm ls elkjs
-      - name: Compare ELK full routing and YadiLab's existing port formula
+      - name: Compare ELK full routing and topology editor's existing port formula
         run: timeout 240s node --max-old-space-size=4096 research/elk_ports_experiment.mjs
       - name: Install browser acceptance prerequisites
         run: |

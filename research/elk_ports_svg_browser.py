@@ -123,7 +123,7 @@ try:
                     const d='M '+pts[0].x+' '+pts[0].y+pts.slice(1).map(p=>' L '+p.x+' '+p.y).join('');
                     const path=svg.querySelector('path.network-edge[data-link-id="'+link.id+'"]');
                     const hit=svg.querySelector('path.edge-hit[data-link-hit="'+link.id+'"]');
-                    if(!path||!hit)throw Error('Missing original YadiLab SVG path');
+                    if(!path||!hit)throw Error('Missing original topology editor SVG path');
                     path.setAttribute('d',d); hit.setAttribute('d',d);
                     const from=path.getPointAtLength(0),to=path.getPointAtLength(path.getTotalLength());
                     for(const [a,b] of [[from,dot(link.a)],[to,dot(link.b)]]){

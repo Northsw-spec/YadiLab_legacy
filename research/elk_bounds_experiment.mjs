@@ -1,4 +1,4 @@
-// Isolated experiment A: fit real ELK 0.13.0 layouts inside YadiLab coordinates.
+// Isolated experiment A: fit real ELK 0.13.0 layouts inside topology editor coordinates.
 // Run: node research/elk_bounds_experiment.mjs
 // Does not modify project files, import history or production code.
 import fs from "node:fs";

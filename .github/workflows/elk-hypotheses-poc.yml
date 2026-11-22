@@ -33,7 +33,7 @@ jobs:
         run: |
           python3 -m pip install playwright==1.57.0
           python3 -m playwright install --with-deps chromium
-      - name: Local real Chromium worker and YadiLab SVG rendering probes
+      - name: Local real Chromium worker and topology editor SVG rendering probes
         run: python3 research/elk_browser_probe.py
         continue-on-error: true
       - name: Bounded 2000-node 5000-link ELK stress test
@@ -59,7 +59,7 @@ jobs:
               if not f.exists(): errors.append(name+' evidence missing'); continue
               data=json.loads(f.read_text())
               if data.get('errors'):errors.append(name+' execution errors: '+str(list(data['errors'])))
-              if name=='stress' and data.get('results',{}).get('H7_stress_2000_5000',{}).get('acceptedByYadiLabModel') is not True:
+              if name=='stress' and data.get('results',{}).get('H7_stress_2000_5000',{}).get('acceptedBytopology editorModel') is not True:
                   errors.append('H7 coordinate bounds FAIL')
           print('RESEARCH_VERDICT:', 'FAIL / corrective research required' if errors else 'PASS', errors)
           raise SystemExit(1 if errors else 0)

@@ -1,4 +1,4 @@
-// Isolated YadiLab/ELK hypothesis experiments. No project mutation or GitHub write here.
+// Isolated topology editor/ELK hypothesis experiments. No project mutation or GitHub write here.
 import fs from "node:fs";
 import {performance} from "node:perf_hooks";
 import {createRequire} from "node:module";
@@ -146,7 +146,7 @@ if(process.argv.includes("--stress")){
      n.x+n.width>100000||n.y+n.height>100000);
    return {nodes:2000,links:5000,ms,rootWidth:out.width,rootHeight:out.height,
      maxNodeX:Math.max(...nodes.map(n=>n.x+n.width)),maxNodeY:Math.max(...nodes.map(n=>n.y+n.height)),
-     invalidNodeCoordinates:invalid.length,acceptedByYadiLabModel:invalid.length===0,
+     invalidNodeCoordinates:invalid.length,acceptedBytopology editorModel:invalid.length===0,
      verdict:invalid.length===0?"PASS_BOUNDS":"FAIL_BOUNDS"};
  });
 }else{

@@ -1,4 +1,4 @@
-"""Browser probes for local ELK assets and YadiLab's unchanged SVG TopologyCanvas."""
+"""Browser probes for local ELK assets and topology editor's unchanged SVG TopologyCanvas."""
 import json, subprocess, time, socket, os, sys
 from pathlib import Path
 from playwright.sync_api import sync_playwright
@@ -71,7 +71,7 @@ try:
             }""")
         except Exception as exc:result["errors"]["H5_worker_raf"]=str(exc)
 
-        # H2: end-to-end node-only ELK positions on actual unchanged YadiLab SVG.
+        # H2: end-to-end node-only ELK positions on actual unchanged topology editor SVG.
         try:
             result["tests"]["H2_actual_elk_canvas_47"]=page.evaluate("""async ()=>{
               const {TopologyCanvas}=await import('/web/canvas.js');
@@ -123,7 +123,7 @@ try:
             page.locator("#topology").screenshot(path=str(OUT/"elk_node_only_47.png"))
         except Exception as exc:result["errors"]["H2_actual_elk_canvas_47"]=str(exc)
 
-        # H10: use YadiLab's original canvas.js (not a replacement renderer).
+        # H10: use topology editor's original canvas.js (not a replacement renderer).
         for n, links in [(47,46),(500,750),(2000,5000)]:
             key="H10_actual_svg_render_"+str(n)
             try:

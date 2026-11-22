@@ -1,4 +1,4 @@
-// Isolated experiment B: ELK ports and full cable routes against unchanged YadiLab SVG geometry.
+// Isolated experiment B: ELK ports and full cable routes against unchanged topology editor SVG geometry.
 // Run: node research/elk_ports_experiment.mjs
 import fs from "node:fs";
 import {performance} from "node:perf_hooks";
@@ -148,14 +148,14 @@ function analyze(p,g,out,placed,assumedSides) {
     }
   }
   return {nodeCount:p.nodes.length,linkCount:p.links.length,portCount:entries.length,
-    sections,mismatchedYadiLabPortCenters:mismatched,maxYadiLabPortCenterError:round(max),
+    sections,mismatchedtopology editorPortCenters:mismatched,maxtopology editorPortCenterError:round(max),
     unstableSides:sidesChanged,sectionEndpointMismatch: endpointBad,
     maxSectionEndpointError:round(endpointMax),nonOrthogonalSegments,
     edgeSegmentsThroughOtherNodes:obstacles,
     truePortGeometricCompatibility:mismatched===0&&endpointBad===0,
     note:"SVG renderer still uses endpoint(project, port); no production UI change"};
 }
-const results={experiment:"ELK FIXED_POS vs YadiLab port endpoint geometry",elkVersion:require("elkjs/package.json").version,
+const results={experiment:"ELK FIXED_POS vs topology editor port endpoint geometry",elkVersion:require("elkjs/package.json").version,
   date:new Date().toISOString(),cases:{},errors:{}};
 for(const spec of specs){
   results.cases[spec.name]={};

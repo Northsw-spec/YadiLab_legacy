@@ -1,4 +1,4 @@
-"""H9: Real YadiLab historical receipt + Save/Open with accepted coordinate-only change."""
+"""H9: Real topology editor historical receipt + Save/Open with accepted coordinate-only change."""
 import copy, json, sys, tempfile
 from pathlib import Path
 root=Path(__file__).resolve().parents[1]
