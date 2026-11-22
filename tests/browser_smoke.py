@@ -6243,7 +6243,9 @@ def run():
                 assert imported_event.value.status == 200
                 result = imported_event.value.json()['project']
                 assert result['schemaVersion'] == before_export['schemaVersion']
-                assert without_positions(result) == without_positions(before_export)
+                # The UI chooses a new projectName; network node facts, not
+                # that user-supplied label or generated positions, must match.
+                assert without_positions(result)['nodes'] == without_positions(before_export)['nodes']
                 assert result['links'] == before_export['links']
                 assert result['zones'] == before_export['zones']
                 await_import_layout(page)
