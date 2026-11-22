@@ -12,6 +12,12 @@ Detta direktiv gäller all framtida kodning i detta repository. Läs även `AGEN
 
 ---
 
+## ELK: aktiv kodleverans, inte forskningsprogram
+
+Vid fortsatt ELK-/SVG-/import-UI-arbete ska Codex följa [ELK:s kodstyrda genomförandeplan](ELK_IMPLEMENTATION_PLAN.md). Detta är en konkret implementationsordning under befintlig QUALITY-färdplan, inte en konkurrerande roadmap. **Det förväntade resultatet från varje aktiv ELK-etapp är fungerande, testad produktionskod med verklig användarnytta.** Gör ingen separat forsknings-, revisions-, ADR-, dokumentations- eller test-PR i stället för implementation. Skippa redan implementerade steg (KEEP); en kort teknisk kontroll får endast användas för en specifik blockerare i den PR som faktiskt ändrar koden.
+
+**Prioritera närmast:** en tydlig, frivillig fortsättning från godkänd import till befintlig ELK-preview om funktionen ännu saknas; annars nästa redan specificerade kodnytta. En aktiv PR åt gången, inga parallella forskningsgrenar, ingen ny motor. Bevara historisk importlayout, källkvitton, nätverksfakta, Save/Open och de vanliga verifieringsgrindarna.
+
 ## 1. Uppdraget
 
 Du är mjukvaruarkitekt, programmerare, nätverksingenjör, testutvecklare och kvalitetsgranskare för en självständig applikation för nätverksdokumentation, simulering och felsökning.

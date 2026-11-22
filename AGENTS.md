@@ -4,6 +4,12 @@
 
 Den enda aktuella etappindelade kvalitetsfärdplanen finns i [docs/QUALITY_IMPROVEMENT_PLAN.md](docs/QUALITY_IMPROVEMENT_PLAN.md). Den omfattar QUALITY-000–011, oberoende protokollreferenser, dataintegritet, import, skalning, användbarhet, distribution och slutrevision. Kontrollera faktisk HEAD/CI och uppdatera verifieringslägen innan en etapp startas. Historiken finns separat i `docs/QUALITY_IMPROVEMENT_HISTORY.md`. Planen **kompletterar**, men ersätter aldrig detta utvecklingskontrakt, [docs/MASTERPROMPT.md](docs/MASTERPROMPT.md), [docs/IMPORT_SOURCE_CONTRACT.md](docs/IMPORT_SOURCE_CONTRACT.md) eller tekniska protokollkontrakt.
 
+## ELK-leverans: produktionskod först (gällande användarprioritet)
+
+För allt fortsatt arbete med ELK/layout/diagram gäller den [kodstyrda ELK-implementeringsplanen](docs/ELK_IMPLEMENTATION_PLAN.md). **Det här är en arbetskö för konkreta kodleveranser, inte en ny forskningsfärdplan.** Börja med nästa ännu inte implementerade, användarnyttiga förbättring; skriv produktionskod och dess positiva/negativa tester i **samma PR**. Hoppa över redan fungerande etapper (KEEP). Skapa **inte** separata forsknings-, arkitektur-, rapport-, ADR- eller test-PR:er som ersättning för fungerande kod. Kör högst en utvecklings-PR åt gången. En kort undersökning ingår bara när en konkret blockerare i den aktuella kodändringen kräver det. Ändra aldrig kanonisk topologi, källproveniens, historiskt importkvitto eller sparschema utan befintligt kontrakt och uttryckligt mandat.
+
+**Nästa prioritet:** frivillig, tydlig ELK-layout direkt efter *godkänd* dokumentationsimport, om denna UI-koppling ännu saknas; annars nästa konkret definierade kodkort. Behåll befintlig Worker/ELK/SVG och obligatoriska CI-grindar.
+
 ## Permanent Masterprompt
 
 **Läs [docs/MASTERPROMPT.md](docs/MASTERPROMPT.md) före varje utvecklingsetapp.** Den är projektets långsiktiga utvecklingsdirektiv fram till användarens slutgodkännande. Denna AGENTS-fil anger korta, operativa regler; den fullständiga målbilden, prioriteringen, acceptanskriterierna och rapporteringskontraktet finns i Masterprompten. Vid konflikt ska den senaste uttryckliga användarinstruktionen följas och aktuell källkod/CI kontrolleras.

@@ -10,6 +10,8 @@ Version 0.1 är en körbar lokal desktop/webb-hybrid för att dokumentera enhete
 
 Utvecklingen styrs av [Masterprompten](docs/MASTERPROMPT.md) och den korta operativa instruktionen i [AGENTS.md](AGENTS.md). Läs båda före varje utvecklingsetapp. Dokumentet beskriver slutmål och kvalitetskrav; alla planerade funktioner är **inte** redan implementerade.
 
+**Nästa ELK-implementation:** [Kodstyrd ELK-genomförandeplan](docs/ELK_IMPLEMENTATION_PLAN.md). Den prioriterar direkt produktionskod och testad användarnytta, utan parallella forskningsgrenar eller rapport-PR:er. Detta är en arbetskö under befintlig QUALITY-färdplan.
+
 ## Starta på Linux (Python 3.10+)
 
 ```bash
