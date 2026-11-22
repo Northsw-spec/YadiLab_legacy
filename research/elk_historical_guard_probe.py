@@ -1,7 +1,9 @@
 """H9: Real YadiLab historical receipt + Save/Open with accepted coordinate-only change."""
 import copy, json, sys, tempfile
 from pathlib import Path
-sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"tests"))
+root=Path(__file__).resolve().parents[1]
+sys.path.insert(0,str(root))
+sys.path.insert(0,str(root/"tests"))
 from test_import_verification import candidate
 from network_core.storage import ProjectStore
 from network_core.import_verification import evidence_status,verify_sources
@@ -41,9 +43,11 @@ with tempfile.TemporaryDirectory() as directory:
     expected_network["nodes"][0]["x"]=proposed["nodes"][0]["x"]
     expected_network["nodes"][0]["y"]=proposed["nodes"][0]["y"]
     assert after["project"]==expected_network,"Unexpected project field mutation"
-    print(json.dumps({"H9_verdict":"PASS_for_coordinate_only_explicit_Save_Open",
+    evidence={"H9_verdict":"PASS_for_coordinate_only_explicit_Save_Open",
        "previewUnchangedOnDisk":True,"sourceReplay":replay["replayStatus"],
        "baselineAfterAcceptedChange":"CHANGED_SINCE_IMPORT",
        "immutableEvidence":True,"projectFieldsChanged":["nodes[0].x","nodes[0].y"],
-       "note":"ELK proposal not yet wired to UI; test deliberately models accepted coordinate-only edit"},
-       indent=2))
+       "note":"ELK proposal not yet wired to UI; test deliberately models accepted coordinate-only edit"}
+    (root/"research/elk-results").mkdir(parents=True,exist_ok=True)
+    (root/"research/elk-results/historical.json").write_text(json.dumps(evidence,indent=2),encoding="utf-8")
+    print(json.dumps(evidence,indent=2))
