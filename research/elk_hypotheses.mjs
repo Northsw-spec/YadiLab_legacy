@@ -138,7 +138,17 @@ const record={date,elkVersion:require("elkjs/package.json").version,node:process
 async function test(id,callback){try {record.results[id]=await callback();console.log(id+" "+JSON.stringify(record.results[id]));}
  catch(e){record.errors[id]=String(e.stack||e);console.error(id+" ERROR "+String(e));}}
 if(process.argv.includes("--stress")){
- await test("H7_stress_2000_5000",async()=>summary(project(2000,5000,"mesh"),await layout(project(2000,5000,"mesh"))));
+ await test("H7_stress_2000_5000",async()=>{
+   const p=project(2000,5000,"mesh"),a=adapter(p),start=performance.now();
+   const out=await elk.layout(a.graph);const ms=fix(performance.now()-start);
+   const nodes=out.children||[],invalid=nodes.filter(n=>
+     !Number.isFinite(n.x)||!Number.isFinite(n.y)||n.x< -100000||n.y< -100000||
+     n.x+n.width>100000||n.y+n.height>100000);
+   return {nodes:2000,links:5000,ms,rootWidth:out.width,rootHeight:out.height,
+     maxNodeX:Math.max(...nodes.map(n=>n.x+n.width)),maxNodeY:Math.max(...nodes.map(n=>n.y+n.height)),
+     invalidNodeCoordinates:invalid.length,acceptedByYadiLabModel:invalid.length===0,
+     verdict:invalid.length===0?"PASS_BOUNDS":"FAIL_BOUNDS"};
+ });
 }else{
  await test("H1_real_elk_three_node_adapter",async()=>{
    const p=JSON.parse(fs.readFileSync("examples/explicit-three-device-demo.yadilab","utf8"));
@@ -150,12 +160,47 @@ if(process.argv.includes("--stress")){
       return summary(p,r);
    });
  }
+ function fullRoutingMetrics(p,r){
+   const outById=new Map(r.out.children.map(n=>[n.id,n]));
+   const originalByElkId=new Map([...r.graph.idMap.entries()].map(([id,elkId])=>[elkId,id]));
+   const portCoordinates=new Map();
+   for(const en of r.out.children){
+     const originalId=originalByElkId.get(en.id);
+     for(const ep of en.ports||[]) portCoordinates.set(ep.id,{x:en.x+ep.x+(ep.width||0)/2,y:en.y+ep.y+(ep.height||0)/2});
+   }
+   let mismatchedSvgPortCenters=0,maxSvgPortDistance=0,edgeSections=0,fullRouteNodeIntersections=0;
+   for(const l of p.links){
+      for(const ep of [l.a,l.b]){
+        const pid=r.graph.portMap.get(ep.node+"|"+ep.port),pt=portCoordinates.get(pid),svg=endpoint(r.placed,ep);
+        if(!pt)throw Error("Missing returned ELK port");
+        const dist=Math.hypot(pt.x-svg.x,pt.y-svg.y);
+        maxSvgPortDistance=Math.max(maxSvgPortDistance,dist);
+        if(dist>1)mismatchedSvgPortCenters++;
+      }
+   }
+   for(const e of r.out.edges){
+      const originalId=r.graph.sourceLinkIds[Number(e.id.slice(1))];
+      const link=p.links.find(l=>l.id===originalId);
+      if(!link)throw Error("Unknown edge mapping");
+      for(const sec of e.sections||[]){
+        edgeSections++;
+        const pts=[sec.startPoint,...(sec.bendPoints||[]),sec.endPoint];
+        for(const n of r.placed.nodes)
+          if(n.id!==link.a.node&&n.id!==link.b.node&&hitsRect(pts,rect(n)))fullRouteNodeIntersections++;
+      }
+   }
+   return {edgeSections,returnedPortCount:portCoordinates.size,mismatchedSvgPortCenters,
+     maxSvgPortDistance:fix(maxSvgPortDistance),fullRouteNodeIntersections};
+ }
  await test("H3_explicit_port_and_edge_sections",async()=>{
    const p=project(10,12,"mesh"),r=await layout(p,true);
-   const sectionCount=r.out.edges.reduce((s,e)=>s+(e.sections?.length||0),0);
-   if(!sectionCount)throw Error("No ELK routed edge sections returned");
-   return {...summary(p,r),edgeSections:sectionCount,portsMapped:r.graph.portMap.size,
-     returnedPortCount:r.out.children.reduce((s,n)=>s+(n.ports?.length||0),0)};
+   const metrics=fullRoutingMetrics(p,r);
+   if(!metrics.edgeSections)throw Error("No ELK routed edge sections returned");
+   return {...summary(p,r),...metrics,portsMapped:r.graph.portMap.size};
+ });
+ await test("H3_ring_full_routing_vs_node_only",async()=>{
+   const p=project(47,47,"ring"),r=await layout(p,true);
+   return {...summary(p,r),...fullRoutingMetrics(p,r)};
  });
  await test("H6_coordinate_replay",async()=>{
    const p=project(47,46,"tree"),coordinates=[],times=[];
