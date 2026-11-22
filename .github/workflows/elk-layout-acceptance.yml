@@ -1,14 +1,13 @@
 name: ELK layout focused acceptance
 on:
-  push:
-    branches:
-      - feature/elk-preview-2026-11-22
   pull_request:
     paths:
       - 'web/features/layout/**'
       - 'web/canvas.js'
       - 'web/app.js'
       - 'tests/browser_elk_layout.py'
+      - 'tests/browser_canvas_large_zoom.py'
+      - 'tests/canvas_zoom_bounds_test.mjs'
 permissions:
   contents: read
 jobs:
@@ -26,10 +25,12 @@ jobs:
       - name: JavaScript safety contract and adapter negative tests
         run: |
           node --check web/features/layout/elk.js
-          node --test tests/elk_layout_adapter_test.mjs
+          node --test tests/elk_layout_adapter_test.mjs tests/canvas_zoom_bounds_test.mjs
       - name: Install Chromium acceptance dependencies
         run: |
           python3 -m pip install playwright==1.57.0
           python3 -m playwright install --with-deps chromium
       - name: Full real HTTP Chromium ELK UI acceptance
         run: python3 tests/browser_elk_layout.py
+      - name: Real Chromium large topology zoom acceptance
+        run: python3 tests/browser_canvas_large_zoom.py
