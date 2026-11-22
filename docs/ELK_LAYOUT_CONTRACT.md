@@ -7,8 +7,12 @@ ELK placement after an explicitly accepted, validated network-document import
 is mandatory and automatic (ELK-06 target, **not yet implemented on this baseline**).
 External CSV/XLSX/ODS network documents must not be required to contain node
 X/Y columns. Source cell coordinates identify original facts, not SVG geometry.
-The legacy strict four-table importer currently requires those columns; its
-input contract must be corrected in the same ELK-06 code delivery.
+The legacy strict four-table importer currently requires those columns, as do
+its schema-1.0/1.3 workbook paths. ELK-06A must fix that input requirement.
+ELK-06B must then automatically produce the first validated layout after
+accepted document import, and ELK-06C must remove X/Y from new documentary
+XLSX/ODS exports and templates (preserving canonical project Save/Open).
+These are planned code deliverables, not claims that today's code already works.
 ELK is never a network import engine or an
 authority for cables, ports, IP addresses, routing, simulation, or topology.
 The layout engine receives only already-declared `project.links` with both

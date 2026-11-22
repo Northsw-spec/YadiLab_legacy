@@ -21,6 +21,17 @@
 
 **Bindande testgrind:** ett verkligt `Devices.csv` och verkliga XLSX-/ODS-arbetsböcker med deklarerade enheter, portar och kablar, men **utan X/Y-kolumner**, ska kunna godkännas i det avsedda importflödet och resultera i ett färdigt automatiskt ELK-diagram. Testa både äldre strikt format och flexibel mappad källimport, även med Save/Open, negativa kabel-/portfall och dokument med celladresser som inte misstolkas som visuella koordinater.
 
+**Även exporten ingår i målet:** `network_core/spreadsheet_export.py` och `network_core/spreadsheet_templates.py` skriver i dag nodernas X/Y till XLSX/ODS. `examples/csv/Devices.csv` är också ett gammalt exempel med X/Y. ELK-06C ska producera **nya koordinatfria dokumentationstabeller och mallar**. Skilj dem från det kanoniska **projektformatet**, där X/Y fortfarande sparas för att bevara användarens manuella diagramplacering. En dokumentationsexport utan X/Y kan inte samtidigt utlovas som ett bit-/fältidentiskt projektbackupformat; den ska i stället återläsa exakt samma *stödda nätverksfakta* och uttryckligen lämna layouten utanför.
+
+**Källkodsgranskad beroendekedja (baslinje-HEAD, inte påstått implementerad):**
+- Strikt CSV: `csv_import.TABLES['Devices.csv']`, `_read_table()`, `_coordinate()`, `import_csv_tables()`.
+- Strikt schema 1.0/1.3 XLSX/ODS: `spreadsheet_schema.TABLES/V13`, `columns_for_sheets()`, `import_spreadsheet_tables()`, `xlsx_import._sheet()`, `ods_import._sheet()`. Parserna antar **en fast kolumnbredd innan headern validerats**; enbart ändring av `TABLES` räcker inte.
+- Flexibel källimport: `import_plan.node_layout()` skapar **interna** preliminära koordinater; `import_evidence.py` kräver samma historiska värden i replay. **Frys dessa kontrakt**.
+- Dokumentexport: `spreadsheet_export._serialize()/export_workbook()` och `spreadsheet_templates.SAMPLE/_cells()/_xlsx()/_ods()` innehåller X/Y. Exportens nuvarande kontroll `restored == canonical` går **inte** att behålla oförändrad när dokumentlayout utelämnas; ersätt med strikt jämförelse av dokumenterbara nätverksfält, inte en försvagad generell acceptans.
+- UI: `web/app.js::importProjects()` hanterar strikt import, `web/features/projects/import-review.js::applyCandidate()` hanterar accepterad flexibel källimport. Import av en redan sparad `.yadilab`-/JSON-projektfil **ska inte** automatlayoutas. Befintlig `web/features/layout/elk.js` används, ingen ny motor.
+
+**Ingen tyst omtolkning:** Ett validerat äldre dokument med båda X/Y-kolumnerna får fortsätta läsas för bakåtkompatibilitet, men framtida dokumentation kräver inte koordinater, och vid *ny dokumentationsimport* är ELK den avsedda slutliga placeringen. En ensam X- eller Y-kolumn, okända kolumner eller förlorade nätverksfält ska avvisas. Varken `schemaVersion` 1.0/1.3/1.4 eller historiska importerade kvitton skrivs om för att lösa presentationsfrågan.
+
 ## 1. Exakt önskat slutresultat
 
 Användaren ska kunna importera en **fullständigt, explicit och källtroget validerad** nätverksdokumentation och **automatiskt få en första lättläst ELK-layout**, utan extra layoutklick, se kablar som verkligen slutar på de deklarerade portarna, redigera diagrammet med mus och tangentbord, använda samma topologi i simuleringsmotorn, spara och öppna projekt samt förstå vad som sparats och vilka visuella rutter som återberäknas. Stora diagram ska vara hanterbara utan att nätverksfakta eller historiskt importbevis förändras.
@@ -77,16 +88,18 @@ Följande är **arbetskort**, inte order om fjorton PR:er. Identifikatorerna ELK
 
 | Körordning | Arbetskort | Faktisk kodnytta | Startvillkor |
 |---|---|---|---|
-| 1 | **ELK-06** | **Automatisk första ELK-layout direkt efter godkänd import – inget extra layoutklick** | Existerande `canApply`, import-Apply och ELK-Worker finns; återanvänd befintlig adapter med stale-skydd |
-| 2 | **ELK-04 + ELK-05** | Korrekt edit/drag/livscykel: ingen falsk eller föråldrad kabelgeometri | Bevisa ett konkret användarfall som saknar detta; annars KEEP |
-| 3 | **ELK-09** | Tangentbord, fokus och begriplig tillgänglig layoutkontroll | Befintliga Builder-flöden granskas *inom samma kod-PR* |
-| 4 | **ELK-02 + ELK-03** | Adapter som klarar specificerade felaktiga indata och grafklasser | Lägg bara till kod när ett negativt test visar ett faktiskt gap |
-| 5 | **ELK-08** | Responsiv interaktion i stora verkliga vyer | Mät reproducerbart aktuellt flaskhalsfall, åtgärda samma PR |
-| 6 | **ELK-07** | Tydlig och korrekt Save/Open-upplevelse för tillfälliga kabelbanor | Behåll nuvarande projektformat; ändra inte schema utan nytt mandat |
-| 7 | **ELK-10** | Verifierat självständigt offlinepaket och korrekt licensdistribution | Ingen spontan biblioteksversionhöjning |
-| 8 | **ELK-11** | Riktig importerad testkorpus + fungerande slutanvändarflöde | Endast källor med uttryckligt tillstånd och tillåten anonymisering |
-| 9 | **ELK-12** | Reproducerbar release, rollback och kort användarmanual | Alla funktionella beroenden gröna |
-| 10 | **ELK-13** | Slutlig integrerad acceptans i vanlig CI, utan revision som sidoprojekt | Samtliga relevanta användarscenarier testade |
+| 1 | **ELK-06A** | **Koordinatfri strikt dokumentimport:** CSV/XLSX/ODS utan X/Y i schema 1.0/1.3 | Bygg på befintlig parser och atomär validering; riktigt testade importer; historiska filer fortsätter fungera |
+| 2 | **ELK-06B** | **Automatisk första ELK-layout** efter accepterad strikt eller flexibel dokumentimport, utan andra klick | 06A merged; återanvänd befintlig Worker och stale-guards; inte för projekfil-Open eller manuellt byggd topologi |
+| 3 | **ELK-06C** | **Koordinatfri dokumentexport, mallar och CSV-exempel** utan falskt löfte om exakt projektroundtrip | 06B merged; särskilj dokumenterbara nätverksfakta från intern X/Y och behåll `.yadilab`-backup |
+| 4 | **ELK-04 + ELK-05** | Korrekt edit/drag/livscykel: ingen falsk eller föråldrad kabelgeometri | Bevisa ett konkret användarfall som saknar detta; annars KEEP |
+| 5 | **ELK-09** | Tangentbord, fokus och begriplig tillgänglig layoutkontroll | Befintliga Builder-flöden granskas *inom samma kod-PR* |
+| 6 | **ELK-02 + ELK-03** | Adapter som klarar specificerade felaktiga indata och grafklasser | Lägg bara till kod när ett negativt test visar ett faktiskt gap |
+| 7 | **ELK-08** | Responsiv interaktion i stora verkliga vyer | Mät reproducerbart aktuellt flaskhalsfall, åtgärda samma PR |
+| 8 | **ELK-07** | Tydlig och korrekt Save/Open-upplevelse för tillfälliga kabelbanor | Behåll nuvarande projektformat; ändra inte schema utan nytt mandat |
+| 9 | **ELK-10** | Verifierat självständigt offlinepaket och korrekt licensdistribution | Ingen spontan biblioteksversionhöjning |
+| 10 | **ELK-11** | Riktig importerad testkorpus + fungerande slutanvändarflöde | Endast källor med uttryckligt tillstånd och tillåten anonymisering |
+| 11 | **ELK-12** | Reproducerbar release, rollback och kort användarmanual | Alla funktionella beroenden gröna |
+| 12 | **ELK-13** | Slutlig integrerad acceptans i vanlig CI, utan revision som sidoprojekt | Samtliga relevanta användarscenarier testade |
 
 **ELK-00 och ELK-01 är inte fristående arbetsfaser**: de representerar snabb HEAD-kontroll och oberoende testfacit som bakas in i varje riktig kod-PR. Lägg aldrig upp egna forsknings-/test-PR:er för dem.
 
@@ -154,27 +167,92 @@ Följande är **arbetskort**, inte order om fjorton PR:er. Identifikatorerna ELK
 
 **Test:** riktiga HTTP + Chromium-scenarier med fördröjd Worker, Abort, Cancel, Apply, Save/Open och Byte-Of-Project jämförelse. Inga mockresultat som bevis för verklig Save/Open. **Implementera bara en verifierad återstående lucka**; annars KEEP.
 
-### ELK-06 – Prioritet 1: automatisk initial ELK-layout efter godkänd import
+### ELK-06 – Dokumentkoordinater avskaffas: tre sekventiella produktionsetapper
 
-**Användarnytta och bindande UX-krav:** dokumentationstabeller för CSV/XLSX/ODS förutsätts **inte innehålla X/Y-koordinater**. När användaren uttryckligen godkänt en **fullständig och giltig** import måste appen **automatiskt beräkna och visa första layouten med befintlig ELK-Worker**. Användaren ska **inte** behöva klicka på en ytterligare ELK-knapp, godkänna layoutens koordinater separat eller välja en layoutmetod för att få ett användbart diagram. Detta är obligatoriskt implementationsarbete om det inte redan fungerar. **Manuell Preview/Apply/Cancel finns kvar för senare omorganisering**, inte för nödvändig initial placering.
+**Mål:** En konsultrapport eller dokumentationstabell är nätverksdata, inte en ritning. CSV/XLSX/ODS **utan** nodkolumnerna X/Y ska accepteras när alla nödvändiga nätverksfakta är giltiga. Appen skapar först intern, giltig temporär geometri och använder sedan **ELK automatiskt** för den första synliga layouten efter godkänd import. Senare om-layout av en manuellt ritad eller redan placerad topologi är valfri. Genererade dokumentationstabeller och mallar blir också koordinatfria. **Det kanoniska projektformatets X/Y bevaras** för Save/Open. Inga nya import- eller layoutmotorer.
 
-**Filer:** `network_core/csv_import.py` och `network_core/spreadsheet_schema.py` för den äldre strikta importeraren; kontrollera motsvarande gränssnitt i `network_core/xlsx_import.py` och `network_core/ods_import.py` (ändra bara vid faktiskt behov). `web/features/projects/import-review.js` för lyckad flexibel `applyCandidate`, `web/app.js` för båda importvägarnas atomära projektbyte, befintlig `computeElkPreview`/Worker, revisionskontroller, status och rendering; `web/index.html` vid behov. Tester: `tests/test_csv_import.py`, `tests/test_xlsx_import.py`, `tests/test_ods_import.py`, `tests/browser_elk_layout.py` och ett verkligt browser-importtest. **Ändra inte** `network_core/import_plan.py::node_layout()`, `network_core/import_evidence.py`, befintliga schema-1.4-kvitton eller källbytes. Återanvänd befintlig adapter och tillståndsägare.
+**Etappindelningen nedan är konkreta kodleveranser, inte forskningsuppdrag.** Utför A → B → C i en PR åt gången. Gör inte en forskning-/rapport-/test-only-PR mellan dem. Slå bara ihop koduppgifter om den sammanhängande diffen fortfarande är liten och samtliga tester redan kan bevisa leveransen. Varje kod-PR ska innehålla negativa tester och full CI-verifiering på exakt HEAD.
 
-**Exakt implementationsordning:**
-1. **Ta bort källdokumentkravet på X/Y i den äldre strikta fyrtabellsimporten**, utan att göra fysiska nätverksfakta valfria. Interna preliminära X/Y måste härledas deterministiskt **före** befintlig `validate_project()` för att uppfylla det interna kanoniska schemat; gamla koordinatbärande indata får inte tyst korrumperas. Testa riktig CSV/XLSX/ODS utan X/Y. Ingen ny importerare eller separat modell.
-2. Återanvänd båda befintliga giltiga importvägarna: strikt `web/app.js::importProjects` efter validering och bekräftelse samt flexibel `web/features/projects/import-review.js::applyCandidate` endast när `canApply` är sann, kandidatens fingerprint matchar och användaren godkänt projektbytet. **Ingen ELK-start** under källinspektion, mapping, avvisad/avbruten import eller när en kandidat saknar giltigt nätverk.
-3. När respektive importvägs atomära **projektbyte faktiskt lyckats** och den importerade arbetsytan skapats, starta **automatiskt** layoutberäkningen från en **gemensam efter-import-hook** med befintlig lokal ELK-Worker; inget extra användarklick och ingen ny HTTP-import. Visa tydlig beräkningsstatus. Lägg inte till en parallell import-/layoutmotor.
-4. Beräkna bara **X/Y och visuella edge-sektioner** för de faktiskt importerade noderna, portarna och de explicit deklarerade kablarna. Använd befintlig tvåpass-ELK och `MULTI_EDGE`/`FIXED_POS`; byt inte node-/port-/link-ID, nätverkskonfiguration eller importkvitto.
-5. Stale-skydd: bind beräkningen till importens `workspaceRevision`, `editRevision` och projektsnapshot. New/Open/ny import/manuell redigering under Worker måste ogiltigförklara resultatet. **Ingen sen automatisk layout** får skriva över en senare användarändring.
-6. När layouten validerats ska dess X/Y **tillämpas automatiskt i den nyimporterade arbetsytan**, och de giltiga ELK-kabelbanorna visas direkt. Ingen andra Apply-knapp. Ingen autosave till disk: användaren väljer fortfarande separat **Spara**. Hantera redan etablerad dirty-status och historisk importproveniens korrekt: källkvitto och replay ändras aldrig; en layoutbaserad avvikelse från baslinjen får inte presenteras som ändrat källdokument.
-7. Om ELK misslyckas, avbryts eller överskrider resursgränsen: **visa ett tydligt fel/otillgänglig layout**, låt den redan godkända importens existerande deterministiska nodplacering ligga kvar och bevara originalfakta. Påstå inte att ELK-layout lyckades, fabricera inga kablar och skriv inget till disk. Gör inte en tyst andra layoutmotor som framstår som ELK.
-8. Vid Open av ett redan sparat projekt med befintliga X/Y ska ingen automatisk nyplacering ske; användarens sparade layout bevaras. En senare frivillig om-layout använder fortfarande befintligt manuellt Preview/Apply/Cancel.
+#### ELK-06A – Ta bort obligatoriska X/Y från strikt CSV/XLSX/ODS-inläsning
 
-**Positiva tester:** verklig *strikt* CSV/XLSX/ODS-import med **inga X/Y-kolumner** samt flexibel källmappning i befintligt HTTP/Chromium-gränssnitt; importacceptans → Worker startar själv → direkt färdigt diagram utan extra klick → exakt bibehållen nod-/port-/länkidentitet → Save → Open med samma godkända interna X/Y. Separata regressioner för redan stödda historiska koordinatbärande CSV-/arbetsboksfiler, men **aldrig** ett nytt krav på koordinater i källdokument. Kontrollera att den synliga och klickbara kabelns ändpunkter möter rätt portcentrum. Bekräfta att historiska importkvitton behåller samma bytes/hash.
+**Förväntat användarbeteende:** \`Devices.csv\` och \`Devices\`-blad får ha **exakt** \`id,label,kind,zoneId\` i valfri kolumnordning. Kolumnerna \`x,y\` får **inte krävas**. Alla övriga explicita kolumner, port-ID:n, länkar, VLAN, MAC, IP och routes valideras lika strikt som tidigare. Ett gammalt format med exakt \`id,label,kind,x,y,zoneId\` får fortsatt accepteras **enbart för bakåtkompatibilitet**, inte för att driva framtida layout. \`x\` utan \`y\` eller \`y\` utan \`x\` är ogiltigt. Inget gissande från kolumnpositioner, IP, nodnamn eller andra källfält.
 
-**Negativa tester:** frånvarande X/Y ska **inte** blockera en i övrigt giltig dokumentation; ofullständiga/ogiltiga länkar, avvisad eller avbruten import, `canApply=false`, stale fingerprint, Import→New/Open/annan import under Worker, Worker-fel, timeout, stora/ogiltiga koordinater, historisk schema-1.4-proveniens och öppning av redan sparat projekt. Ingen sen Worker får flytta ett nytt eller manuellt modifierat projekt. Inget projekt får autosparas och inget dokumenterat nätverksfält ändras av layouten.
+**Filer att ändra vid behov:** \`network_core/csv_import.py\`, \`network_core/spreadsheet_schema.py\`, \`network_core/xlsx_import.py\`, \`network_core/ods_import.py\`. Tydliga positiva och negativa tester i \`tests/test_csv_import.py\`, \`tests/test_xlsx_import.py\`, \`tests/test_ods_import.py\`, \`tests/test_web_import_graph.py\` och befintliga riktiga ZIP-fixturer. Ingen ny importerare och ingen ny kanonisk schemaVersion.
 
-**DoD:** både strikt CSV/XLSX/ODS och flexibel dokumentationsimport stöder **Import (utan X/Y-kolumner) → Validate → Accept → automatic ELK layout displayed → Save → Open** i riktig Chromium utan extra layoutklick eller koordinatfält i källdokumentet. Felvägar ger ärlig status utan dataförlust. Den manuella valbara layoutkontrollen för befintliga projekt fungerar fortsatt och regressionssviten är grön.
+**Konstruktion och ordning:**
+1. Dela *inputheader-kontraktet* i exakt tillåtna koordinatfria och äldre parvisa koordinatbärande \`Devices\`-header-varianter. Behåll strikta headerkontroller för alla övriga blad. Avvisa extra/dubblerade/halva fält, även när kolumnerna är omordnade. Verifiera data med de faktiska validerade kolumnnamnen, inte genom att anta en given bredd.
+2. \`csv_import._read_table()\` måste kunna välja tillåten \`Devices.csv\`-variant från den faktiska headern. \`spreadsheet_schema.columns_for_sheets()\` räcker inte ensamt, eftersom XLSX-/ODS-parserna begränsar kolumnbredd och typkontroller innan headern tolkas: lös det med en **avgränsad header-/variantavläsning i samma parser**, fortsatt begränsad av befintliga maxstorlekar. Inga heuristiska nya kolumner, inga förbikopplade ZIP/XML-skydd, inga felaktiga celladresser.
+3. För **koordinatfria** dokument bygger den befintliga importkedjan preliminära **interna** X/Y deterministiskt, i samma tillåtna koordinatintervall och med unik nod-ID-sortering, *före* \`validate_project()\`. Det är en modellbootstrap/felreserv – **inte en konkurrerande layoutmotor eller nätverksfakta**. Återanvänd redan säker befintlig pure-placement-logik om beroenden tillåter utan cirkulär import; annars minsta isolerade, fullt testade helper med identisk matematisk regel. **Ändra aldrig \`import_plan.node_layout()\` eller \`import_evidence.py\`**, eftersom deras historiska fingerprint och replay är skyddade.
+4. För äldre kompletta X/Y-filer bevaras tidigare *inputvalidering och formatkompatibilitet*. När ELK-06B är integrerad ska deras första automatiska visuella layout komma från ELK, inte från dokumentkoordinater. Under A får gamla importtester inte försvagas, ändra deras innebörd i tysthet eller låta felaktiga koordinater maskera nätverksfel.
+5. Versionsstyrda XLSX/ODS med \`Project\` och schema 1.3 måste också fungera utan X/Y. \`spreadsheet_schema.import_spreadsheet_tables()\` får inte återskapa ett 6-kolumners \`Devices.csv\` ur en koordinatfri, läst tabell eller förlora VLAN/MAC/routes. De övriga fältens typ- och proveniensfel ska fortfarande peka på rätt källcell.
+6. Rätta fel-/hjälptexter i samma kod-PR: "lägg till X/Y" är inte längre ett legitimt importfel. Förbli exakt och fail-closed för saknade explicita fysiska endpoints, otillåtna datatyper eller andra nätverksfakta.
+
+**Positiva tester:** riktiga CSV, riktig OOXML-XLSX och riktig ODF-ODS utan X/Y; schema 1.0 **och** 1.3; omordnade headers; flera och 2 000 noder; ren Layer 2 utan krav på IP; explicit port- och kabelregister; ID:n, enabled, VLAN, MAC, IPv4, routes bevarade; validerat kanoniskt projekt med genererade interna ändliga X/Y.
+
+**Negativa tester:** enbart X eller Y; extra/dubblerad kolumn; ogiltig text-/numerisk celltyp; dolda eller fusionerade celler; korrupt ZIP; fel tabellnamn; för många noder; falska kabeländar, dubblerade ID:n, konfliktande VLAN/routes; varken arbetsyta eller disk får bytas på fel. **Regressionsgrind:** gamla kompletta X/Y-filer fungerar fortfarande med deras befintliga strikt validerade kontrakt. Schema 1.4:s historiska kvitton och flexibla importbehållare är oförändrade.
+
+**Klart endast när:** i riktig HTTP/Chromium kan användaren godkänna koordinatfri strikt CSV/XLSX/ODS och se en giltig **temporär intern** placering, utan att systemet frågar efter X/Y; alla obligatoriska Python/JS-/browserregressioner PASS. **A ensam är inte den slutliga ELK-funktionen** och får inte felaktigt markeras som sådan.
+
+#### ELK-06B – Kör ELK automatiskt efter all godkänd dokumentationsimport
+
+**Förväntat användarbeteende:** efter att användaren **uttryckligen godkänt en helt giltig** koordinatfri dokumentimport ska **ELK automatiskt beräkna och visa den första layouten utan extra klick eller andra Apply**. Det gäller både äldre strikt import och flexibel källmappning. Befintligt \`Föreslå ELK-layout\` och Preview/Apply/Cancel för en **redan skapad/manuellt ritad** topologi fortsätter fungera, men är inte en förutsättning för import.
+
+**Filer:** \`web/app.js\` (befintliga \`importProjects()\`, \`resetProject()\`, ELK-/Workspace-state), \`web/features/projects/import-review.js\` (\`applyCandidate()\` och minimal lyckad-Apply-callback), \`web/features/layout/elk.js\` **endast vid bevisad brist**, befintlig UI-status; riktiga browsertester för båda importerarna. Ingen ny state manager eller Worker.
+
+**Konstruktionskontrakt:**
+1. Starta Worker bara **efter** godkänd och atomärt tillämpad **dokumentimport**. I strikt import måste \`importKind(files) !== 'project'\` gälla; att öppna/sätta ett gammalt \`.yadilab\`-/JSON-projekt är **inte** ny dokumentimport och får aldrig nollställa dess sparade X/Y. I flexibel import krävs \`candidate.canApply\`, godkänt ersättningsbeslut, exakt färskt fingerprint/projekt och slutförd \`replaceProject()\`. Ingen start under enbart preview, källa-inspektion, avbrutet urval eller blockerad candidate.
+2. Återanvänd en **enda** post-import ELK-hjälpfunktion i \`web/app.js\`, triggas av båda framgångsvägarna. Befintlig tvåpass-Worker, \`MULTI_EDGE\`, \`FIXED_POS\`, endpoint-/overlap-/koordinatvalidering och timeouts måste behållas. Inget extra \`layout-preview\`-klick, inget ytterligare användar-Apply, ingen import HTTP-dubblett.
+3. Vid start fånga workspace-ID/revision, edit-revision, filnamn och **exakt projektsnapshot**. Worker-svar med ändrad kontext, New/Open, annan Import, Builder-redigering eller manuell dragning får **aldrig** skriva över nyare data. Bygg inte två separata stale-guard-system.
+4. Vid verifierad workerframgång tillämpas **endast X/Y på befintliga nod-ID:n**, plus giltiga, tillfälliga kabelbanor i presentationen. Jämför projektion med alla kanoniska fält utom X/Y samt objekt-ID-/ändpunktsuppsättning före/efter; ingen fysisk kabel eller port får uppstå eller försvinna. Återanvänd dirtiness, rendering och status i den befintliga ägaren.
+5. **Ingen autosave.** Under pågående Worker får Save inte smyga förbi revisionsskyddet eller skriva ett senare ogiltigt svar. Efter lyckad layout sker separat explicit Save; efter ELK-fel visas ett ärligt, märkbart misslyckande och importens **interna deterministiska** reservgeometri ligger kvar. Om Save ska tillåtas efter fel ska användaren tydligt se att den automatiska ELK-layouten **inte** har lyckats. Skapa inte en andra visuell motor för att dölja felet.
+6. För schema 1.4 förblir originalsource-bytes, SHA-256, selected units, fingerprint, fieldOrigins, baseline-replay och \`importEvidence\` oförändrade. UI får redovisa \`CHANGED_SINCE_IMPORT\` eftersom X/Y i projektets historiska baslinje skiljer sig; detta är **inte** ett påstående att det externa källdokumentet förändrats.
+7. För redan öppnat/sparat projekt med X/Y eller **manuellt byggd topologi** körs aldrig initial ELK av sig själv. En senare manuell omplacering sker bara genom existerande Preview → Apply/Cancel och fortsatt separat Save.
+
+**Positiva browsergrindar:** alla tre strikta koordinatfria dokumenttyper och flexibel accepterad källimport; direkt Worker-start efter import-Apply; synliga portexakta kablar utan extra klick; exakt oförändrad nätverkssemantik; Save→Open med samma X/Y; inga nätverkspaket eller routeutfall påverkas av nodpositionen. Kontrollera faktisk projektfil på disk efter explicit Save.
+
+**Negativa browsergrindar:** importfel/avbryt/ej \`canApply\`, gamla Worker-resultat efter Import→New, Import→Open, Import→Import och manuell dragning, dubbla klick, Worker-throw/timeout/abort, stora grafer och ogiltigt ELK-svar, Save medan Worker körs, öppna tidigare sparad layout utan ändring. Kontrollera att ingen autosave eller stum nätverksmutation inträffar. Riktiga lokala Chromium/HTTP-fall, inte en stub som utges för end-to-end.
+
+**Klart endast när:** **Import → Validate → Accept → auto ELK displayed → explicit Save → Open** passerar på alla stödda dokumentvägar och befintligt manuellt Preview/Apply/Cancel bibehålls.
+
+#### ELK-06C – Gör dokumentexport och dokumentmallar koordinatfria
+
+**Varför nödvändigt:** i dag skriver \`network_core/spreadsheet_export.py\` nod-X/Y till \`Devices\`-bladet, \`network_core/spreadsheet_templates.py\` har \`SAMPLE\` med dessa värden, och \`examples/csv/Devices.csv\` visar samma äldre kolumner. Den existerande exporteraren beskriver XLSX/ODS som **lossless canonical project interchange** och kräver \`restored == canonical\`. Den garantin kan **inte matematiskt förenas** med dokumentationsfiler där X/Y inte finns. Detta är en verifierad kontraktskonflikt, inte ett tillstånd att ignorera dataförlust.
+
+**Förväntat användarbeteende:** nygenererade CSV-exempel, nedladdningsbara XLSX-/ODS-mallar och exporterade **nätverksdokument** innehåller **inte** X/Y-kolumner. **Projektbackup** via kanonisk \`.yadilab\`-/JSON Save/Export behåller däremot X/Y exakt. UI och hjälptext anger tydligt att nätverksdokumentexporten bevarar stödda nätverksfakta men **inte nodplaceringen**; tidigare sparat projekt förblir enda garanterade layoutbackup.
+
+**Filer:** \`network_core/spreadsheet_export.py\`, \`network_core/spreadsheet_templates.py\`, \`network_core/spreadsheet_schema.py\` vid behov, \`examples/csv/Devices.csv\`, relevanta riktiga export-/template-fixturer och deras tester (\`tests/test_spreadsheet_export.py\`, \`tests/test_spreadsheet_templates.py\` om befintliga; använd faktiskt hittade filnamn). Dokumentera målkontraktet efter att koden passerat i \`README.md\`, \`docs/XLSX_IMPORT.md\`, \`docs/ODS_IMPORT.md\`, \`docs/SPREADSHEET_V13.md\`. Ändra inte \`network_core/model.py\` eller det kanoniska projektformatet.
+
+**Exakt kodarbete:**
+1. Byt den **externa** \`Devices\`-rubriken till \`id,label,kind,zoneId\` i nya mallar och nätverksdokumentexporter. Ändra radernas bredd och XLSX/ODS-skrivarnas fälttypklassificering; skriv inte ut X/Y som text, dolda kolumner, extra blad eller konstruerade nätverksfakta. Behåll alla befintliga andra stödda faktakolumner, inkl. schema 1.3-utökningar.
+2. Byt \`export_workbook()\`-verifiering till **exakt jämförelse av stödda dokumenterbara nätverksfält**, med en ren, avgränsad projektion som först validerar båda projekten och tar bort **endast** X/Y från noder vid jämförelsen. **Använd inte \`model.canonical_network_view()\` oförändrad**: den behåller X/Y. Släpp inte igenom fältförlust, ändrad identitet, portstatus, VLAN/MAC, IPv4, statiska routes, fysiska endpoints eller ändrad ordning/struktur som produktens dokumentationskontrakt skyddar. Om något annat fält inte kan representeras: behåll befintlig fail-closed-avvisning.
+3. Säkerställ att XLSX-/ODS-exportens nya koordinatfria bytes kan återimporteras via **samma riktiga importerare** från ELK-06A och att en godkänd import sedan får första ELK-layouten genom ELK-06B, utan koordinatbegäran. Kontrollera att den nya dokumentfilen faktiskt saknar X/Y-rubriker vid direkt filinspektion.
+4. Bevara separat kanonisk projekt-Export/Save/Open där X/Y bevaras. Ändra inte \`schemaVersion\` och släpp inte omärkligt schema 1.4-\`importEvidence\` som dokumentexport; den nuvarande schema-begränsningen (1.0/1.3) och uttryckliga avvisningen måste dokumenteras om den kvarstår.
+5. Uppdatera mallar och exempel som användare förväntas kopiera. Historiska koordinatbärande källfiler fortsätter **läsas** enligt 06A-kompatibiliteten men nygenererade nätverksdokument **skriver inte ut** X/Y. Dokumentation ska efter kodmerge inte längre säga att externa X/Y krävs.
+6. Ändra exportens produkttext från "förlustfri projektbackup i kalkylblad" till korrekt **"nätverksdokumentation – layout sparas endast i projektfil"** när kontraktet faktiskt är verifierat. Gör ingen ny exportmotor.
+
+**Positiva/negativa tester:** faktiska XLSX-/ODS-ZIP-exporter och nytt CSV-exempel utan X/Y; exakt nätverksprojektion efter riktig import; samma ID:n, noder/portar/länkar/VLAN/routes; bevarad kanonisk projektbackup inklusive X/Y; avvisning av irreducerbar fältförlust, felaktig/okänd schema, ogiltiga port-/kabelreferenser och osäkra/korrupta filer; kompatibilitet med äldre koordinatbärande arbetsböcker. Inget semantiskt försvagat testsystem.
+
+**Klart endast när:** inget nyproducerat externt nätverksdokument kräver eller innehåller X/Y; all stödd nätverksinformation återimporteras utan förlust, de kanoniska projektfilerna bevarar den manuella diagramlayouten, och browser-export/återimport/Save/Open + full CI är gröna.
+
+#### ELK-06: sammanhängande slutacceptans innan nästa arbetskort
+
+Samtliga **A, B och C måste vara MERGED med PASS** innan ELK-06 som helhet kan märkas ACCEPTED. Ingen av etapperna får döljas bakom fraser som "fungerar redan" utan exakta negativa och positiva testfall.
+
+| Användarhandling | Obligatoriskt utfall |
+|---|---|
+| Strikt CSV \`Devices.csv\` utan X/Y | Accepterad med explicit komplett topologi, intern preliminär plats, sedan automatisk ELK |
+| Strikt XLSX/ODS (schema 1.0 + 1.3) utan X/Y | Samma utfall, samma nätverksfakta och korrekt bevarad källcellsfelposition |
+| Flexibel källmappning med historiskt kvitto | Samma automatiska ELK utan att skriva om \`node_layout()\` eller importEvidence |
+| Öppna kanonisk projektfil med sparade X/Y | Exakta manuella X/Y bevaras, ingen automatisk re-layout |
+| Rita topologi manuellt och tryck inte på ELK | Ingen automatisk omplacering |
+| Begär manuell ELK för existerande diagram | Preview → Apply/Cancel, separat Save |
+| Exportera nätverksdokument och mallar | Inga X/Y-kolumner, exakta stödda nätverksfakta efter återimport |
+| Spara projektfil och öppna igen | X/Y och all nätverksdata bevaras, inga auto-genererade kablar |
+| Arbetsbok med ogiltig länk, VLAN eller felaktig källcell | Avvisa källtrogen import, ingen auto-ELK, ingen autosave |
+| Worker misslyckas, timeout eller stale svar | Synligt fel; ingen vilseledande ELK-PASS, inga sena koordinatmutationer |
+
+**STOPP och rollback:** om ett steg försvagar redan giltig import, förändrar schema 1.4-evidens, drar upp falska kablar, ändrar verklig nätverkssemantik eller döljer kända källfel: stoppa just den PR:n och återställ dess ändring. Lägg aldrig till en parallell importerare, tyst lagningsheuristik eller ny forskningsgren som "lösning". Alla ändringar måste fungera även i befintlig offline-runtime.
+
 
 ### ELK-07 – Korrekta användarlöften om kabelbanor efter Save/Open
 
@@ -220,7 +298,7 @@ Följande är **arbetskort**, inte order om fjorton PR:er. Identifikatorerna ELK
 
 **Mål:** externa dokument som används av godkända testpersoner ska gå igenom samma riktiga funktion som användarna använder. Inga parallella testimportörer och inga verkliga företagsdokument som publiceras utan tillstånd.
 
-**Testflöde:** filbytes → faktisk inspektion → exakt cellmapping → `canApply` → användarens import-Apply → historiskt kvitto → **automatisk ELK-layout utan extra klick** → Save/Open → separat källverifiering och simulering mot samma faktiska länkar.
+**Testflöde:** koordinatfri CSV/XLSX/ODS (strikt/flexibel) → verkliga filbytes → inspektion/strikt validering → explicit importgodkännande → **automatisk ELK-layout utan extra klick** → Save/Open → koordinatfri dokumentexport och faktisk återimport → separat källverifiering/simulering. Flexibel import med kvitto måste dessutom bevara fingerprint och replay.
 
 **Krav:** minst ett tillåtet anonymiserat exemplar per stödd formatfamilj när sådant finns; annars skriv `NOT_AVAILABLE` och fortsätt med de tillåtna syntetiska browserfixturerna. **Skapa ingen forskningsgren för att leta efter datakällor.** Lägg till den minsta regressionen i samma kod-PR som den felaktiga import-/layoutgränsen rättas.
 
@@ -272,15 +350,19 @@ Följande är **arbetskort**, inte order om fjorton PR:er. Identifikatorerna ELK
 
 | Prioritet | Börja implementera | Leverera i PR | Sluta inte med |
 |---|---|---|---|
-| **P1** | ELK-06: **ta bort obligatoriska X/Y-fält från gammal strikt import och kör automatisk initial ELK-layout efter accepterad import** (ingen extra knapp) | Strikt CSV/XLSX/ODS **och** flexibel browser-import utan X/Y → automatisk ELK-rendering → Save/Open | Ytterligare layoutklick, importforskningsrapport eller importer nummer två |
-| **P2** | ELK-09: tangentbordsfokus och manövrering för existerande layoutkontroller | Riktig tangentbordsfunktion med negativa Chromium-tester | Tillgänglighetschecklista utan kod |
-| **P3** | ELK-04/05 eller ELK-08: den **först reproducerade** kvarvarande redigerings-/interaktionsbristen | Minimal fix med mätning och regression | Ny ruttmotor, CSS-/SVG-omskrivning utan mätbart problem |
+| **P1** | **ELK-06A:** koordinatfri strikt CSV/XLSX/ODS-import (schema 1.0/1.3) | Verklig produktionsparser + positiva/negativa tester + Chromium-import utan X/Y | Extra forskningsgren eller nytt dokumentkoordinatkrav |
+| **P2** | **ELK-06B:** automatisk ELK efter godkänd strikt/flexibel dokumentimport | Befintlig Worker i två riktiga UI-flöden + Save/Open + stale-race-tester | Andra layoutklick, auto-Save eller separat layoutmotor |
+| **P3** | **ELK-06C:** koordinatfri nätverksdokumentexport och mallar | Riktig XLSX/ODS/CSV-utdata utan X/Y, strikt nätverksrundtur; projektbackuper fortsatt med X/Y | Att kalla koordinatfri dokumentexport en lossless projektbackup |
+| **P4** | ELK-09: tangentbord, fokus och manövrering | Funktionell kod och riktiga negativa Chromium-tester | Tillgänglighetschecklista utan kod |
+| **P5** | ELK-04/05 eller ELK-08: först reproducerad kvarvarande interaktionsbrist | Minimal produktionsfix med mätning och regression | Andra motorer eller breda omskrivningar |
 
-**Om P1 redan är uppfylld:** Codex ska **inte** skapa en redundant knapp eller PR. Redovisa med fil/rad och browserbevis, och gå direkt till P2 **i samma session**. **Om P2 är uppfylld:** gå direkt till P3. Denna rutin förhindrar att projektet fylls med ”forskningsleveranser”.
+**Arbetsordning är obligatorisk:** börja med 06A, sedan 06B, sedan 06C. Varje kod-PR ska innehålla funktion och relevanta tester, inte enbart dokumentation. Om en etapp redan är bevisat implementerad ska den hoppas över och nästa kodetapp väljas. Ingen parallell forskningsgren, inte 14 PR:er för 14 rubriker.
 
-## 8. Codex-direktiv som ska användas ordagrant för nästa uppdrag
+## 8. Codex-direktiv – första verkliga kodleveransen
 
-> **Uppgift:** Implementera nästa konkreta produktionsförbättring i `docs/ELK_IMPLEMENTATION_PLAN.md`, börja vid P1 i avsnitt 7. Detta är en **koduppgift**, inte en forsknings-, revisions- eller dokumentationsuppgift. Kontrollera aktuell `main`, CI, en eventuell redan öppen kod-PR och om P1 redan finns. Om P1 saknas: **eliminera först kravet på X/Y-kolumner i äldre strikt CSV/XLSX/ODS** via befintliga `network_core/csv_import.py` och `network_core/spreadsheet_schema.py` samt relevanta importtester, med bevarad kompatibilitet för äldre källfiler. Integrera sedan båda befintliga importvägarna med minsta nödvändiga ändring i `web/features/projects/import-review.js`, `web/app.js` och riktiga browser-tester så att **varje uttryckligt accepterad, helt giltig dokumentationsimport utan koordinatkolumner automatiskt får sin första ELK-layout**, utan ett andra knapptryck eller separat layout-Apply. Återanvänd befintlig tvåpass-Worker, validera resultatet och tillämpa X/Y i den aktuella arbetsytan under strikt stale-/revisionskontroll. **Ingen autosave** och ingen ändring av `network_core/import_plan.py::node_layout()` eller historiskt källkvitto. Efter Open av ett sparat projekt ska dess X/Y bevaras, medan frivillig manuell Preview/Apply/Cancel används för senare omplacering. Worker-fel ska visas tydligt och importens existerande deterministiska initialplacering bevaras. Om P1 redan finns: gå **direkt till P2 och implementera fungerande tangentbordsflöde**. Bevara all befintlig kod som fungerar. Inga parallella grenar, ingen ny layout-/importmotor, inga fristående forsknings-PR:er eller statusrapporter som ersätter kod. Skriv produktionskod och relevanta positiva/negativa tester i samma lilla PR; kör befintliga tester. Skriv exakt PR-länk, HEAD, kodändringar och verifiering. Merge endast vid GitHubs normala gröna grind på exakt HEAD och verifiera `main`. Om CI ännu körs, avsluta utan passiv väntan och lämna PR öppen.
+> **Uppgift (ELK-06A):** Detta är ett **implementationsuppdrag**, inte forskning. Läs \`AGENTS.md\`, \`docs/MASTERPROMPT.md\` och ELK-06A/B/C i \`docs/ELK_IMPLEMENTATION_PLAN.md\`. Kontrollera aktuell \`main\`, befintliga öppna PR:er och exakt CI en gång. **Ändra produktionskod nu** så att den äldre strikta CSV-/XLSX-/ODS-importen (både schema 1.0 och 1.3) fungerar med helt giltiga nätverksdokument vars \`Devices\`-tabell endast innehåller \`id,label,kind,zoneId\` (och alltså **inga X/Y-kolumner**). Gör ett strikt val mellan exakt den nya headern och den tidigare kompletta 6-kolumners-varianten för bakåtkompatibilitet; avvisa en ensam X/Y, okända och dubblerade fält. Härled temporär intern geometri deterministiskt före \`validate_project()\`, utan att skapa en andra layoutmotor, något nätverksfaktum, någon fysisk kabel eller en ny schemaVersion. Bevara verklig XLSX-/ODS-typvalidering, ZIP/XML-skydd, explicit VLAN/MAC/IP/routes, kanoniska ID:n och alla negativa fel. **Ändra inte \`import_plan.node_layout()\`, \`import_evidence.py\` eller historiska importkvitton.** Skriv och kör riktiga positiva/negativa CSV-, OOXML- och ODF-tester (schema 1.0 och 1.3), samt relevant HTTP/Chromium-import/Save/Open. En enda liten PR för verklig kod och dess tester, ingen research- eller test-only-PR. Merge endast när samtliga obligatoriska kontroller PASS på exakt HEAD, annars lämna PR öppen med konkret blockerare. **Fortsätt därefter med ELK-06B**, inte med en rapport.
+
+**Efter 06A:** nästa Codex-uppdrag ska vara **06B (automatisk första ELK-layout)**; därefter **06C (koordinatfri dokumentexport/mallar)**. 06A får inte markeras som färdig ELK-importkedja förrän även B och C är verifierade. **Ingen ny forskningsfas mellan etapperna.**
 
 ## 9. Spårbarhet och ändringar av planen
 

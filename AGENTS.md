@@ -10,6 +10,8 @@ För allt fortsatt arbete med ELK/layout/diagram gäller den [kodstyrda ELK-impl
 
 **Källdokumentkontrakt:** CSV/XLSX/ODS och flexibelt mappade nätverksdokument får **aldrig kräva nodkolumnerna X/Y**. Rad/kolumn/celladress i källfilen är en källhänvisning, **inte nodgeometri**. Interna X/Y i projektfilen genereras av import-/layoutsystemet. **Verifierad lucka:** äldre strikt fyrtabellsimport i `network_core/csv_import.py` och `network_core/spreadsheet_schema.py` kräver ännu X/Y; detta ska korrigeras i ELK-06 och får inte beskrivas som redan löst. Bevara äldre projektfiler och historiska kvitton.
 
+**Kodetapperna går i ordningen ELK-06A → 06B → 06C:** först strikt CSV/XLSX/ODS som accepterar dokument **utan X/Y** (schema 1.0/1.3), därefter **automatisk ELK** för båda importerarna och till sist **koordinatfri dokumentexport/mallar**. Nuvarande `spreadsheet_export.py` och `spreadsheet_templates.py` skriver fortfarande X/Y och kräver egen kodkorrigering i 06C. Projektfiler `.yadilab`/JSON får fortsatt spara intern X/Y exakt. Detta är reella kod-PR:er, aldrig fristående forskning.
+
 **Nästa prioritet:** **automatisk första ELK-layout direkt efter uttryckligen godkänd och validerad dokumentationsimport utan källkoordinater**. Ingen ytterligare knapp, layoutgodkännande eller autosave. Beräkna X/Y via befintlig ELK-Worker och tillämpa bara för giltig, oförändrad arbetsyta; bevara importkvitton och nätverksfakta. En **senare om-layout av befintligt diagram** är däremot frivillig via manuell Preview/Apply/Cancel. Om initialflödet redan fungerar: nästa konkreta kodkort. Behåll befintlig Worker/ELK/SVG och obligatoriska CI-grindar.
 
 ## Permanent Masterprompt
