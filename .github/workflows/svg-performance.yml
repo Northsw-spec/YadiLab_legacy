@@ -1,0 +1,45 @@
+name: SVG performance and geometry acceptance
+on:
+  push:
+    branches:
+      - perf/svg-indexed-render-2026-11-22
+  pull_request:
+    paths:
+      - web/canvas.js
+      - tests/browser_svg_performance.py
+permissions:
+  contents: read
+jobs:
+  svg-performance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prepare exact original main canvas as differential baseline
+        run: |
+          git show fda26052be5ba5376e64793cb780079f7e841718:web/canvas.js > web/canvas-baseline.mjs
+          sha256sum web/canvas-baseline.mjs
+      - name: Syntax and standard network model tests
+        run: |
+          npm run check
+      - name: Install real Chromium
+        run: |
+          python3 -m pip install playwright==1.57.0
+          python3 -m playwright install --with-deps chromium
+      - name: Compare real Chromium SVG geometry, runtime and interactions
+        run: python3 tests/browser_svg_performance.py
+      - name: Preserve measurements on success or failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: svg-performance-comparison
+          path: research/svg-perf-results/benchmark.json
+          if-no-files-found: warn
