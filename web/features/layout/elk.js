@@ -139,7 +139,9 @@ function graphFor(source, data, sides = null) {
       'elk.spacing.nodeNode': '55',
       'elk.layered.spacing.nodeNodeBetweenLayers': '90',
       'elk.layered.wrapping.strategy': 'MULTI_EDGE',
-      'elk.aspectRatio': '1.6',
+      // A wider target keeps the documented four-node chain out of a wrapped
+      // same-column edge that crashes ELK's fixed-port crossing minimizer.
+      'elk.aspectRatio': '3',
     }, children, edges}, portIds
   };
 }

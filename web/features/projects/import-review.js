@@ -70,7 +70,7 @@ export function validateReviewPage(page, source, table, fromRow) {
 }
 
 // Review state is transient. The workspace controller in app.js alone owns the project.
-export function createImportReview({context, current, getProject, replaceProject, confirmDiscard, download, notify, getPreviewGeneration}) {
+export function createImportReview({context, current, getProject, replaceProject, onApplied, confirmDiscard, download, notify, getPreviewGeneration}) {
   const dialog = $('external-dialog');
   let sources = [], fileChoices = [], views = [], plan = null, candidate = null, planToken = null, candidateToken = null, attached = false;
   let revision = 0, statusGeneration = 0, sourceGeneration = 0, navigationGeneration = 0;
@@ -732,6 +732,7 @@ export function createImportReview({context, current, getProject, replaceProject
       replaceProject(fresh.proposedProject);
       sources=original; attached=true; renderSources(); refreshStatus();
       notify(`Importerade ${fresh.proposedProject.nodes.length} noder och ${fresh.proposedProject.zones.length} zoner. Ingen automatisk Save.`);
+      onApplied();
     } catch(error) { if(valid(token)) showError(error); }
   }
   async function verify(reconnected) {

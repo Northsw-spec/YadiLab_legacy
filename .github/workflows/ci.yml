@@ -34,5 +34,7 @@ jobs:
         run: xvfb-run -a python3 tests/browser_primary_selection_x11.py
       - name: Real Chromium ELK preview, cancellation and durable Save/Open
         run: python3 tests/browser_elk_layout.py
+      - name: Automatic imported ELK layout in Chromium
+        run: python3 tests/browser_elk_import.py
       - name: Large ELK layout zoom and viewport regression in Chromium
         run: python3 tests/browser_canvas_large_zoom.py
