@@ -70,3 +70,29 @@ test('new small document resets the large zoom-out allowance', () => {
   close(canvas.view.w,9000);
   assert.equal(canvas.viewBox.split(' ').length,4);
 });
+
+test('zoom and Fit reuse exactly one pre-write CSS viewport measurement', () => {
+  const canvas=camera(large);
+  let reads=0, writes=0, freshRect=false;
+  const oldRect=canvas.svg.getBoundingClientRect;
+  canvas.svg.getBoundingClientRect=()=>{reads++;freshRect=true;return oldRect();};
+  canvas.svg.setAttribute=(name,value)=>{
+    assert.equal(name,'viewBox');
+    assert.equal(freshRect,true,'viewBox write must follow CSS geometry read');
+    freshRect=false;
+    writes++;
+    canvas.viewBox=value;
+  };
+  canvas.fit();
+  assert.equal(reads,1,'Fit should measure viewport once');
+  assert.equal(writes,1);
+  canvas.zoom(1.12);
+  assert.equal(reads,2,'Zoom should reuse rect for toWorld and setView');
+  assert.equal(writes,2);
+  canvas.zoom(1/1.12,425,315);
+  assert.equal(reads,3,'Mouse-anchored zoom should measure once');
+  assert.equal(writes,3);
+  canvas.setView();
+  assert.equal(reads,4,'Standalone setView reads before writing');
+  assert.equal(writes,4);
+});
