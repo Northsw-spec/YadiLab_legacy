@@ -15,14 +15,52 @@ const svgText = (attributes, label) => {
   text.textContent = label;
   return text;
 };
-const entry = (project, nodeId) => project.nodes.find(n => n.id === nodeId);
-function endpoint(project, endpoint) {
-  const node = entry(project, endpoint.node);
-  const index = node.ports.findIndex(p => p.id === endpoint.port);
-  const link = project.links.find(l => (l.a.node === endpoint.node && l.a.port === endpoint.port) || (l.b.node === endpoint.node && l.b.port === endpoint.port));
-  const remote = link && entry(project, (link.a.node === endpoint.node ? link.b : link.a).node);
-  const side = remote && remote.x + WIDTH / 2 < node.x + WIDTH / 2 ? 'left' : 'right';
-  return {x: node.x + (side === 'left' ? 0 : WIDTH), y: node.y + HEAD + index * PORT_ROW + 5, side};
+// One immutable-by-convention index per render. The previous implementation
+// linearly scanned every node and every cable *for each* cable endpoint and
+// visible port. Large canonical topologies therefore caused quadratic work
+// even though no network facts were being calculated.
+function createRenderIndex(project) {
+  const nodeById = new Map();
+  const membersByZone = new Map();
+  for (const node of project.nodes) {
+    // Match Array.find semantics if a malformed project contains duplicates;
+    // the canonical validator still rejects duplicate node identifiers.
+    if (!nodeById.has(node.id)) nodeById.set(node.id, node);
+    if (!membersByZone.has(node.zoneId)) membersByZone.set(node.zoneId, []);
+    membersByZone.get(node.zoneId).push(node);
+  }
+  const key = endpoint => JSON.stringify([endpoint.node, endpoint.port]);
+  const portIndex = new Map();
+  for (const node of nodeById.values()) {
+    for (let index = 0; index < node.ports.length; index++) {
+      const portKey = key({node: node.id, port: node.ports[index].id});
+      if (!portIndex.has(portKey)) portIndex.set(portKey, index);
+    }
+  }
+  const remoteNodeByPort = new Map();
+  for (const link of project.links) {
+    const a = key(link.a), b = key(link.b);
+    // The first matching link is the one selected by the old Array.find.
+    if (!remoteNodeByPort.has(a)) remoteNodeByPort.set(a, link.b.node);
+    if (!remoteNodeByPort.has(b)) remoteNodeByPort.set(b, link.a.node);
+  }
+  const coordinateByPort = new Map();
+  const endpointAt = endpoint => {
+    const id = key(endpoint);
+    const cached = coordinateByPort.get(id);
+    if (cached) return cached;
+    const node = nodeById.get(endpoint.node);
+    const index = portIndex.get(id) ?? -1;
+    const remoteId = remoteNodeByPort.get(id);
+    const remote = remoteId && nodeById.get(remoteId);
+    // Preserve the exact existing SVG side rule and port-center coordinates.
+    const side = remote && remote.x + WIDTH / 2 < node.x + WIDTH / 2 ? 'left' : 'right';
+    const position = {x: node.x + (side === 'left' ? 0 : WIDTH),
+      y: node.y + HEAD + index * PORT_ROW + 5, side};
+    coordinateByPort.set(id, position);
+    return position;
+  };
+  return {membersByZone, endpointAt};
 }
 function route(a, b) {
   // The path starts/ends exactly at the visible port circles. Geometry does
@@ -345,11 +383,13 @@ export class TopologyCanvas {
     this.stopJourney();
     const project = this.presentation?.project || this.project;
     if (!project) return;
+    const {membersByZone, endpointAt} = createRenderIndex(project);
+    const highlightedIds = new Set(this.highlight);
     const children = [];
     // Zones are derived from explicitly assigned membership. They are
     // presentation backgrounds, never physical nodes or inferred links.
     for (const zone of project.zones) {
-      const members = project.nodes.filter(node => node.zoneId === zone.id);
+      const members = membersByZone.get(zone.id) || [];
       if (!members.length) continue;
       const minX = Math.min(...members.map(n => n.x)) - 35;
       const maxX = Math.max(...members.map(n => n.x + WIDTH)) + 35;
@@ -360,9 +400,9 @@ export class TopologyCanvas {
       children.push(svgText({x: minX + 17, y: minY + 26, class: 'zone-label'}, truncate(zone.label, 35)));
     }
     for (const link of project.links) {
-      const a = endpoint(project, link.a), b = endpoint(project, link.b);
+      const a = endpointAt(link.a), b = endpointAt(link.b);
       const d = this.presentation?.paths?.[link.id] || route(a, b);
-      const highlighted = this.highlight.includes(link.id);
+      const highlighted = highlightedIds.has(link.id);
       const selected = this.selected?.type === 'link' && this.selected.id === link.id;
       const p = svgElement('path', {d, class: `network-edge${link.enabled ? '' : ' offline'}${highlighted ? ' highlight' : ''}${selected ? ' selected' : ''}`,
         'data-link-id': link.id, 'data-from-node': link.a.node, 'data-from-port': link.a.port,
@@ -388,7 +428,7 @@ export class TopologyCanvas {
       group.append(svgElement('line', {x1: 12, y1: 59, x2: WIDTH - 12, y2: 59, class: 'node-separator'}));
       for (let i = 0; i < node.ports.length; i++) {
         const port = node.ports[i];
-        const pt = endpoint(project, {node: node.id, port: port.id});
+        const pt = endpointAt({node: node.id, port: port.id});
         const px = pt.x - node.x, py = pt.y - node.y;
         group.append(svgText({x: pt.side === 'right' ? WIDTH - 15 : 15, y: py + 4,
           class: `node-port${port.enabled ? '' : ' offline'}`,
@@ -415,6 +455,10 @@ export class TopologyCanvas {
       });
       children.push(group);
     }
-    this.svg.replaceChildren(...children);
+    // Assemble in detached DOM, then replace the SVG tree in a single call.
+    // This preserves element order, selectors, hit targets and packet paths.
+    const fragment = document.createDocumentFragment();
+    for (const child of children) fragment.appendChild(child);
+    this.svg.replaceChildren(fragment);
   }
 }
