@@ -2,6 +2,7 @@
 from __future__ import annotations
 import copy
 import json
+import shutil
 import socket
 import tempfile
 import threading
@@ -64,7 +65,9 @@ def run():
         records={}
         try:
             with sync_playwright() as playwright:
-                browser=playwright.chromium.launch(headless=True)
+                executable=shutil.which('chromium') or shutil.which('chromium-browser')
+                browser=playwright.chromium.launch(headless=True,executable_path=executable,
+                                                   args=['--no-sandbox'] if executable else [])
                 page=browser.new_page(viewport={"width":1440,"height":900})
                 page.set_default_timeout(45000)
                 js_errors=[]

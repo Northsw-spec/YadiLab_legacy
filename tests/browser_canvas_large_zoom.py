@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import sys
 import tempfile
 import threading
@@ -20,7 +21,9 @@ def run():
         thread.start()
         try:
             with sync_playwright() as browser_tool:
-                browser=browser_tool.chromium.launch(headless=True)
+                executable=shutil.which('chromium') or shutil.which('chromium-browser')
+                browser=browser_tool.chromium.launch(headless=True,executable_path=executable,
+                                                     args=['--no-sandbox'] if executable else [])
                 page=browser.new_page(viewport={"width":1440,"height":900})
                 page.goto(f"http://127.0.0.1:{server.server_port}/",wait_until="domcontentloaded")
                 assert page.locator("#topology").count()==1

@@ -52,6 +52,19 @@ from test_import_integration_4c import corpus_a, expected_network
 from network_core.model import canonical_network_view, validate_project
 
 
+def without_positions(project):
+    copy = json.loads(json.dumps(project))
+    for node in copy['nodes']:
+        del node['x'], node['y']
+    return copy
+
+
+def await_import_layout(page):
+    expect(page.locator('#layout-status')).to_contain_text(
+        'Automatisk ELK-layout klar.', timeout=30000)
+    assert page.locator('#layout-apply').is_disabled()
+
+
 def port():
     with socket.socket() as sock:
         sock.bind(('127.0.0.1', 0))
@@ -2480,6 +2493,7 @@ def import_review_regression(context, base, network_mode, store, errors, restart
     assert fresh.value.status == 200
     expect(page.locator('#count-nodes')).to_have_text('2')
     expect(page.locator('#count-links')).to_have_text('0')
+    await_import_layout(page)
     assert page.locator('.network-edge').count() == 0
     with page.expect_download() as bundle_download:
         page.locator('#external-bundle-export').click()
@@ -2506,7 +2520,7 @@ def import_review_regression(context, base, network_mode, store, errors, restart
     with page.expect_response('**/api/projects/review-4b4'):
         page.locator('#open-project').click()
     expect(page.locator('#import-evidence-status')).to_contain_text('MANIFEST_VALIDATED')
-    expect(page.locator('#import-evidence-status')).to_contain_text('BASELINE_MATCH')
+    expect(page.locator('#import-evidence-status')).to_contain_text('CHANGED_SINCE_IMPORT')
     expect(page.locator('#import-evidence-status')).to_contain_text('Källfil ej ansluten')
     page.locator('#external-import').click()
     with page.expect_response('**/api/import/verify-sources') as verified:
@@ -2555,7 +2569,7 @@ def import_review_regression(context, base, network_mode, store, errors, restart
     page.locator('[data-item-type="node"][data-item-id="A"]').click()
     page.locator('#node-label').fill('Alpha')
     page.locator('#node-label').dispatch_event('change')
-    expect(page.locator('#import-evidence-status')).to_contain_text('BASELINE_MATCH')
+    expect(page.locator('#import-evidence-status')).to_contain_text('CHANGED_SINCE_IMPORT')
     assert json.loads(disk_file.read_text())['importEvidence'] == receipt
     page.locator('#external-import').click()
     hold_http_reply(page, '/api/import/verify-sources', first_only=True)
@@ -2634,6 +2648,7 @@ def import_review_ui_regression(context, base, network_mode, store, errors, rest
     page.once('dialog',lambda dialog:dialog.accept())
     page.locator('#external-apply').click()
     expect(page.locator('#count-nodes')).to_have_text('1')
+    await_import_layout(page)
     page.locator('#external-close').click()
     page.locator('#project-filename').fill('review-ui-4d2')
     page.locator('#project-filename').dispatch_event('change')
@@ -2646,7 +2661,7 @@ def import_review_ui_regression(context, base, network_mode, store, errors, rest
     page.locator('#saved-projects').select_option('review-ui-4d2')
     page.locator('#open-project').click()
     page.locator('#external-import').click()
-    expect(page.locator('#external-history')).to_contain_text('BASELINE_MATCH')
+    expect(page.locator('#external-history')).to_contain_text('CHANGED_SINCE_IMPORT')
     expect(page.locator('#external-history')).to_contain_text('Källfil ej ansluten')
     page.locator('#external-reattach-files').set_input_files({'name':'ui.csv','mimeType':'text/csv','buffer':raw})
     expect(page.locator('#external-history')).to_contain_text('SOURCE_VERIFIED')
@@ -2831,6 +2846,7 @@ def import_review_delimiters_regression(context, base, network_mode, store, erro
     page.locator('#external-apply').click()
     expect(page.locator('#count-nodes')).to_have_text('2')
     expect(page.locator('#count-links')).to_have_text('0')
+    await_import_layout(page)
     with page.expect_download() as downloaded:
         page.locator('#external-bundle-export').click()
     bundle = json.loads(Path(downloaded.value.path()).read_text())
@@ -3000,6 +3016,7 @@ def zone_import_regression(context, base, network_mode, store, errors, restart):
     expect(page.locator('#count-nodes')).to_have_text('1')
     expect(page.locator('#count-zones')).to_have_text('1')
     expect(page.locator('#count-links')).to_have_text('0')
+    await_import_layout(page)
     with page.expect_download() as downloaded:
         page.locator('#external-bundle-export').click()
     bundle = json.loads(Path(downloaded.value.path()).read_text())
@@ -3020,7 +3037,7 @@ def zone_import_regression(context, base, network_mode, store, errors, restart):
     page.reload(wait_until='domcontentloaded')
     page.locator('#saved-projects').select_option('zones-4c')
     page.locator('#open-project').click()
-    expect(page.locator('#import-evidence-status')).to_contain_text('BASELINE_MATCH')
+    expect(page.locator('#import-evidence-status')).to_contain_text('CHANGED_SINCE_IMPORT')
     page.locator('#external-import').click()
     with page.expect_response('**/api/import/verify-sources') as verified:
         page.locator('#external-bundle-file').set_input_files({'name':'zones-sources.json',
@@ -3121,6 +3138,7 @@ def port_import_regression(context, base, network_mode, store, errors, restart, 
     page.once('dialog', lambda dialog: dialog.accept())
     page.locator('#external-apply').click()
     expect(page.locator('[data-port-node="R1"]' if route else '[data-port-node="SERVER1"]' if ipv4 else '[data-port-node="SW-01"]')).to_have_count(1)
+    await_import_layout(page)
     with page.expect_download() as downloaded:
         page.locator('#external-bundle-export').click()
     bundle = json.loads(Path(downloaded.value.path()).read_text())
@@ -3143,7 +3161,7 @@ def port_import_regression(context, base, network_mode, store, errors, restart, 
     page.reload(wait_until='domcontentloaded')
     page.locator('#saved-projects').select_option(project_name)
     page.locator('#open-project').click()
-    expect(page.locator('#import-evidence-status')).to_contain_text('BASELINE_MATCH')
+    expect(page.locator('#import-evidence-status')).to_contain_text('CHANGED_SINCE_IMPORT')
     page.locator('#external-import').click()
     with page.expect_response('**/api/import/verify-sources') as verified:
         page.locator('#external-bundle-file').set_input_files({
@@ -3281,6 +3299,7 @@ def cable_import_regression(context, base, network_mode, store, errors, restart)
     page.once('dialog', lambda dialog: dialog.accept())
     page.locator('#external-apply').click()
     expect(page.locator('[data-link-id="CABLE-001"]')).to_have_count(1)
+    await_import_layout(page)
     with page.expect_download() as downloaded:
         page.locator('#external-bundle-export').click()
     bundle = json.loads(Path(downloaded.value.path()).read_text())
@@ -3303,7 +3322,7 @@ def cable_import_regression(context, base, network_mode, store, errors, restart)
     page.locator('#saved-projects').select_option(name)
     page.locator('#open-project').click()
     expect(page.locator('[data-link-id="CABLE-001"]')).to_have_count(1)
-    expect(page.locator('#import-evidence-status')).to_contain_text('BASELINE_MATCH')
+    expect(page.locator('#import-evidence-status')).to_contain_text('CHANGED_SINCE_IMPORT')
     page.locator('#external-import').click()
     with page.expect_response('**/api/import/verify-sources') as verified:
         page.locator('#external-bundle-file').set_input_files({'name':'cable-sources.json',
@@ -3388,6 +3407,7 @@ def integrated_4c_regression(context, base, network_mode, store, errors, restart
     page.locator('#external-apply').click()
     expect(page.locator('[data-node-id]')).to_have_count(5)
     expect(page.locator('[data-link-id]')).to_have_count(4)
+    await_import_layout(page)
     with page.expect_download() as downloaded:
         page.locator('#external-bundle-export').click()
     bundle = json.loads(Path(downloaded.value.path()).read_text())
@@ -3404,7 +3424,7 @@ def integrated_4c_regression(context, base, network_mode, store, errors, restart
     assert saved.value.status == 200
     stored_bytes = disk.read_bytes()
     stored = json.loads(stored_bytes)
-    assert canonical_network_view(stored) == expected_network()
+    assert without_positions(canonical_network_view(stored)) == without_positions(expected_network())
     assert stored['schemaVersion']=='1.4'
     receipt = stored['importEvidence']
     restart()
@@ -3413,7 +3433,7 @@ def integrated_4c_regression(context, base, network_mode, store, errors, restart
     page.locator('#open-project').click()
     expect(page.locator('[data-node-id]')).to_have_count(5)
     expect(page.locator('[data-link-id]')).to_have_count(4)
-    expect(page.locator('#import-evidence-status')).to_contain_text('BASELINE_MATCH')
+    expect(page.locator('#import-evidence-status')).to_contain_text('CHANGED_SINCE_IMPORT')
     expect(page.locator('#import-evidence-status')).to_contain_text('Källfil ej ansluten')
     page.locator('#external-import').click()
     with page.expect_response('**/api/import/verify-sources') as verified:
@@ -3943,6 +3963,7 @@ def mapping_profile_regression(context, base, network_mode, store, errors, resta
     page.once('dialog', lambda dialog: dialog.accept())
     page.locator('#external-apply').click()
     expect(page.locator('[data-node-id]')).to_have_count(2)
+    await_import_layout(page)
     with page.expect_download() as bundle_download:
         page.locator('#external-bundle-export').click()
     bundle=json.loads(Path(bundle_download.value.path()).read_bytes())
@@ -3955,14 +3976,14 @@ def mapping_profile_regression(context, base, network_mode, store, errors, resta
     with page.expect_response('**/api/save') as saved: page.locator('#save-project').click()
     assert saved.value.status==200
     stored=json.loads(disk.read_bytes())
-    assert canonical_network_view(stored)==expected
+    assert without_positions(canonical_network_view(stored))==without_positions(expected)
     assert stored['importEvidence']==receipt and stored['schemaVersion']=='1.4'
     restart()
     page.reload(wait_until='domcontentloaded')
     page.locator('#saved-projects').select_option(filename)
     page.locator('#open-project').click()
     expect(page.locator('[data-node-id]')).to_have_count(2)
-    expect(page.locator('#import-evidence-status')).to_contain_text('BASELINE_MATCH')
+    expect(page.locator('#import-evidence-status')).to_contain_text('CHANGED_SINCE_IMPORT')
     expect(page.locator('#import-evidence-status')).to_contain_text('Källfil ej ansluten')
     page.locator('#external-import').click()
     with page.expect_response('**/api/import/verify-sources') as verified:
@@ -5853,6 +5874,7 @@ def run():
             expect(page.locator('[data-link-id="cable-1"]')).to_have_count(1)
             assert page.locator('[data-link-id]').count() == 1
             assert prompts.count('confirm') >= 2 and prompts.count('prompt') == 1, prompts
+            await_import_layout(page)
             expect(page.locator('#save-indicator')).to_contain_text('Osparade ändringar')
             assert hashlib.sha256(saved_file.read_bytes()).hexdigest() == digest
             assert not (store / 'csv-demo.yadilab').exists()
@@ -5908,6 +5930,7 @@ def run():
             assert incoming['name'] == 'XLSX Browser Lab'
             assert [n['id'] for n in incoming['nodes']] == ['pc-a','sw-a']
             assert incoming['links'][0]['id'] == 'cable-1'
+            await_import_layout(page)
             expect(page.locator('#save-indicator')).to_contain_text('Osparade ändringar')
             assert not (store/'xlsx-demo.yadilab').exists()
             assert hashlib.sha256((store/'csv-demo.yadilab').read_bytes()).hexdigest() == csv_sha
@@ -5917,7 +5940,7 @@ def run():
             expect(page.locator('#save-indicator')).to_contain_text(
                 'Sparat · xlsx-demo.yadilab', timeout=12000)
             saved_xlsx = json.loads((store/'xlsx-demo.yadilab').read_bytes())
-            assert saved_xlsx == incoming
+            assert without_positions(saved_xlsx) == without_positions(incoming)
             xlsx_sha = hashlib.sha256((store/'xlsx-demo.yadilab').read_bytes()).hexdigest()
             page.locator('#new-project').click()
             page.locator('#saved-projects').select_option('xlsx-demo')
@@ -5966,6 +5989,7 @@ def run():
             assert [n['id'] for n in ods_project['nodes']] == ['pc-a','sw-a']
             assert ods_project['links'][0]['a'] == {'node':'pc-a','port':'eth0'}
             assert ods_project['links'][0]['b'] == {'node':'sw-a','port':'gi1'}
+            await_import_layout(page)
             assert prompts.count('prompt') == ods_prompts_before + 1
             expect(page.locator('#save-indicator')).to_contain_text('Osparade ändringar')
             assert not (store/'ods-demo.yadilab').exists()
@@ -5975,7 +5999,7 @@ def run():
             expect(page.locator('#save-indicator')).to_contain_text(
                 'Sparat · ods-demo.yadilab', timeout=12000)
             ods_raw=(store/'ods-demo.yadilab').read_bytes()
-            assert json.loads(ods_raw) == ods_project
+            assert without_positions(json.loads(ods_raw)) == without_positions(ods_project)
             ods_sha=hashlib.sha256(ods_raw).hexdigest()
             page.locator('#new-project').click()
             page.locator('#saved-projects').select_option('ods-demo')
@@ -6024,6 +6048,7 @@ def run():
                 assert imported['nodes'][1]['ports'][1]['vlan'] == {
                     'mode':'trunk','allowedVlans':[10,20]}
                 assert imported['nodes'][0]['staticRoutes'][0]['nextHop'] == '192.0.2.1'
+                await_import_layout(page)
                 expect(page.locator('[data-node-id="ha"]')).to_have_count(1)
                 expect(page.locator('[data-link-id="trunk"]')).to_have_count(1)
                 expect(page.locator('#save-indicator')).to_contain_text('Osparade ändringar')
@@ -6036,7 +6061,7 @@ def run():
                 expect(page.locator('#save-indicator')).to_contain_text(
                     'Sparat · '+saved_name+'.yadilab',timeout=12000)
                 stored=(store/(saved_name+'.yadilab')).read_bytes()
-                assert json.loads(stored) == imported
+                assert without_positions(json.loads(stored)) == without_positions(imported)
                 saved_sha=hashlib.sha256(stored).hexdigest()
                 page.locator('#new-project').click()
                 page.locator('#saved-projects').select_option(saved_name)
@@ -6081,6 +6106,7 @@ def run():
                     assert coordinate_free_response.value.status == 200
                 expect(page.locator('[data-node-id="'+expected_node+'"]')).to_have_count(1)
                 expect(page.locator('[data-link-id="'+expected_link+'"]')).to_have_count(1)
+                await_import_layout(page)
                 saved_name = 'coordinate-free-'+ext
                 assert not (store/(saved_name+'.yadilab')).exists()
                 page.locator('#project-filename').fill(saved_name)
@@ -6089,7 +6115,7 @@ def run():
                 expect(page.locator('#save-indicator')).to_contain_text(
                     'Sparat · '+saved_name+'.yadilab', timeout=12000)
                 saved = json.loads((store/(saved_name+'.yadilab')).read_bytes())
-                assert all(0 <= node['x'] <= 100000 and 0 <= node['y'] <= 100000
+                assert all(abs(node['x']) <= 100000 and abs(node['y']) <= 100000
                            for node in saved['nodes'])
                 page.locator('#new-project').click()
                 page.locator('#saved-projects').select_option(saved_name)
@@ -6136,6 +6162,7 @@ def run():
                         'mode':'trunk','allowedVlans':[10,20]}
                     expect(page.locator('[data-node-id="demo-client"]')).to_have_count(1)
                     expect(page.locator('[data-link-id="demo-link-trunk"]')).to_have_count(1)
+                    await_import_layout(page)
                     expect(page.locator('#save-indicator')).to_contain_text('Osparade ändringar')
                     assert not (store/('template-'+ext+'.yadilab')).exists()
                     for name, old_hash in template_hashes.items():
@@ -6150,7 +6177,7 @@ def run():
                 expect(page.locator('#save-indicator')).to_contain_text(
                     'Sparat · template-ods.yadilab', timeout=12000)
                 persisted = (store/'template-ods.yadilab').read_bytes()
-                assert json.loads(persisted) == example
+                assert without_positions(json.loads(persisted)) == without_positions(example)
                 persisted_sha = hashlib.sha256(persisted).hexdigest()
                 page.locator('#new-project').click()
                 page.locator('#saved-projects').select_option('template-ods')
@@ -6219,6 +6246,7 @@ def run():
                 assert result['nodes'] == before_export['nodes']
                 assert result['links'] == before_export['links']
                 assert result['zones'] == before_export['zones']
+                await_import_layout(page)
                 expect(page.locator('#save-indicator')).to_contain_text('Osparade ändringar')
                 assert hashlib.sha256(current_file.read_bytes()).hexdigest() == before_sha
                 slug='export-roundtrip-'+extension
@@ -6229,7 +6257,7 @@ def run():
                 expect(page.locator('#save-indicator')).to_contain_text(
                     'Sparat · '+slug+'.yadilab',timeout=12000)
                 disk=(store/(slug+'.yadilab')).read_bytes()
-                assert json.loads(disk) == result
+                assert without_positions(json.loads(disk)) == without_positions(result)
                 sha=hashlib.sha256(disk).hexdigest()
                 page.locator('#new-project').click()
                 page.locator('#saved-projects').select_option(slug)

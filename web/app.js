@@ -522,6 +522,51 @@ function cancelElkPreview() {
   canvas.fit();
 }
 
+function networkWithoutCoordinates(value) {
+  return JSON.stringify({...value, nodes: value.nodes.map(({x, y, ...node}) => node)});
+}
+
+// Called only after an accepted documentation import has replaced the workspace.
+// The existing ELK worker and workspace guards own this calculation too.
+async function layoutImportedProject() {
+  if (!project.nodes.length) return;
+  invalidateElk();
+  const context = transferContext();
+  const generation = ++elkGeneration;
+  elkAbort = new AbortController();
+  elkBusy = true;
+  layoutStatus('ELK beräknar importens första layout. Ingen projektfil skrivs.');
+  try {
+    const proposal = await computeElkPreview(JSON.parse(context.snapshot), {signal: elkAbort.signal});
+    if (elkGeneration !== generation) return;
+    if (!transferCurrent(context)) {
+      invalidateElk('Arbetsytan ändrades under automatisk ELK-layout. Importens placering behölls.');
+      return;
+    }
+    if (networkWithoutCoordinates(proposal.project) !==
+        networkWithoutCoordinates(JSON.parse(context.snapshot))) {
+      throw new Error('layoutmotorn ändrade dokumenterade nätverksfakta');
+    }
+    project = proposal.project;
+    changed();
+    elkAccepted = {snapshot: JSON.stringify(project), paths: proposal.paths};
+    render();
+    canvas.fit();
+    layoutStatus('Automatisk ELK-layout klar. Placeringen är osparad; Save krävs för X/Y.');
+  } catch (error) {
+    if (elkGeneration !== generation) return;
+    invalidateElk('Automatisk ELK-layout misslyckades: ' + error.message +
+      '. Importens interna reservplacering finns kvar och är osparad.');
+    notify('Automatisk ELK-layout misslyckades: ' + error.message, true);
+  } finally {
+    if (elkGeneration === generation) {
+      elkBusy = false;
+      elkAbort = null;
+      layoutStatus($('layout-status').textContent);
+    }
+  }
+}
+
 function invalidateSimulationSession() { simulationSession.invalidate(); }
 function select(type, id) { selection = {type, id}; pendingPort = null; render(); }
 function getSelected() {
@@ -2046,6 +2091,7 @@ async function importProjects(files) {
     if (!confirm(`Importen innehåller ${incoming.nodes.length} enheter och ${incoming.links.length} uttryckligt deklarerade länkar. Ersätta nuvarande arbetsyta? Ingen fil skrivs automatiskt.`)) return;
     resetProject(incoming);
     notify(`Importerade ${incoming.nodes.length} enheter, ${incoming.links.length} länkar och ${incoming.zones.length} zoner. Inget sparades automatiskt.`);
+    if (kind !== 'project') void layoutImportedProject();
   } catch (error) {
     if (!transferCurrent(context)) return transferStale();
     notify(`Import avvisad: ${error.message}`, true);
@@ -2063,6 +2109,7 @@ const importReview = createImportReview({
   current: transferCurrent,
   getProject: () => project,
   replaceProject: resetProject,
+  onApplied: () => { void layoutImportedProject(); },
   confirmDiscard,
   download: downloadExport,
   notify,
