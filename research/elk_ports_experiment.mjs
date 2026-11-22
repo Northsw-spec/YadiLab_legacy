@@ -148,7 +148,7 @@ function analyze(p,g,out,placed,assumedSides) {
     }
   }
   return {nodeCount:p.nodes.length,linkCount:p.links.length,portCount:entries.length,
-    sections,mismatchedtopology editorPortCenters:mismatched,maxtopology editorPortCenterError:round(max),
+    sections,mismatchedCanonicalPortCenters:mismatched,maxCanonicalPortCenterError:round(max),
     unstableSides:sidesChanged,sectionEndpointMismatch: endpointBad,
     maxSectionEndpointError:round(endpointMax),nonOrthogonalSegments,
     edgeSegmentsThroughOtherNodes:obstacles,

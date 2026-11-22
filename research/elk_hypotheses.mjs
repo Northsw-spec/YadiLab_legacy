@@ -146,7 +146,7 @@ if(process.argv.includes("--stress")){
      n.x+n.width>100000||n.y+n.height>100000);
    return {nodes:2000,links:5000,ms,rootWidth:out.width,rootHeight:out.height,
      maxNodeX:Math.max(...nodes.map(n=>n.x+n.width)),maxNodeY:Math.max(...nodes.map(n=>n.y+n.height)),
-     invalidNodeCoordinates:invalid.length,acceptedBytopology editorModel:invalid.length===0,
+     invalidNodeCoordinates:invalid.length,acceptedByCanonicalModel:invalid.length===0,
      verdict:invalid.length===0?"PASS_BOUNDS":"FAIL_BOUNDS"};
  });
 }else{
