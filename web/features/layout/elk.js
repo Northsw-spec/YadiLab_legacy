@@ -28,6 +28,31 @@ function validateGraph(input, output, nodeIds, links) {
     edges.set(edge.id, edge);
   }
   if (edges.size !== links.length) fail('kabelmängden har förändrats');
+  // The layout engine may only reposition existing objects. Node dimensions,
+  // virtual port identities and exact FIXED_POS offsets must survive intact.
+  const inputs = new Map(input.children.map(node => [node.id, node]));
+  for (const [id, outputNode] of children) {
+    const expected = inputs.get(id);
+    if (!expected || outputNode.width !== expected.width ||
+        outputNode.height !== expected.height) fail('nodstorleken ändrades');
+    if (expected.ports) {
+      if (!Array.isArray(outputNode.ports) ||
+          outputNode.ports.length !== expected.ports.length) {
+        fail('portmängden ändrades');
+      }
+      const expectedPorts = new Map(expected.ports.map(port => [port.id, port]));
+      const seen = new Set();
+      for (const port of outputNode.ports) {
+        const original = expectedPorts.get(port.id);
+        if (seen.has(port.id) || !original || !boundedPoint(port) ||
+            port.width !== original.width || port.height !== original.height ||
+            port.x !== original.x || port.y !== original.y) {
+          fail('portidentiteten eller FIXED_POS-positionen ändrades');
+        }
+        seen.add(port.id);
+      }
+    }
+  }
   return {children, edges};
 }
 
