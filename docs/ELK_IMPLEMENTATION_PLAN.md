@@ -10,7 +10,7 @@
 
 ## 1. Exakt önskat slutresultat
 
-Användaren ska kunna importera en **fullständigt, explicit och källtroget validerad** nätverksdokumentation, välja en lättläst ELK-layout, se kablar som verkligen slutar på de deklarerade portarna, redigera diagrammet med mus och tangentbord, använda samma topologi i simuleringsmotorn, spara och öppna projekt samt förstå vad som sparats och vilka visuella rutter som återberäknas. Stora diagram ska vara hanterbara utan att nätverksfakta eller historiskt importbevis förändras.
+Användaren ska kunna importera en **fullständigt, explicit och källtroget validerad** nätverksdokumentation och **automatiskt få en första lättläst ELK-layout**, utan extra layoutklick, se kablar som verkligen slutar på de deklarerade portarna, redigera diagrammet med mus och tangentbord, använda samma topologi i simuleringsmotorn, spara och öppna projekt samt förstå vad som sparats och vilka visuella rutter som återberäknas. Stora diagram ska vara hanterbara utan att nätverksfakta eller historiskt importbevis förändras.
 
 **Det är levererad applikationsfunktionalitet som mäts.** Kodrader, forskningsvågor, issue-antal, experimentvarianter och antal PR:er är inte framstegsmått.
 
@@ -23,7 +23,8 @@ Följande är observerat på nulägesankaret, men status måste kontrolleras på
 | Pythonmodell med schema 1.0–1.4 och strikt validering | `network_core/model.py` | Kanoniska ID:n, gränser, okända fält, no implicit cables |
 | Historisk flexibel import och källkvitto | `network_core/import_plan.py`, `import_evidence.py`, `web/features/projects/import-review.js` | Originalbytes, källreferenser, `canApply`, fingerprint, historisk replay |
 | Lokal ELK 0.13.0 i Worker | `web/features/layout/elk.js`, `web/vendor/` | 2 pass, `MULTI_EDGE`, 0×0 `FIXED_POS`, full outputvalidering, abort, timeout |
-| Opt-in read-only Preview → Apply → separat Save | `web/app.js`, `web/index.html` | Stale guard, inga writes under preview, Save/Open-kontrakt |
+| Manuell opt-in Preview → Apply → separat Save för befintliga projekt | `web/app.js`, `web/index.html` | Stale guard, inga writes under preview, Save/Open-kontrakt |
+| Automatisk initial ELK-layout efter godkänd import | **Ska implementeras i ELK-06** | Importerade tabeller behöver inga X/Y-fält; automatiskt läggs bara presentationskoordinater till efter godkänt import-Apply |
 | SVG, zoner, portpunkter, kabelbanor och packet playback | `web/canvas.js` | Alla visualiserade kablar har verkliga `link.id` och två portändar |
 | Renderings- och kameraoptimering | `web/canvas.js` | PR #91–92 är redan integrerade; upprepa inte dessa projekt |
 | Ordinarie CI, Chromium, X11, Save/Open | `.github/workflows/ci.yml`, `tests/` | Testa slutlig PR-HEAD; inga genvägar genom att inaktivera tester |
@@ -51,7 +52,7 @@ Följande är observerat på nulägesankaret, men status måste kontrolleras på
 - **Ingen gissning:** om en okänd detalj hotar dataintegritet, projektformat eller fysisk topologi ska Codex inte skriva på måfå. Stoppa endast den beroende deluppgiften, redovisa exakt blockerare och fortsätt med nästa oberoende koduppgift i prioriteringsordning.
 - **Ingen ny schema-/import-/simuleringsarkitektur** utan separat uttryckligt användargodkännande. Fungerande delar är KEEP.
 - **Ingen passiv CI-väntan i Codex-sessionen.** Kör relevanta lokala kontroller; om CI fortfarande körs, lämna PR öppen med exakt HEAD och länk. Ingen polling-loop eller nytt uppdrag för att fylla väntetid.
-- **Ingen ogrundad automatisk layout:** rita aldrig kabel, port, nod eller routing baserat på IP, VLAN, zon, grafnärhet eller ELK:s estetiska output.
+- **Automatisk initial placering är obligatorisk efter en accepterad import utan källkoordinater.** Den får endast omplacera redan deklarerade noder och beräkna visuell kabelgeometri utifrån redan deklarerade länkar. ELK får aldrig uppfinna kabel, port, nod eller routing utifrån IP, VLAN, zon eller grafnärhet.
 
 ### 3.3 Krav för att få säga ”klart”
 
@@ -63,7 +64,7 @@ Följande är **arbetskort**, inte order om fjorton PR:er. Identifikatorerna ELK
 
 | Körordning | Arbetskort | Faktisk kodnytta | Startvillkor |
 |---|---|---|---|
-| 1 | **ELK-06** | Tydlig ELK-åtgärd direkt efter **godkänd** källtrogen import | Existerande `canApply` och import-Apply fungerar; använd existerande ELK-knapp/adapter |
+| 1 | **ELK-06** | **Automatisk första ELK-layout direkt efter godkänd import – inget extra layoutklick** | Existerande `canApply`, import-Apply och ELK-Worker finns; återanvänd befintlig adapter med stale-skydd |
 | 2 | **ELK-04 + ELK-05** | Korrekt edit/drag/livscykel: ingen falsk eller föråldrad kabelgeometri | Bevisa ett konkret användarfall som saknar detta; annars KEEP |
 | 3 | **ELK-09** | Tangentbord, fokus och begriplig tillgänglig layoutkontroll | Befintliga Builder-flöden granskas *inom samma kod-PR* |
 | 4 | **ELK-02 + ELK-03** | Adapter som klarar specificerade felaktiga indata och grafklasser | Lägg bara till kod när ett negativt test visar ett faktiskt gap |
@@ -140,21 +141,26 @@ Följande är **arbetskort**, inte order om fjorton PR:er. Identifikatorerna ELK
 
 **Test:** riktiga HTTP + Chromium-scenarier med fördröjd Worker, Abort, Cancel, Apply, Save/Open och Byte-Of-Project jämförelse. Inga mockresultat som bevis för verklig Save/Open. **Implementera bara en verifierad återstående lucka**; annars KEEP.
 
-### ELK-06 – Prioritet 1: tydlig kodintegrering efter godkänd import
+### ELK-06 – Prioritet 1: automatisk initial ELK-layout efter godkänd import
 
-**Användarnytta:** efter att användaren **uttryckligen accepterat en fullständig, giltig** CSV/XLSX/ODS-import ska ELK-layout vara ett uppenbart, frivilligt *nästa klick*, utan att dokumentationsimport och layout blandas ihop. Detta är det **första föreslagna koduppdraget** om beteendet inte redan finns.
+**Användarnytta och bindande UX-krav:** dokumentationstabeller för CSV/XLSX/ODS förutsätts **inte innehålla X/Y-koordinater**. När användaren uttryckligen godkänt en **fullständig och giltig** import måste appen **automatiskt beräkna och visa första layouten med befintlig ELK-Worker**. Användaren ska **inte** behöva klicka på en ytterligare ELK-knapp, godkänna layoutens koordinater separat eller välja en layoutmetod för att få ett användbart diagram. Detta är obligatoriskt implementationsarbete om det inte redan fungerar. **Manuell Preview/Apply/Cancel finns kvar för senare omorganisering**, inte för nödvändig initial placering.
 
-**Filer:** `web/features/projects/import-review.js` (`applyCandidate`, kandidatens giltighet/fingerprint), `web/app.js` (`createImportReview`, `startElkPreview`, `resetProject`, status/knapp), `web/index.html` vid behov för befintlig knapp-/statusyta, `tests/browser_elk_layout.py` och ett riktat browser-importtest. **Rör inte** `network_core/import_plan.py::node_layout()`, `network_core/import_evidence.py` eller importens projektkandidatformat.
+**Filer:** `web/features/projects/import-review.js` (befintlig lyckad `applyCandidate` och onApply-återkoppling), `web/app.js` (importens atomära projektbyte, befintlig `computeElkPreview`/Worker, revisionskontroller, status och rendering), vid behov `web/index.html` för status och `tests/browser_elk_layout.py` plus ett verkligt browser-importtest. Återanvänd befintlig adapter och state-ägare. **Ändra inte** `network_core/import_plan.py::node_layout()`, `network_core/import_evidence.py`, befintliga schema-1.4-kvitton eller källbytes.
 
 **Exakt implementationsordning:**
-1. Kontrollera om dagens UI redan gör nästa ELK-steg tydligt efter accepterad import. Om ja: hoppa över kortet; bygg inte en duplicerad knapp.
-2. Om inte: koppla befintlig import-Apply-succé till en **synlig, frivillig åtgärd** som återanvänder existerande `layout-preview`/`startElkPreview`. **Starta inte Worker automatiskt** och gör ingen extra HTTP-import.
-3. Aktivera åtgärden endast efter att `candidate.canApply` är sann, användaren godkänt ersättning, ny kandidat-fingerprint matchat och `replaceProject` slutförts. Granskningsläge, blockerade kandidatfall och avbruten import får aldrig generera layoutförslag.
-4. Visa att layout är *presentation* och att Apply flyttar endast noder, medan Save sker separat. Behåll historisk källproveniens och `BASELINE_MATCH` → `CHANGED_SINCE_IMPORT` där positionsändring medför skillnad.
+1. Återanvänd den befintliga giltiga källimporten. **Ingen ELK-start** under källinspektion, mapping, avvisad/avbruten import eller `canApply=false`. Kontrollera att kandidatens fingerprint fortfarande matchar och att användaren godkänt projektbytet.
+2. När det atomära **import-Apply faktiskt lyckats** och den importerade arbetsytan skapats, starta **automatiskt** layoutberäkningen med befintlig lokal ELK-Worker; inget extra användarklick och ingen ny HTTP-import. Visa tydlig beräkningsstatus. Lägg inte till en parallell import-/layoutmotor.
+3. Beräkna bara **X/Y och visuella edge-sektioner** för de faktiskt importerade noderna, portarna och de explicit deklarerade kablarna. Använd befintlig tvåpass-ELK och `MULTI_EDGE`/`FIXED_POS`; byt inte node-/port-/link-ID, nätverkskonfiguration eller importkvitto.
+4. Stale-skydd: bind beräkningen till importens `workspaceRevision`, `editRevision` och projektsnapshot. New/Open/ny import/manuell redigering under Worker måste ogiltigförklara resultatet. **Ingen sen automatisk layout** får skriva över en senare användarändring.
+5. När layouten validerats ska dess X/Y **tillämpas automatiskt i den nyimporterade arbetsytan**, och de giltiga ELK-kabelbanorna visas direkt. Ingen andra Apply-knapp. Ingen autosave till disk: användaren väljer fortfarande separat **Spara**. Hantera redan etablerad dirty-status och historisk importproveniens korrekt: källkvitto och replay ändras aldrig; en layoutbaserad avvikelse från baslinjen får inte presenteras som ändrat källdokument.
+6. Om ELK misslyckas, avbryts eller överskrider resursgränsen: **visa ett tydligt fel/otillgänglig layout**, låt den redan godkända importens existerande deterministiska nodplacering ligga kvar och bevara originalfakta. Påstå inte att ELK-layout lyckades, fabricera inga kablar och skriv inget till disk. Gör inte en tyst andra layoutmotor som framstår som ELK.
+7. Vid Open av ett redan sparat projekt med befintliga X/Y ska ingen automatisk nyplacering ske; användarens sparade layout bevaras. En senare frivillig om-layout använder fortfarande befintligt manuellt Preview/Apply/Cancel.
 
-**Negativa tester:** ogiltig portände, icke accepterad kandidat, avbruten källgranskning, snabb Import→New, kraschad Worker, Cancel och projektfil med historisk schema-1.4-proveniens. Kontrollera att antalet noder/portar/länkar och alla kanoniska icke-koordinatfält är identiska före/efter layout Apply.
+**Positiva tester:** verklig CSV/XLSX/ODS-import genom befintligt HTTP/Chromium-gränssnitt; explicit importacceptans → Worker startar själv → direkt färdigt diagram utan extra klick → exakt bibehållen nod-/port-/länkidentitet → Save → Open med samma godkända X/Y. Kontrollera att den synliga och klickbara kabelns ändpunkter möter rätt portcentrum. Bekräfta att historiska importkvitton behåller samma bytes/hash.
 
-**DoD:** riktig användare kan genomföra **Import → Validate → Accept → Click ELK Preview → Cancel/Apply → Save → Open**; ingen auto-Save, inget falskt källbevis och inget parallellt importflöde. Endast den minsta nödvändiga kodändringen.
+**Negativa tester:** ofullständiga/ogiltiga länkar, avvisad eller avbruten import, `canApply=false`, stale fingerprint, Import→New/Open/annan import under Worker, Worker-fel, timeout, stora/ogiltiga koordinater, historisk schema-1.4-proveniens och öppning av redan sparat projekt. Ingen sen Worker får flytta ett nytt eller manuellt modifierat projekt. Inget projekt får autosparas och inget dokumenterat nätverksfält ändras av layouten.
+
+**DoD:** **Import → Validate → Accept → automatic ELK layout displayed → Save → Open** fungerar i riktig Chromium utan extra layoutklick eller koordinatfält i källdokumentet. Felvägar ger ärlig status utan dataförlust. Den manuella valbara layoutkontrollen för befintliga projekt fungerar fortsatt och regressionssviten är grön.
 
 ### ELK-07 – Korrekta användarlöften om kabelbanor efter Save/Open
 
@@ -200,7 +206,7 @@ Följande är **arbetskort**, inte order om fjorton PR:er. Identifikatorerna ELK
 
 **Mål:** externa dokument som används av godkända testpersoner ska gå igenom samma riktiga funktion som användarna använder. Inga parallella testimportörer och inga verkliga företagsdokument som publiceras utan tillstånd.
 
-**Testflöde:** filbytes → faktisk inspektion → exakt cellmapping → `canApply` → användar-Apply → historiskt kvitto → ELK-preview → Apply → Save/Open → separat källverifiering och simulering mot samma faktiska länkar.
+**Testflöde:** filbytes → faktisk inspektion → exakt cellmapping → `canApply` → användarens import-Apply → historiskt kvitto → **automatisk ELK-layout utan extra klick** → Save/Open → separat källverifiering och simulering mot samma faktiska länkar.
 
 **Krav:** minst ett tillåtet anonymiserat exemplar per stödd formatfamilj när sådant finns; annars skriv `NOT_AVAILABLE` och fortsätt med de tillåtna syntetiska browserfixturerna. **Skapa ingen forskningsgren för att leta efter datakällor.** Lägg till den minsta regressionen i samma kod-PR som den felaktiga import-/layoutgränsen rättas.
 
@@ -210,7 +216,7 @@ Följande är **arbetskort**, inte order om fjorton PR:er. Identifikatorerna ELK
 
 **Kodarbete:** endast befintliga, verifierade nödvändiga paketerings-, start- och integrationssteg samt korrigeringar i `README.md`, `docs/ELK_LAYOUT_CONTRACT.md` och relevanta release-/testfiler. Inga nya planarkiv, breda ADR-serier eller teoretiska designrapporter.
 
-**Verifiera användarens resa:** starta offline; öppna projekt; importera fullt giltigt dokument; preview; Cancel; Preview; Apply; Save; Open; ändra nod; simulera; stäng/starta app; förstå varför tidigare kabelböjar visas som standardrutter om ELK inte återberäknats.
+**Verifiera användarens resa:** starta offline; importera fullt giltigt dokument **utan X/Y-kolumner**; godkänn import; se första ELK-layouten visas **automatiskt utan ytterligare klick**; Save; Open utan oönskad nyplacering; ändra nod; prova en senare **frivillig** Preview/Cancel/Apply; simulera; stäng/starta app; förstå att exakta tidigare ELK-kabelböjar inte är beständiga om de inte återberäknats.
 
 **Rollback:** om en release ångras ska tidigare kanoniska projekt kunna öppnas oförändrade. Ingen nedgradering som förlorar schema-1.4-proveniens, kabel-ID eller port-ID. Roller, verktyg och körbara kommandon ska stå kort och konkret i användardokumentationen.
 
@@ -225,7 +231,7 @@ Följande är **arbetskort**, inte order om fjorton PR:er. Identifikatorerna ELK
 - All ny produktionskod är merged med grön obligatorisk CI på exakt HEAD; slutlig `main` verifierad.
 - Explicit import, `canApply`, källreferenser och schema-1.4-evidens är intakta.
 - Alla kablar har två deklarerade fysiska portändar; ingen ELK-kurva har blivit nätverkssanning.
-- Preview/Cancel/Apply/New/Open/Save/stale fungerar både positivt och negativt.
+- Automatisk initial ELK efter **accepterad** import utan X/Y och senare manuell Preview/Cancel/Apply/New/Open/Save/stale fungerar både positivt och negativt.
 - Synliga SVG-banor, interaktionsbanor och paketanimation refererar samma kablar.
 - Tangentbordsflöden och fokus har verifierats för implementerade åtgärder.
 - Stora, stödda nät ger hanterlig interaktion eller ett korrekt, begripligt resursavslag.
@@ -240,8 +246,8 @@ Följande är **arbetskort**, inte order om fjorton PR:er. Identifikatorerna ELK
 |---|---|---|---|
 | Nod-, port-, länk- och zonidentitet | `network_core/model.py` + användarens explicit accepterade modell | Validerad användarändring eller accepterad import | ELK hittar på eller byter objekt |
 | Importerade originalceller, fingerprint, historisk replay | `network_core/import_plan.py`, `import_evidence.py` | Endast enligt befintligt versionskontrakt | Byta `node_layout()` för äldre importbevis |
-| Layoutförslag, ELK-Worker-output | `web/features/layout/elk.js` | Vid användarens klick på Preview | Skriva till projektfil eller skapa nätverkslänk |
-| Godkända nodpositioner X/Y | `web/app.js` | Endast explicit Apply och separat Save | Ändra utan revision-/snapshotkontroll |
+| Layoutberäkning och ELK-Worker-output | `web/features/layout/elk.js` | **Automatiskt efter godkänd ny import**, eller vid användarens senare manuella Preview | Skriva till projektfil eller skapa nätverkslänk |
+| Beräknade nodpositioner X/Y | `web/app.js` | **Automatiskt efter lyckad godkänd import** med revisions-/snapshotkontroll; annars manuellt Apply. Enbart separat Save skriver till disk | Ändra sparat projekt vid Open eller skriva över en nyare arbetsyta |
 | ELK edge-sektioner | Flyktig presentation i `web/canvas.js` | Visas bara för exakt giltig snapshot | Hävdas vara varaktigt sparade eller fysisk topologi |
 | Paket, ARP, VLAN, routing och ICMP | Befintlig Python-simulator, kanonisk topologi | Enligt faktisk protokollmotor | Härledas från ritad kabel eller närhet |
 | Projektfil och disk | `network_core/storage.py` | Endast uttrycklig Save | Autosave från Import/ELK/zoom |
@@ -252,7 +258,7 @@ Följande är **arbetskort**, inte order om fjorton PR:er. Identifikatorerna ELK
 
 | Prioritet | Börja implementera | Leverera i PR | Sluta inte med |
 |---|---|---|---|
-| **P1** | ELK-06: direkt, frivilligt layoutflöde efter **accepterad** import | Synlig UI-handling med riktig browser-import → Preview/Apply/Save/Open | Ytterligare importforskningsrapport, importer nummer två |
+| **P1** | ELK-06: **automatisk initial ELK-layout efter accepterad import** (ingen extra knapp) | Riktig browser-import utan X/Y → automatisk ELK-rendering → Save/Open | Ytterligare layoutklick, importforskningsrapport eller importer nummer två |
 | **P2** | ELK-09: tangentbordsfokus och manövrering för existerande layoutkontroller | Riktig tangentbordsfunktion med negativa Chromium-tester | Tillgänglighetschecklista utan kod |
 | **P3** | ELK-04/05 eller ELK-08: den **först reproducerade** kvarvarande redigerings-/interaktionsbristen | Minimal fix med mätning och regression | Ny ruttmotor, CSS-/SVG-omskrivning utan mätbart problem |
 
@@ -260,7 +266,7 @@ Följande är **arbetskort**, inte order om fjorton PR:er. Identifikatorerna ELK
 
 ## 8. Codex-direktiv som ska användas ordagrant för nästa uppdrag
 
-> **Uppgift:** Implementera nästa konkreta produktionsförbättring i `docs/ELK_IMPLEMENTATION_PLAN.md`, börja vid P1 i avsnitt 7. Detta är en **koduppgift**, inte en forsknings-, revisions- eller dokumentationsuppgift. Kontrollera aktuell `main`, CI, en eventuell redan öppen kod-PR och om P1 redan finns. Om P1 saknas: implementera minsta nödvändiga ändring i existerande `web/features/projects/import-review.js`, `web/app.js` och browser-tester så att en **uttryckligt accepterad, helt giltig import** får ett tydligt, **frivilligt** nästa klick till redan befintlig ELK-förhandsvisning; ingen auto-Apply, ingen auto-Save och ingen förändring av `network_core/import_plan.py::node_layout()` eller historiskt källkvitto. Om P1 redan finns: gå **direkt till P2 och implementera fungerande tangentbordsflöde**. Bevara all befintlig kod som fungerar. Inga parallella grenar, ingen ny layout-/importmotor, inga fristående forsknings-PR:er eller statusrapporter som ersätter kod. Skriv produktionskod och relevanta positiva/negativa tester i samma lilla PR; kör befintliga tester. Skriv exakt PR-länk, HEAD, kodändringar och verifiering. Merge endast vid GitHubs normala gröna grind på exakt HEAD och verifiera `main`. Om CI ännu körs, avsluta utan passiv väntan och lämna PR öppen.
+> **Uppgift:** Implementera nästa konkreta produktionsförbättring i `docs/ELK_IMPLEMENTATION_PLAN.md`, börja vid P1 i avsnitt 7. Detta är en **koduppgift**, inte en forsknings-, revisions- eller dokumentationsuppgift. Kontrollera aktuell `main`, CI, en eventuell redan öppen kod-PR och om P1 redan finns. Om P1 saknas: implementera minsta nödvändiga ändring i befintliga `web/features/projects/import-review.js`, `web/app.js` och browser-tester så att **en uttryckligt accepterad, helt giltig import utan koordinatkolumner automatiskt får sin första ELK-layout**, utan ett andra knapptryck eller separat layout-Apply. Återanvänd befintlig tvåpass-Worker, validera resultatet och tillämpa X/Y i den aktuella arbetsytan under strikt stale-/revisionskontroll. **Ingen autosave** och ingen ändring av `network_core/import_plan.py::node_layout()` eller historiskt källkvitto. Efter Open av ett sparat projekt ska dess X/Y bevaras, medan frivillig manuell Preview/Apply/Cancel används för senare omplacering. Worker-fel ska visas tydligt och importens existerande deterministiska initialplacering bevaras. Om P1 redan finns: gå **direkt till P2 och implementera fungerande tangentbordsflöde**. Bevara all befintlig kod som fungerar. Inga parallella grenar, ingen ny layout-/importmotor, inga fristående forsknings-PR:er eller statusrapporter som ersätter kod. Skriv produktionskod och relevanta positiva/negativa tester i samma lilla PR; kör befintliga tester. Skriv exakt PR-länk, HEAD, kodändringar och verifiering. Merge endast vid GitHubs normala gröna grind på exakt HEAD och verifiera `main`. Om CI ännu körs, avsluta utan passiv väntan och lämna PR öppen.
 
 ## 9. Spårbarhet och ändringar av planen
 

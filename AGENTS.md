@@ -8,7 +8,7 @@ Den enda aktuella etappindelade kvalitetsfärdplanen finns i [docs/QUALITY_IMPRO
 
 För allt fortsatt arbete med ELK/layout/diagram gäller den [kodstyrda ELK-implementeringsplanen](docs/ELK_IMPLEMENTATION_PLAN.md). **Det här är en arbetskö för konkreta kodleveranser, inte en ny forskningsfärdplan.** Börja med nästa ännu inte implementerade, användarnyttiga förbättring; skriv produktionskod och dess positiva/negativa tester i **samma PR**. Hoppa över redan fungerande etapper (KEEP). Skapa **inte** separata forsknings-, arkitektur-, rapport-, ADR- eller test-PR:er som ersättning för fungerande kod. Kör högst en utvecklings-PR åt gången. En kort undersökning ingår bara när en konkret blockerare i den aktuella kodändringen kräver det. Ändra aldrig kanonisk topologi, källproveniens, historiskt importkvitto eller sparschema utan befintligt kontrakt och uttryckligt mandat.
 
-**Nästa prioritet:** frivillig, tydlig ELK-layout direkt efter *godkänd* dokumentationsimport, om denna UI-koppling ännu saknas; annars nästa konkret definierade kodkort. Behåll befintlig Worker/ELK/SVG och obligatoriska CI-grindar.
+**Nästa prioritet:** **automatisk första ELK-layout direkt efter uttryckligen godkänd och validerad dokumentationsimport utan källkoordinater**. Ingen ytterligare knapp, layoutgodkännande eller autosave. Beräkna X/Y via befintlig ELK-Worker och tillämpa bara för giltig, oförändrad arbetsyta; bevara importkvitton och nätverksfakta. En **senare om-layout av befintligt diagram** är däremot frivillig via manuell Preview/Apply/Cancel. Om initialflödet redan fungerar: nästa konkreta kodkort. Behåll befintlig Worker/ELK/SVG och obligatoriska CI-grindar.
 
 ## Permanent Masterprompt
 

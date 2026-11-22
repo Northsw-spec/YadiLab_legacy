@@ -16,7 +16,7 @@ Detta direktiv gäller all framtida kodning i detta repository. Läs även `AGEN
 
 Vid fortsatt ELK-/SVG-/import-UI-arbete ska Codex följa [ELK:s kodstyrda genomförandeplan](ELK_IMPLEMENTATION_PLAN.md). Detta är en konkret implementationsordning under befintlig QUALITY-färdplan, inte en konkurrerande roadmap. **Det förväntade resultatet från varje aktiv ELK-etapp är fungerande, testad produktionskod med verklig användarnytta.** Gör ingen separat forsknings-, revisions-, ADR-, dokumentations- eller test-PR i stället för implementation. Skippa redan implementerade steg (KEEP); en kort teknisk kontroll får endast användas för en specifik blockerare i den PR som faktiskt ändrar koden.
 
-**Prioritera närmast:** en tydlig, frivillig fortsättning från godkänd import till befintlig ELK-preview om funktionen ännu saknas; annars nästa redan specificerade kodnytta. En aktiv PR åt gången, inga parallella forskningsgrenar, ingen ny motor. Bevara historisk importlayout, källkvitton, nätverksfakta, Save/Open och de vanliga verifieringsgrindarna.
+**Prioritera närmast:** **automatisk första ELK-layout efter uttryckligen godkänd och giltig dokumentationsimport**, eftersom källtabellerna inte innehåller X/Y. Codex får **inte** kräva ett extra ELK-klick eller manuellt layout-Apply för att diagrammet ska få sin första placering. Använd befintlig Worker och atomärt stale-skydd; ingen autosave eller förändring av historiska importkvitton. **Valfri manuell ELK Preview/Apply/Cancel gäller endast senare omplacering** och öppnade projekt med sparade X/Y får inte automatiskt få ny layout. En aktiv PR åt gången, inga parallella forskningsgrenar, ingen ny motor. Bevara nätverksfakta, Save/Open och de vanliga verifieringsgrindarna.
 
 ## 1. Uppdraget
 
