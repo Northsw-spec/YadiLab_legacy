@@ -32,3 +32,5 @@ jobs:
           sudo apt-get install -y xvfb xauth xclip
       - name: Real X11 PRIMARY middle-pan and clipboard regression
         run: xvfb-run -a python3 tests/browser_primary_selection_x11.py
+      - name: Real Chromium ELK preview, cancellation and durable Save/Open
+        run: python3 tests/browser_elk_layout.py

@@ -6,11 +6,13 @@ import socket
 import tempfile
 import threading
 from pathlib import Path
+import sys
 from playwright.sync_api import sync_playwright
-from network_core.server import LabHTTPServer
-from network_core.storage import ProjectStore
 
 ROOT=Path(__file__).resolve().parents[1]
+sys.path.insert(0,str(ROOT))
+from network_core.server import LabHTTPServer
+from network_core.storage import ProjectStore
 
 def port_dot(page, node, port):
     return page.evaluate("""([node, port])=>{
