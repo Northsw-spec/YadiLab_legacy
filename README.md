@@ -120,7 +120,7 @@ Longest-prefix match omfattar nu både `CONNECTED` och `STATIC`; lika specifika 
 
 **Topologisk grafväg är inte ping, IP-routing, VLAN-medveten reachability, brandväggslogik eller ett bevis på nätverksanslutning.** Första versionens grafspårning traverserar dokumentationsgrafen, inte verkliga protokoll.
 
-Ännu inte implementerat: godtycklig kalkylbladsimport, beständig DHCP-leasedatabas och permanent klient-IPv4-konfiguration, DNS, brandväggsregler, ACL, fysisk kabeltyp, extern nätverksemulering, automatisk ELK-layout, portöverlappskontroll, multi-user, produktionsinstallatör och omfattande tillgänglighetsverifiering. Ingen funktion visar påhittade enheter eller kablar. Inga gamla simuleringsmotorer har förts över utan bevis.
+Ännu inte implementerat: godtycklig kalkylbladsimport, beständig DHCP-leasedatabas och permanent klient-IPv4-konfiguration, DNS, brandväggsregler, ACL, fysisk kabeltyp, extern nätverksemulering, automatisk första ELK-layout efter godkänd dokumentationsimport, portöverlappskontroll, multi-user, produktionsinstallatör och omfattande tillgänglighetsverifiering. Ingen funktion visar påhittade enheter eller kablar. Inga gamla simuleringsmotorer har förts över utan bevis.
 
 ## Avgränsad DHCPv4 DISCOVER/OFFER via HTTP (PR #29)
 
@@ -253,7 +253,11 @@ Builder kan nu importera **en XLSX-arbetsbok** med namngivna blad `Devices` (obl
 
 Import görs med **Importera**, en `.xlsx` och uttryckligt projektnamn. Servern konverterar de strikta OOXML-tabellerna till den **befintliga CSV-valideringen** och returnerar ett helt validerat dokument före något beslut om att ersätta arbetsytan. Användaren får därefter bekräfta, och **Save krävs separat** för att skriva till disk. Se [XLSX-kontraktet](docs/XLSX_IMPORT.md).
 
-## Import av explicit CSV-dokumentation
+## Äldre strikt CSV-utbytesformat – koordinatkravet ska avvecklas
+
+**Viktig skillnad mellan aktuell kod och mål:** den äldre, strikta fyrtabellsimporten kräver ännu `x/y` enligt tabellen nedan, och de historiska strikta XLSX-/ODS-vägarna delar detta kontrakt. **Det är teknisk skuld i nuvarande kod, inte ett krav på framtida nätverksdokument.** Externa dokumentationsfiler ska **inte** behöva innehålla nodkoordinater. Den kodstyrda [ELK-06-planen](docs/ELK_IMPLEMENTATION_PLAN.md) kräver att de gamla importvägarna accepterar källor utan X/Y och sedan automatiskt placerar noderna med ELK efter godkänd import. Tills ändringen är implementerad och testad är denna strikta importväg fortfarande begränsad; dokumentationens vanliga källceller med rad-/kolumnadresser är inte nodgeometri.
+
+### Nuvarande äldre CSV-kontrakt (före ELK-06)
 
 Markera `Devices.csv` samt valfria `Interfaces.csv`, `Links.csv` och `Zones.csv` samtidigt i **Importera**. Appen validerar samtliga tabeller före uttryckligt godkännande att ersätta aktuell arbetsyta. Ingenting sparas automatiskt.
 
@@ -266,7 +270,7 @@ Det är ett **definierat CSV-utbytesformat**, inte en generell importerare för 
 | `Links.csv` | `id,aNode,aPort,bNode,bPort,enabled` |
 | `Zones.csv` | `id,label` |
 
-`kind` är `host`, `switch`, `router` eller `firewall`. `x` och `y` är uttryckligen angivna presentationskoordinater. `zoneId` och `ipv4` kan lämnas tomma (motsvarar null); övriga värden krävs. `enabled` måste vara exakt `true` eller `false`. Länkar skapas **enbart** från `Links.csv` med ändpunkter som deklarerats i `Interfaces.csv`.
+`kind` är `host`, `switch`, `router` eller `firewall`. **Endast i denna äldre strikta kodväg** krävs för närvarande att `x` och `y` är uttryckligen angivna presentationskoordinater – ett krav som ska tas bort från källdokumenten enligt ELK-06. `zoneId` och `ipv4` kan lämnas tomma (motsvarar null); övriga värden krävs. `enabled` måste vara exakt `true` eller `false`. Länkar skapas **enbart** från `Links.csv` med ändpunkter som deklarerats i `Interfaces.csv`.
 
 Okända fält, odeklarerade portar, ogiltiga referenser och malformed CSV avvisas helt. Exempel finns i `examples/csv/`. ODS och XLSX stöds nu i det **specifika fyrtabellsformatet**, men godtyckliga Excel-/ODS-/CSV-format stöds inte.
 
