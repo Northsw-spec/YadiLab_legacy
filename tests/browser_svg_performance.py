@@ -38,7 +38,7 @@ def run():
     summary={"cases":[],"checks":[],"browser":"Chromium","method":"performance.now synchronous setData; 3 repeats; DOM SHA-256","errors":[]}
     try:
         with sync_playwright() as pw:
-            browser=pw.chromium.launch(headless=True,args=["--enable-precise-memory-info"])
+            browser=pw.chromium.launch(headless=True,args=["--enable-precise-memory-info","--js-flags=--expose-gc"])
             page=browser.new_page(viewport={"width":1380,"height":900})
             page.set_default_timeout(120000)
             page.goto(f"http://127.0.0.1:{server.server_port}/_canvas_perf_fixture.html")
@@ -81,6 +81,12 @@ def run():
                       samples.push(performance.now()-t);
                       heap.push(performance.memory?.usedJSHeapSize??null);
                     }
+                    // Compare retained heap after explicit GC. Without this, the
+                    // second implementation inherits allocations from the first
+                    // and heapUsedSize is not an interpretable memory measure.
+                    if(typeof window.gc!=='function')throw Error('Chromium GC instrumentation unavailable');
+                    window.gc();window.gc();
+                    const heapAfterGc=performance.memory?.usedJSHeapSize??null;
                     const childCount=root.querySelectorAll('*').length;
                     const domBytes=new TextEncoder().encode(root.innerHTML);
                     const digest=await crypto.subtle.digest('SHA-256',domBytes);
@@ -101,7 +107,8 @@ def run():
                     root.replaceChildren();
                     return {variant:label,samplesMs:samples.map(v=>+v.toFixed(3)),
                       medianMs:[...samples].sort((a,b)=>a-b)[1],
-                      heapUsedBytes:heap.at(-1),domChildren:childCount,svgHash:hash,
+                      heapUsedBytes:heapAfterGc,heapPreGcBytes:heap.at(-1),
+                      domChildren:childCount,svgHash:hash,
                       port,selected,zoomMs,zoomStartWidth:startWidth,zoomEndWidth:finalWidth};
                   };
                   const first=await take(Baseline,'baseline');
@@ -114,6 +121,8 @@ def run():
                 assert a["svgHash"]==b["svgHash"],f"SVG DOM changed for {n}/{e}"
                 assert a["domChildren"]==b["domChildren"],f"DOM object count changed for {n}/{e}"
                 assert a["port"]==b["port"] and a["selected"]==b["selected"],"Pointer semantics differ"
+                assert a["heapUsedBytes"] is not None and b["heapUsedBytes"] is not None
+                assert a["port"]=={"node":"N00000","port":"p0"},a["port"]
                 assert a["selected"]=={"type":"link","id":"L0"},a["selected"]
                 assert a["port"]["node"] in (data["baseline"]["port"]["node"],),a["port"]
                 for v in (a,b):
