@@ -54,7 +54,7 @@ jobs:
           from pathlib import Path
           p=Path('research/elk-results')
           errors=[]
-          for name in ('node','browser','stress'):
+          for name in ('node','browser','stress','historical'):
               f=p/(name+'.json')
               if not f.exists(): errors.append(name+' evidence missing'); continue
               data=json.loads(f.read_text())
