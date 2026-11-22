@@ -1,6 +1,6 @@
 # Explicit XLSX workbook import (first bounded Excel format)
 
-> **Status för nuvarande äldre kod, inte framtida importkrav:** Detta kapitel beskriver den strikta XLSX-importen före ELK-06A; dess `Devices`-blad kräver i dag `x/y`. Det är teknisk skuld, **inte ett krav på externa nätverksdokument**. Den bindande [kodplanen](ELK_IMPLEMENTATION_PLAN.md) kräver koordinatfri CSV/XLSX/ODS-inläsning i ELK-06A, automatisk initial ELK-layout i 06B och koordinatfri dokumentexport/mallar i 06C. Efter kodmerge ska huvudtextens äldre header-/testbeskrivningar uppdateras mot verifierad implementation. Celladresser (t.ex. B12) är källhänvisningar, **inte** nodpositioner.
+> **ELK-06A–C:** Den strikta XLSX-importen accepterar nu `Devices` utan nodkoordinater och även äldre dokument med **både** `x` och `y`. Efter godkänd dokumentimport körs den första ELK-layouten automatiskt; Save kräver fortfarande ett separat klick. Nya nätverksdokumentexporter och mallar saknar X/Y. Källcelladresser som B12 är proveniens, inte nodpositioner.
 
 ## Intended use and scope
 
@@ -8,7 +8,7 @@ A network consultant may receive documentation as an XLSX workbook. This impleme
 
 | Worksheet name | Required | Exact header cells (any order) |
 | --- | --- | --- |
-| `Devices` | Yes | `id,label,kind,x,y,zoneId` |
+| `Devices` | Yes | `id,label,kind,zoneId` (äldre: även `x,y` tillsammans) |
 | `Interfaces` | No | `nodeId,id,name,enabled,ipv4` |
 | `Links` | No | `id,aNode,aPort,bNode,bPort,enabled` |
 | `Zones` | No | `id,label` |
@@ -21,13 +21,13 @@ Unversioned workbooks retain canonical **schema 1.0**. A separate, explicit `Pro
 
 `POST /api/import/xlsx` accepts exactly `filename` (one `.xlsx`), `projectName` (1–120 characters), and `contentBase64` (standard base64 of the raw ZIP bytes). Hard limits: **5 MiB compressed**, **12 MiB total expanded**, **5 MiB per XML part**, **24 archive entries**, and **5001 rows per sheet** (header + 5000 data records).
 
-The standard OOXML workbook manifest and local worksheet relationships identify the named sheets. Sheet order, generated worksheet filenames, and column order are not assumed. The importer recognizes normal inline strings, plain shared strings, numeric coordinates, and native boolean `enabled` cells; all device/port/link IDs remain literal **text** to avoid Excel's numeric normalization destroying leading zeros. Unsupported numeric identity cells, formulas/cached formula values, cell errors, rich-text shared strings, hidden sheets/rows/columns, merged cells, drawings, external links, embedded objects/macros, unexpected worksheet parts, out-of-range/duplicate coordinates, malformed XML, corrupt ZIP archives, duplicate archive members and unsupported OOXML package parts are rejected with HTTP 422 rather than skipped.
+The standard OOXML workbook manifest and local worksheet relationships identify the named sheets. Sheet order, generated worksheet filenames, and column order are not assumed. The importer recognizes normal inline strings, plain shared strings, legacy numeric coordinate pairs, and native boolean `enabled` cells; all device/port/link IDs remain literal **text** to avoid Excel's numeric normalization destroying leading zeros. Unsupported numeric identity cells, formulas/cached formula values, cell errors, rich-text shared strings, hidden sheets/rows/columns, merged cells, drawings, external links, embedded objects/macros, unexpected worksheet parts, out-of-range/duplicate coordinates, malformed XML, corrupt ZIP archives, duplicate archive members and unsupported OOXML package parts are rejected with HTTP 422 rather than skipped.
 
-`network_core/xlsx_import.py` converts the declared cell matrix to CSV records **in memory**, using the exact `csv_import.TABLES` schema and existing `import_csv_tables`. That existing path validates the canonical graph and declared identities; the shared spreadsheet version converter then adds schema-1.3 facts and validates the complete document again. No second model/import validation implementation and no filesystem writes.
+`network_core/xlsx_import.py` converts the declared cell matrix to CSV records **in memory**, using the strictly validated coordinate-free or legacy Devices-header variant and existing `import_csv_tables`. That existing path validates the canonical graph and declared identities; the shared spreadsheet version converter then adds schema-1.3 facts and validates the complete document again. No second model/import validation implementation and no filesystem writes.
 
 ## UI and Save
 
-In the Builder choose **Importera**, select one XLSX, and enter a project name when asked. The browser sends the raw workbook bytes, never `File.text()` (which would corrupt binary data). On **successful complete validation**, Builder asks whether to discard unsaved changes and separately whether to replace the workspace. Cancel, invalid documents and HTTP 422 preserve existing working document and actual stored bytes. An accepted import remains **unsaved** until the user clicks **Save**.
+In the Builder choose **Importera**, select one XLSX, and enter a project name when asked. The browser sends the raw workbook bytes, never `File.text()` (which would corrupt binary data). On **successful complete validation**, Builder asks whether to discard unsaved changes and separately whether to replace the workspace. Cancel, invalid documents and HTTP 422 preserve existing working document and actual stored bytes. An accepted document import starts the initial ELK layout automatically, but remains **unsaved** until the user clicks **Save**.
 
 The XLSX import itself does not prove external reachability, authentic device inventory, or that Excel's presentation is correctly configured; it only confirms the declared table content conforms to the import model.
 

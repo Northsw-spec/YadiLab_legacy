@@ -1,16 +1,16 @@
-"""Lossless, read-only canonical project interchange to XLSX and ODS.
+"""Read-only coordinate-free XLSX/ODS network documentation export.
 
-Uses the same physical writers as the downloadable demo templates and the
-same real importers for a final roundtrip check. No inferred network facts.
+All supported network facts must roundtrip through the actual importers.
+Presentation node X/Y belongs exclusively to canonical project Save/Export.
 """
 from __future__ import annotations
 
 import base64
+import copy
 import re
 
-from .csv_import import TABLES
 from .model import ProjectValidationError, validate_project
-from .spreadsheet_schema import V13
+from .spreadsheet_schema import DOCUMENT_V10, DOCUMENT_V13
 from .spreadsheet_templates import _xlsx, _ods
 
 _ILLEGAL_XML = re.compile("[\x00-\x08\x0b\x0c\x0e-\x1f\r]")
@@ -35,7 +35,7 @@ def _serialize(project: dict) -> tuple[dict[str, list[tuple[str, ...]]],
     version = project["schemaVersion"]
     if version not in ("1.0", "1.3"):
         _fail("schemaVersion", f"schema {version} is not in the explicit workbook contract (1.0/1.3); no automatic migration")
-    contract = V13 if version == "1.3" else TABLES
+    contract = DOCUMENT_V13 if version == "1.3" else DOCUMENT_V10
     rows: dict[str, list[tuple[str, ...]]] = {}
     if version == "1.3":
         rows["Project"] = [("1.3",)]
@@ -48,10 +48,7 @@ def _serialize(project: dict) -> tuple[dict[str, list[tuple[str, ...]]],
 
     for ni, node in enumerate(project["nodes"]):
         where = f"nodes[{ni}]"
-        rows["Devices"].append((
-            node["id"], node["label"], node["kind"], str(node["x"]), str(node["y"]),
-            _name(node["zoneId"]),
-        ))
+        rows["Devices"].append((node["id"], node["label"], node["kind"], _name(node["zoneId"])))
         for pi, port in enumerate(node["ports"]):
             loc = f"{where}.ports[{pi}]"
             base = (node["id"], port["id"], port["name"],
@@ -106,8 +103,16 @@ def _serialize(project: dict) -> tuple[dict[str, list[tuple[str, ...]]],
     return rows, contract
 
 
+def _document_facts(project: object) -> dict:
+    """A validated, exact projection: remove only node display coordinates."""
+    canonical = copy.deepcopy(validate_project(project))
+    for node in canonical["nodes"]:
+        del node["x"], node["y"]
+    return canonical
+
+
 def export_workbook(project: object, extension: str) -> bytes:
-    """Return real binary workbook, rejecting any change to canonical semantics."""
+    """Return binary documentation only if every supported network fact survives."""
     if extension not in ("xlsx", "ods"):
         _fail("format", "expected exactly xlsx or ods")
     canonical = validate_project(project)
@@ -128,6 +133,6 @@ def export_workbook(project: object, extension: str) -> bytes:
     }
     restored = (import_xlsx_workbook(payload) if extension == "xlsx"
                 else import_ods_workbook(payload))
-    if restored != canonical:
-        _fail("roundtrip", "workbook cannot preserve the exact canonical data; original project unchanged")
+    if _document_facts(restored) != _document_facts(canonical):
+        _fail("roundtrip", "workbook cannot preserve all documented network facts; original project unchanged")
     return data

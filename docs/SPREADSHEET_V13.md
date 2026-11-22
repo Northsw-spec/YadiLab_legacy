@@ -1,6 +1,6 @@
 # Explicit versioned XLSX/ODS interchange format — schema 1.3
 
-> **Historiskt formatkontrakt – kodförändring planerad:** Tabellen nedan visar de **faktiska** schema-1.3-kolumnerna före ELK-06A; `Devices` innehåller fortfarande obligatoriska `x/y` i nuvarande kod. Detta är **inte ett acceptabelt krav på framtida källdokument**. [Kodplan ELK-06A–C](ELK_IMPLEMENTATION_PLAN.md) avskaffar det obligatoriska importkravet, kör ELK efter godkänd dokumentimport och tar bort koordinater från nya dokumentexporter/mallar. Kanoniska projektfiler behåller X/Y för Save/Open.
+> **ELK-06A–C:** Nya schema-1.3 XLSX-/ODS-mallar och exporter har `Devices=id,label,kind,zoneId`. Den strikta importen accepterar även äldre filer med kompletta X/Y-par och kör ELK automatiskt efter godkänd dokumentimport. Sparade projektfiler behåller X/Y. Kalkylblad är nätverksdokumentation, inte layoutbackup.
 
 The Builder offers two real binary schema-1.3 example workbooks (XLSX and ODS) under the saved-project controls. Each is a **labelled demo**, not an observed network. Their routes are declared facts but do not imply successful reachability. Validation failures for versioned cells include the original source cell address when the row/column is unambiguous. See [template downloads and diagnostics](SPREADSHEET_TEMPLATES.md).
 
@@ -18,13 +18,13 @@ Only these sheets are recognized, in any order:
 | Sheet | Required | Exact named columns (order immaterial) |
 |---|---|---|
 | Project | For 1.3 | schemaVersion |
-| Devices | Yes | id, label, kind, x, y, zoneId |
+| Devices | Yes | id, label, kind, zoneId (legacy: also x and y together) |
 | Interfaces | No | nodeId, id, name, enabled, ipv4, mac, vlanMode, accessVlan, allowedVlans |
 | Links | No | id, aNode, aPort, bNode, bPort, enabled |
 | Zones | No | id, label |
 | StaticRoutes | No | nodeId, id, destination, nextHop, outPort |
 
-If `Project` is absent, `StaticRoutes` is forbidden and `Interfaces` must have only the legacy five columns. If `Project` is present, `Interfaces` must have all nine columns, including any blank optional fields. A version other than exactly `1.3`, duplicate metadata rows or unknown columns is an error. Data cells representing identities, MACs, IPv4/CIDRs, destination prefixes, gateways and VLAN IDs must be **text**. Native numeric `x/y` and boolean `enabled` cells remain supported. IDs and endpoints must be declared, not inferred.
+If `Project` is absent, `StaticRoutes` is forbidden and `Interfaces` must have only the legacy five columns. If `Project` is present, `Interfaces` must have all nine columns, including any blank optional fields. A version other than exactly `1.3`, duplicate metadata rows or unknown columns is an error. Data cells representing identities, MACs, IPv4/CIDRs, destination prefixes, gateways and VLAN IDs must be **text**. Native numeric legacy `x/y` pairs and boolean `enabled` cells remain supported; no X/Y is required in newly produced documentation. IDs and endpoints must be declared, not inferred.
 
 ## MAC and VLAN columns
 

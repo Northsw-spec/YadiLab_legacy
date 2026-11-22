@@ -253,26 +253,22 @@ Builder kan nu importera **en XLSX-arbetsbok** med namngivna blad `Devices` (obl
 
 Import görs med **Importera**, en `.xlsx` och uttryckligt projektnamn. Servern konverterar de strikta OOXML-tabellerna till den **befintliga CSV-valideringen** och returnerar ett helt validerat dokument före något beslut om att ersätta arbetsytan. Användaren får därefter bekräfta, och **Save krävs separat** för att skriva till disk. Se [XLSX-kontraktet](docs/XLSX_IMPORT.md).
 
-## Äldre strikt CSV-utbytesformat – koordinatkravet ska avvecklas
+## Strikt CSV-import och koordinatfria nätverksdokument
 
-**Viktig skillnad mellan aktuell kod och mål:** den äldre, strikta fyrtabellsimporten kräver ännu `x/y` enligt tabellen nedan, och de historiska strikta XLSX-/ODS-vägarna delar detta kontrakt. **Det är teknisk skuld i nuvarande kod, inte ett krav på framtida nätverksdokument.** Externa dokumentationsfiler ska **inte** behöva innehålla nodkoordinater. Den kodstyrda [ELK-06-planen](docs/ELK_IMPLEMENTATION_PLAN.md) kräver att de gamla importvägarna accepterar källor utan X/Y och sedan automatiskt placerar noderna med ELK efter godkänd import. Tills ändringen är implementerad och testad är denna strikta importväg fortfarande begränsad; dokumentationens vanliga källceller med rad-/kolumnadresser är inte nodgeometri. **Även den nuvarande XLSX-/ODS-exporten och nedladdningsbara mallarna innehåller X/Y**, vilket ska korrigeras i **ELK-06C** efter kodleveranserna **06A** (koordinatfri import) och **06B** (automatisk första ELK-layout). En nätverksdokumentexport utan X/Y är **inte** en fullständig backup av nodernas visuella placering: använd projektfilens Save/Export för det.
+CSV-, XLSX- och ODS-dokumentation behöver **inte** ha X/Y-kolumner för noder. Efter en godkänd dokumentimport skapar Builder en första layout automatiskt med ELK; den är osparad tills **Save** väljs. Den manuella ELK-funktionen för redan placerade topologier är fortsatt frivillig. Äldre källor med både `x` och `y` accepteras fortfarande efter strikt validering, men halva koordinatpar eller okända fält avvisas.
 
-### Nuvarande äldre CSV-kontrakt (före ELK-06)
+Markera `Devices.csv` samt valfria `Interfaces.csv`, `Links.csv` och `Zones.csv` samtidigt i **Importera**. Appen validerar samtliga tabeller före uttryckligt godkännande att ersätta arbetsytan. Dessa är explicita nätverkstabeller; godtyckliga källdokument kräver separat flexibel fältmappning.
 
-Markera `Devices.csv` samt valfria `Interfaces.csv`, `Links.csv` och `Zones.csv` samtidigt i **Importera**. Appen validerar samtliga tabeller före uttryckligt godkännande att ersätta aktuell arbetsyta. Ingenting sparas automatiskt.
-
-Det är ett **definierat CSV-utbytesformat**, inte en generell importerare för godtyckliga kalkylblad. Varje tabell kräver exakt följande kolumner (i valfri ordning):
-
-| Tabell | Kolumner |
-| --- | --- |
-| `Devices.csv` (krävs) | `id,label,kind,x,y,zoneId` |
+| Fil | Nya dokumentationskolumner |
+|---|---|
+| `Devices.csv` | `id,label,kind,zoneId` |
 | `Interfaces.csv` | `nodeId,id,name,enabled,ipv4` |
 | `Links.csv` | `id,aNode,aPort,bNode,bPort,enabled` |
 | `Zones.csv` | `id,label` |
 
-`kind` är `host`, `switch`, `router` eller `firewall`. **Endast i denna äldre strikta kodväg** krävs för närvarande att `x` och `y` är uttryckligen angivna presentationskoordinater – ett krav som ska tas bort från källdokumenten enligt ELK-06. `zoneId` och `ipv4` kan lämnas tomma (motsvarar null); övriga värden krävs. `enabled` måste vara exakt `true` eller `false`. Länkar skapas **enbart** från `Links.csv` med ändpunkter som deklarerats i `Interfaces.csv`.
+`kind` är `host`, `switch`, `router` eller `firewall`. `zoneId` och `ipv4` får vara tomma, `enabled` måste vara exakt `true` eller `false`, och varje kabel kräver en explicit port i båda ändar. Schema 1.3 i XLSX/ODS har dessutom MAC-, VLAN- och statiska routefält; se [formatkontraktet](docs/SPREADSHEET_V13.md).
 
-Okända fält, odeklarerade portar, ogiltiga referenser och malformed CSV avvisas helt. Exempel finns i `examples/csv/`. ODS och XLSX stöds nu i det **specifika fyrtabellsformatet**, men godtyckliga Excel-/ODS-/CSV-format stöds inte.
+**Nätverksdokumentexport (.xlsx/.ods) och nedladdningsbara mallar är koordinatfria.** De bevarar stödda dokumenterbara nätverksfakta, men inte visuella X/Y. **Spara eller exportera projektet som `.yadilab`/JSON om nodplaceringarna ska bevaras.** Schema 1.4 med historiska importkvitton exporteras inte som kalkylblad, utan kräver projektfil. [Exportkontrakt](docs/SPREADSHEET_EXPORT.md).
 
 ## Filformat
 

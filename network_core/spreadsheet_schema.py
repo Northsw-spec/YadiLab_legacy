@@ -23,6 +23,11 @@ V13 = {
     "Zones.csv": TABLES["Zones.csv"],
     "StaticRoutes.csv": ("nodeId", "id", "destination", "nextHop", "outPort"),
 }
+# Outbound network documentation intentionally excludes presentation geometry.
+# The importers retain TABLES/V13 and still accept complete legacy x/y pairs.
+DOCUMENT_DEVICE_FIELDS = ("id", "label", "kind", "zoneId")
+DOCUMENT_V10 = {**TABLES, "Devices.csv": DOCUMENT_DEVICE_FIELDS}
+DOCUMENT_V13 = {**V13, "Devices.csv": DOCUMENT_DEVICE_FIELDS}
 KNOWN_SHEETS = frozenset(n[:-4] for n in V13)
 
 

@@ -11,6 +11,8 @@ import threading
 import unittest
 import zipfile
 from pathlib import Path
+from unittest.mock import patch
+from xml.etree import ElementTree as ET
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
@@ -33,6 +35,33 @@ def reimport(data: bytes, extension: str, name: str):
     })
 
 
+def network_facts(value):
+    """Independent network projection omitting only diagram coordinates."""
+    result=copy.deepcopy(validate_project(value))
+    for node in result["nodes"]:
+        del node["x"],node["y"]
+    return result
+
+
+def device_headers(data: bytes, extension: str, version: str) -> tuple[str, ...]:
+    """Read the physical Devices header from actual ZIP XML bytes."""
+    with zipfile.ZipFile(io.BytesIO(data)) as archive:
+        if extension=="xlsx":
+            number=2 if version=="1.3" else 1
+            root=ET.fromstring(archive.read(f"xl/worksheets/sheet{number}.xml"))
+            ns="{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
+            row=root.find(f".//{ns}sheetData/{ns}row")
+            return tuple(c.find(f"{ns}is/{ns}t").text for c in row.findall(f"{ns}c"))
+        root=ET.fromstring(archive.read("content.xml"))
+        ns="{urn:oasis:names:tc:opendocument:xmlns:table:1.0}"
+        txt="{urn:oasis:names:tc:opendocument:xmlns:text:1.0}"
+        for sheet in root.findall(f".//{ns}table"):
+            if sheet.attrib.get(ns+"name")=="Devices":
+                row=sheet.find(f"{ns}table-row")
+                return tuple(c.find(f"{txt}p").text for c in row.findall(f"{ns}table-cell"))
+    raise AssertionError("Devices sheet missing")
+
+
 class ProjectSpreadsheetExportTests(unittest.TestCase):
     def test_schema13_actual_zip_roundtrip_macs_vlans_routes_links_identity(self):
         original = expected_v13()
@@ -48,8 +77,10 @@ class ProjectSpreadsheetExportTests(unittest.TestCase):
                         self.assertEqual(archive.namelist()[0], "mimetype")
                         self.assertEqual(archive.getinfo("mimetype").compress_type,
                                          zipfile.ZIP_STORED)
+                self.assertEqual(device_headers(data, extension, "1.3"),
+                                 ("id", "label", "kind", "zoneId"))
                 restored = reimport(data, extension, original["name"])
-                self.assertEqual(restored, original)
+                self.assertEqual(network_facts(restored), network_facts(original))
                 self.assertEqual(restored["nodes"][0]["staticRoutes"][0]["id"], "to-network-b")
                 self.assertEqual(restored["nodes"][1]["ports"][1]["vlan"]["allowedVlans"], [10,20])
                 self.assertEqual(restored["links"][1]["a"], {"node":"sa","port":"uplink"})
@@ -61,8 +92,10 @@ class ProjectSpreadsheetExportTests(unittest.TestCase):
         for extension in ("xlsx","ods"):
             with self.subTest(extension=extension):
                 raw=export_workbook(original,extension)
+                self.assertEqual(device_headers(raw,extension,"1.0"),
+                                 ("id","label","kind","zoneId"))
                 restored=reimport(raw,extension,original["name"])
-                self.assertEqual(restored,original)
+                self.assertEqual(network_facts(restored), network_facts(original))
                 self.assertEqual(restored["schemaVersion"],"1.0")
                 self.assertEqual(restored["links"][0]["b"],{"node":"sw-a","port":"gi1"})
 
@@ -78,7 +111,7 @@ class ProjectSpreadsheetExportTests(unittest.TestCase):
         for extension in ("xlsx","ods"):
             with self.subTest(extension=extension):
                 data=export_workbook(original,extension)
-                self.assertEqual(reimport(data,extension,original["name"]),original)
+                self.assertEqual(network_facts(reimport(data,extension,original["name"])), network_facts(original))
 
     def test_missing_optional_sections_no_routes_and_no_implicit_facts(self):
         sample=copy.deepcopy(expected_v13())
@@ -93,8 +126,54 @@ class ProjectSpreadsheetExportTests(unittest.TestCase):
         for extension in ("xlsx","ods"):
             with self.subTest(extension=extension):
                 restored=reimport(export_workbook(sample,extension),extension,sample["name"])
-                self.assertEqual(restored,sample)
+                self.assertEqual(network_facts(restored),network_facts(sample))
                 self.assertEqual(restored["links"],[])
+
+    def test_coordinates_are_not_exported_even_when_layout_changes(self):
+        original=expected_v13()
+        moved=copy.deepcopy(original)
+        for node in moved["nodes"]:
+            node["x"] += 321
+            node["y"] -= 123
+        moved=validate_project(moved)
+        self.assertNotEqual(original,moved)
+        for extension in ("xlsx","ods"):
+            with self.subTest(extension=extension):
+                exported=export_workbook(original,extension)
+                self.assertEqual(exported,export_workbook(moved,extension))
+                self.assertEqual(device_headers(exported,extension,"1.3"),
+                                 ("id","label","kind","zoneId"))
+
+    def test_roundtrip_rejects_loss_of_any_non_coordinate_fact(self):
+        original=expected_v13()
+        altered=copy.deepcopy(original)
+        altered["nodes"][0]["label"]="Undocumented mutation"
+        altered=validate_project(altered)
+        with patch("network_core.xlsx_import.import_xlsx_workbook",return_value=altered):
+            with self.assertRaisesRegex(ProjectValidationError,"all documented network facts"):
+                export_workbook(original,"xlsx")
+
+    def test_canonical_project_backup_retains_exact_coordinates(self):
+        with tempfile.TemporaryDirectory() as root:
+            original=expected_v13()
+            store=ProjectStore(Path(root))
+            saved=store.save("layout-backup",original)
+            before=(Path(root)/"layout-backup.yadilab").read_bytes()
+            for extension in ("xlsx","ods"):
+                documentation=export_workbook(original,extension)
+                self.assertEqual(network_facts(reimport(documentation,extension,original["name"])),
+                                 network_facts(original))
+                self.assertEqual((Path(root)/"layout-backup.yadilab").read_bytes(),before)
+            self.assertEqual(store.read("layout-backup")["project"],original)
+            self.assertEqual(store.read("layout-backup")["sha256"],saved["sha256"])
+
+    def test_new_csv_example_has_no_coordinates(self):
+        import csv
+        with (Path(__file__).resolve().parent.parent/"examples/csv/Devices.csv").open(
+                encoding="utf-8",newline="") as source_file:
+            records=list(csv.reader(source_file))
+        self.assertEqual(records[0],["id","label","kind","zoneId"])
+        self.assertEqual(len(records),3)
 
     def test_export_requires_at_least_one_declared_node(self):
         value={"schemaVersion":"1.3","name":"Empty","zones":[],"nodes":[],"links":[]}
@@ -174,7 +253,8 @@ class ProjectSpreadsheetExportTests(unittest.TestCase):
                 disk=(Path(root)/("roundtrip-"+extension+".yadilab")).read_bytes()
                 self.assertEqual(saved["sha256"],hashlib.sha256(disk).hexdigest())
                 reopened=ProjectStore(Path(root)).read("roundtrip-"+extension)["project"]
-                self.assertEqual(reopened,project)
+                self.assertEqual(reopened,restored)
+                self.assertEqual(network_facts(reopened),network_facts(project))
                 # Only the saved file was written, never a workbook.
                 self.assertEqual(list(Path(root).glob("*.xlsx")),[])
                 self.assertEqual(list(Path(root).glob("*.ods")),[])
@@ -215,7 +295,7 @@ class ProjectSpreadsheetExportHTTPTests(unittest.TestCase):
                 self.assertEqual(data["filename"],"network-documentation."+extension)
                 content=base64.b64decode(data["contentBase64"],validate=True)
                 self.assertEqual(content[:2],b"PK")
-                self.assertEqual(reimport(content,extension,original["name"]),original)
+                self.assertEqual(network_facts(reimport(content,extension,original["name"])),network_facts(original))
                 self.assertEqual(list(self.root.glob("*.yadilab")),[self.root/"old.yadilab"])
                 self.assertEqual((self.root/"old.yadilab").read_bytes(),old_bytes)
         self.assertEqual(self.server.store.read("old")["sha256"],saved["sha256"])

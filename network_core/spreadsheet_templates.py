@@ -10,16 +10,16 @@ import io
 import zipfile
 from xml.sax.saxutils import escape, quoteattr
 
-from .spreadsheet_schema import V13
+from .spreadsheet_schema import DOCUMENT_V13
 
 SHEET_ORDER = ("Project", "Devices", "Interfaces", "Links", "Zones", "StaticRoutes")
 SAMPLE = {
     "Project": [("1.3",)],
     "Devices": [
-        ("demo-client", "DEMO client", "host", "30", "40", "demo-zone"),
-        ("demo-switch-a", "DEMO switch A", "switch", "150", "40", "demo-zone"),
-        ("demo-switch-b", "DEMO switch B", "switch", "270", "40", "demo-zone"),
-        ("demo-router", "DEMO router", "router", "390", "40", "demo-zone"),
+        ("demo-client", "DEMO client", "host", "demo-zone"),
+        ("demo-switch-a", "DEMO switch A", "switch", "demo-zone"),
+        ("demo-switch-b", "DEMO switch B", "switch", "demo-zone"),
+        ("demo-router", "DEMO router", "router", "demo-zone"),
     ],
     "Interfaces": [
         ("demo-client", "eth0", "NIC", "true", "192.0.2.10/24",
@@ -67,7 +67,7 @@ ODS_NAMESPACES = (
 
 
 def _cells(sheet: str, records_by_sheet=None, contract=None):
-    schema = V13 if contract is None else contract
+    schema = DOCUMENT_V13 if contract is None else contract
     source = SAMPLE if records_by_sheet is None else records_by_sheet
     headers = schema[sheet + ".csv"]
     records = source[sheet]
@@ -78,7 +78,7 @@ def _cells(sheet: str, records_by_sheet=None, contract=None):
 
 
 def _xlsx(records_by_sheet=None, contract=None) -> bytes:
-    schema = V13 if contract is None else contract
+    schema = DOCUMENT_V13 if contract is None else contract
     sheet_order = SHEET_ORDER if records_by_sheet is None else tuple(records_by_sheet)
     content_overrides = []
     sheet_tags = []
@@ -159,7 +159,7 @@ def _odf_text(value: str) -> str:
 
 
 def _ods(records_by_sheet=None, contract=None) -> bytes:
-    schema = V13 if contract is None else contract
+    schema = DOCUMENT_V13 if contract is None else contract
     sheet_order = SHEET_ORDER if records_by_sheet is None else tuple(records_by_sheet)
     sheets_xml = []
     for sheet in sheet_order:

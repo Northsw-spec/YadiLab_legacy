@@ -16,9 +16,9 @@
         <button id="import-project" class="btn btn-ghost" type="button" title="Projekt-JSON eller namngivna Devices/Interfaces/Links/Zones-tabeller">Strikt import</button>
         <button id="external-import" class="btn btn-ghost" type="button">Extern dokumentation</button>
         <button id="preview-tables" class="btn btn-ghost" type="button">Förhandsgranska tabeller</button>
-        <button id="export-project" class="btn btn-ghost" type="button" title="Kanonisk projekt-JSON">Exportera JSON</button>
-        <button id="export-xlsx" class="btn btn-outline" type="button" title="Exportera aktuella dokumenterade fakta som XLSX, utan att spara projektet">Exportera XLSX</button>
-        <button id="export-ods" class="btn btn-outline" type="button" title="Exportera aktuella dokumenterade fakta som ODS, utan att spara projektet">Exportera ODS</button>
+        <button id="export-project" class="btn btn-ghost" type="button" title="Projektbackup som bevarar nodernas X/Y och nätverksfakta">Exportera JSON</button>
+        <button id="export-xlsx" class="btn btn-outline" type="button" title="Nätverksdokumentation i XLSX utan X/Y; layout bevaras endast i projektfil">Exportera XLSX</button>
+        <button id="export-ods" class="btn btn-outline" type="button" title="Nätverksdokumentation i ODS utan X/Y; layout bevaras endast i projektfil">Exportera ODS</button>
         <button id="save-project" class="btn btn-primary" type="button">Spara projekt</button>
         <input id="preview-file" type="file" accept=".csv,.xlsx,.ods" hidden>
         <input id="import-file" type="file" accept=".yadilab,application/json,.json,.csv,text/csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.ods,application/vnd.oasis.opendocument.spreadsheet" multiple hidden>
@@ -108,7 +108,7 @@
           <p id="import-evidence-status" class="muted tiny" aria-live="polite">Inget historiskt importkvitto.</p>
           <p class="muted tiny">Spara skriver riktiga <code>.yadilab</code>-filer på din dator via den lokala servern.</p>
           <div class="eyebrow">MALLAR · SCHEMA 1.3</div>
-          <p class="muted tiny">Märkta demonstrationsexempel – ersätt alla demouppgifter med dokumenterade fakta.</p>
+          <p class="muted tiny">Märkta demonstrationsexempel utan X/Y – ersätt demouppgifter med dokumenterade fakta. ELK placerar noderna vid import; spara projektfil för layoutbackup.</p>
           <div class="template-links">
             <a id="template-xlsx" class="btn btn-outline btn-small" href="/api/templates/xlsx" download="network-schema13-demo.xlsx">Excel-mall (.xlsx)</a>
             <a id="template-ods" class="btn btn-outline btn-small" href="/api/templates/ods" download="network-schema13-demo.ods">Calc-mall (.ods)</a>
