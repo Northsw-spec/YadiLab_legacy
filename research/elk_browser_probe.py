@@ -23,6 +23,7 @@ try:
     with sync_playwright() as pw:
         browser=pw.chromium.launch(headless=True)
         page=browser.new_page(viewport={"width":1400,"height":900})
+        page.on("worker",lambda worker: result["environment"].setdefault("worker_events",[]).append(worker.url))
         page.on("request",lambda request: result["environment"]["external_requests"].append(request.url)
           if not request.url.startswith("http://127.0.0.1:8765/") else None)
         page.goto("http://127.0.0.1:8765/research/_elk_browser_probe.html",wait_until="load")
@@ -42,7 +43,7 @@ try:
               return result;
             }""")
             time.sleep(.1)
-            workers=[w.url for w in page.workers]
+            workers=result["environment"].get("worker_events",[])
             ans["observedWorkerUrls"]=workers
             ans["sameOriginWorkerObserved"]=any(u.startswith("http://127.0.0.1:8765/") and "elk-worker" in u for u in workers)
             result["tests"]["H4_offline_local_worker"]=ans
