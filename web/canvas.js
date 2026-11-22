@@ -104,6 +104,7 @@ export class TopologyCanvas {
     this.callbacks = {onSelect, onPort, onMove, onEndMove, onScale};
     this.view = {x: -30, y: -30, w: 1200, h: 740};
     this.project = null;
+    this.presentation = null;
     this.selected = null;
     this.pending = null;
     this.highlight = [];
@@ -305,7 +306,7 @@ export class TopologyCanvas {
   }
 
   fit() {
-    const nodes = this.project?.nodes || [];
+    const nodes = (this.presentation?.project || this.project)?.nodes || [];
     const rect = this.svg.getBoundingClientRect();
     const aspect = Math.max(.5, rect.width / Math.max(1, rect.height));
     if (!nodes.length) {
@@ -324,8 +325,9 @@ export class TopologyCanvas {
     this.setView();
   }
 
-  setData(project, selected, pending, highlighted = []) {
+  setData(project, selected, pending, highlighted = [], presentation = null) {
     this.project = project;
+    this.presentation = presentation;
     this.selected = selected;
     this.pending = pending;
     this.highlight = highlighted;
@@ -334,7 +336,7 @@ export class TopologyCanvas {
 
   render() {
     this.stopJourney();
-    const project = this.project;
+    const project = this.presentation?.project || this.project;
     if (!project) return;
     const children = [];
     // Zones are derived from explicitly assigned membership. They are
@@ -352,7 +354,7 @@ export class TopologyCanvas {
     }
     for (const link of project.links) {
       const a = endpoint(project, link.a), b = endpoint(project, link.b);
-      const d = route(a, b);
+      const d = this.presentation?.paths?.[link.id] || route(a, b);
       const highlighted = this.highlight.includes(link.id);
       const selected = this.selected?.type === 'link' && this.selected.id === link.id;
       const p = svgElement('path', {d, class: `network-edge${link.enabled ? '' : ' offline'}${highlighted ? ' highlight' : ''}${selected ? ' selected' : ''}`,
@@ -390,13 +392,15 @@ export class TopologyCanvas {
         dot.addEventListener('pointerdown', event => {
           if (event.button !== 0) return;
           event.stopPropagation();
-          this.callbacks.onPort({node: node.id, port: port.id});
+          if (this.presentation?.preview) return;
+        this.callbacks.onPort({node: node.id, port: port.id});
         });
         group.append(dot);
       }
       group.addEventListener('pointerdown', event => {
         if (event.button !== 0) return;
         event.stopPropagation();
+        if (this.presentation?.preview) return;
         const pt = this.toWorld(event.clientX, event.clientY);
         this.capture(event, {kind: 'node', id: node.id, worldX: pt.x, worldY: pt.y,
           nodeX: node.x, nodeY: node.y, lastX: node.x, lastY: node.y});

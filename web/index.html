@@ -118,7 +118,7 @@
       <main class="canvas-column" aria-label="Topologiarbetsyta">
         <div class="canvas-toolbar">
           <div class="canvas-tab"><span class="tab-indicator"></span> Topologi <span class="tab-caption">/ dokumenterad graf</span></div>
-          <div class="canvas-tools"><button id="probe-toggle" class="btn btn-small btn-soft" type="button" aria-controls="probe-panel" aria-expanded="false">Skicka probe · Paketresa</button><button id="toggle-dropdowns" class="btn btn-small btn-ghost" type="button" aria-pressed="false">Toggla Dropdowns</button><span id="canvas-mode">REDIGERING</span><button id="zoom-out" title="Zooma ut" aria-label="Zooma ut" class="icon-button" type="button">−</button><button id="zoom-in" title="Zooma in" aria-label="Zooma in" class="icon-button" type="button">+</button><button id="zoom-fit" class="btn btn-small btn-ghost" type="button">Anpassa</button></div>
+          <div class="canvas-tools"><button id="probe-toggle" class="btn btn-small btn-soft" type="button" aria-controls="probe-panel" aria-expanded="false">Skicka probe · Paketresa</button><button id="layout-preview" class="btn btn-small btn-outline" type="button" title="Beräkna valfri lokal ELK-layout utan att ändra nätverksmodellen">Föreslå ELK-layout</button><button id="toggle-dropdowns" class="btn btn-small btn-ghost" type="button" aria-pressed="false">Toggla Dropdowns</button><span id="canvas-mode">REDIGERING</span><button id="zoom-out" title="Zooma ut" aria-label="Zooma ut" class="icon-button" type="button">−</button><button id="zoom-in" title="Zooma in" aria-label="Zooma in" class="icon-button" type="button">+</button><button id="zoom-fit" class="btn btn-small btn-ghost" type="button">Anpassa</button></div>
         </div>
         <div class="canvas-container">
           <section id="probe-panel" class="probe-panel" aria-label="Skicka ICMP-probe och spela upp paketresa" hidden>
@@ -139,6 +139,7 @@
             </div>
             <p id="probe-status" role="status" aria-live="polite">Ingen aktuell paketresa.</p>
           </section>
+          <section id="layout-controls" class="layout-controls" aria-label="Förhandsvisning av automatisk layout" hidden><p id="layout-status" role="status" aria-live="polite">Ingen förhandsvisning.</p><div class="layout-actions"><button id="layout-apply" type="button" class="btn btn-small btn-primary" disabled>Tillämpa placering</button><button id="layout-cancel" type="button" class="btn btn-small btn-ghost" disabled>Avbryt</button></div></section>
           <svg id="topology" aria-label="Nätverkstopologi med verkliga deklarerade länkar. Panorera med musens mittenknapp." role="img" tabindex="0"></svg>
           <div id="empty-state" class="empty-state">
             <div class="empty-illustration"><span class="empty-node">▣</span><span class="empty-line"></span><span class="empty-node">▣</span></div>
@@ -500,6 +501,7 @@
     <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
     <div id="canvas-context-menu" class="context-menu" role="menu" aria-label="IPv4-adresser" hidden></div>
   </div>
+  <script src="/vendor/elk-api.js"></script>
   <script type="module" src="/app.js"></script>
 </body>
 </html>

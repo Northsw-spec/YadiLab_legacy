@@ -12,6 +12,7 @@ import {createDoraSessionController} from './features/sessions/dora-session.js';
 import {createSimulationSessionController} from './features/sessions/simulation-session.js';
 import {renderIcmpInvestigationPanel} from './features/diagnostics/icmp-investigation-panel.js';
 import {createImportReview} from './features/projects/import-review.js';
+import {computeElkPreview} from './features/layout/elk.js';
 
 let project = blank();
 let selection = null;
@@ -69,6 +70,7 @@ const canvas = new TopologyCanvas($('topology'), {
   onMove: (id, x, y) => {
     const node = project.nodes.find(item => item.id === id);
     if (node) {
+      invalidateElk();
       node.x = Math.max(-100000, Math.min(100000, x));
       node.y = Math.max(-100000, Math.min(100000, y));
       editRevision += 1;
@@ -414,6 +416,7 @@ function invalidateDoraSession() {
   doraSession.invalidate();
 }
 function changed({keepTrace = false} = {}) {
+  invalidateElk();
   forgetJourney();
   editRevision += 1;
   importReview.onEdit();
@@ -432,6 +435,91 @@ function changed({keepTrace = false} = {}) {
   invalidateSimulationSession();
   arpDiagnostic = null; arpHighlightedLinks = [];
   render();
+}
+
+
+// ELK is an opt-in, transient presentation. Only explicitly applied node X/Y
+// becomes canonical, and Save remains a separate user action. Edge sections
+// are never persisted: Open restores ordinary cable paths until re-layout.
+let elkPreview = null;
+let elkAccepted = null;
+let elkBusy = false;
+let elkGeneration = 0;
+let elkAbort = null;
+function layoutStatus(message = '') {
+  $('layout-status').textContent = message || 'Ingen ELK-förhandsvisning.';
+  $('layout-preview').disabled = elkBusy || project.nodes.length === 0;
+  $('layout-apply').disabled = elkBusy || !elkPreview;
+  $('layout-cancel').disabled = !elkBusy && !elkPreview;
+  $('layout-controls').hidden = !(elkBusy || elkPreview || message);
+}
+function invalidateElk(message = '') {
+  ++elkGeneration;
+  elkAbort?.abort();
+  elkAbort = null;
+  elkBusy = false;
+  elkPreview = null;
+  elkAccepted = null;
+  layoutStatus(message);
+}
+async function startElkPreview() {
+  if (elkBusy) return;
+  invalidateElk();
+  if (!project.nodes.length) {
+    notify('Skapa eller importera minst en deklarerad enhet före automatisk layout.', true);
+    return;
+  }
+  const context = transferContext();
+  const generation = ++elkGeneration;
+  elkAbort = new AbortController();
+  elkBusy = true;
+  const signal = elkAbort.signal;
+  layoutStatus('ELK beräknar en skrivskyddad förhandsvisning. Ingen projektfil skrivs.');
+  try {
+    const proposal = await computeElkPreview(JSON.parse(context.snapshot), {signal});
+    if (elkGeneration !== generation) return;
+    if (!transferCurrent(context)) {
+      invalidateElk('Arbetsytan ändrades under ELK-beräkningen. Förslaget avvisades.');
+      return;
+    }
+    elkPreview = {...proposal, context};
+    render();
+    canvas.fit();
+    layoutStatus('Förslag klart: ' + proposal.nodeCount + ' noder, ' + proposal.linkCount +
+      ' dokumenterade kablar. Tillämpa för att ändra X/Y (osparat). Kabelbanorna är tillfälliga.');
+  } catch (error) {
+    if (elkGeneration !== generation) return;
+    invalidateElk('Ingen layout tillämpades: ' + error.message);
+  } finally {
+    if (elkGeneration === generation) {
+      elkBusy = false;
+      elkAbort = null;
+      layoutStatus(elkPreview ? $('layout-status').textContent : $('layout-status').textContent);
+    }
+  }
+}
+function applyElkPreview() {
+  const proposal = elkPreview;
+  if (!proposal || elkBusy) return;
+  if (!transferCurrent(proposal.context)) {
+    invalidateElk('Förslaget är föråldrat och kan inte tillämpas.');
+    render();
+    return;
+  }
+  // No new cables, ports, zones or network facts; only user-approved X/Y.
+  project = proposal.project;
+  changed();
+  elkAccepted = {snapshot: JSON.stringify(project), paths: proposal.paths};
+  render();
+  canvas.fit();
+  layoutStatus('ELK-placering tillämpad men ännu inte sparad. Endast X/Y sparas vid Save. ' +
+    'Efter Open visas standardkablar tills du väljer ELK igen.');
+  notify('ELK-placering tillämpad. Spara projekt separat för att bevara nodernas X/Y.');
+}
+function cancelElkPreview() {
+  invalidateElk();
+  render();
+  canvas.fit();
 }
 
 function invalidateSimulationSession() { simulationSession.invalidate(); }
@@ -1773,11 +1861,14 @@ function render() {
   renderList($('zone-list'), project.zones, 'zone', 'Inga zoner');
   $('empty-state').hidden = project.nodes.length > 0;
   $('canvas-hint').textContent = pendingPort ? `Vald port: ${pendingPort.node}/${pendingPort.port}. Klicka en andra ledig port eller samma port för att avbryta.`
+    : elkPreview ? 'ELK-förhandsvisning: skrivskyddad. Välj Tillämpa eller Avbryt innan du redigerar.'
     : 'Mittenknapp: panorera · Mushjul: zooma · Vänsterdrag: flytta enhet · Klicka två lediga portar: kabel.';
   const sessionView = simulationSession.getState();
   canvas.setData(project, selection, pendingPort,
     sessionView.diagnostic?.data ? sessionView.highlightedLinks :
-    arpDiagnostic ? arpHighlightedLinks : highlightedLinks);
+    arpDiagnostic ? arpHighlightedLinks : highlightedLinks,
+    elkPreview ? {project: elkPreview.project, paths: elkPreview.paths, preview: true} :
+    elkAccepted?.snapshot === JSON.stringify(project) ? {paths: elkAccepted.paths} : null);
   renderInspector();
   updateTraceSelectors();
   renderArpDiagnostics();
@@ -1815,6 +1906,7 @@ function confirmDiscard() {
   return !isDirty() || confirm('Det finns osparade ändringar. Lämna projektet utan att spara?');
 }
 function resetProject(value = blank(), pristineBlank = false) {
+  invalidateElk();
   workspaceRevision += 1;
   importReview.onWorkspace();
   project = value;
@@ -1827,6 +1919,10 @@ function resetProject(value = blank(), pristineBlank = false) {
   changed(); canvas.fit();
 }
 async function saveProject() {
+  if (elkPreview || elkBusy) {
+    notify('ELK-förhandsvisningen är inte sparad. Tillämpa eller avbryt den före Save.', true);
+    return;
+  }
   // A server response describes the snapshot actually submitted, not any
   // edits made while the request was in flight. Never replace newer work.
   if (savePending) return;
@@ -1896,6 +1992,7 @@ async function openProject() {
       notify('Öppningen avbröts: arbetsytan eller projektvalet ändrades under inläsningen.');
       return;
     }
+    invalidateElk();
     workspaceRevision += 1;
     editRevision += 1;
     importReview.onWorkspace();
@@ -2732,12 +2829,16 @@ $('trace-target').addEventListener('change', () => { $('trace-target').dataset.u
 $('zoom-in').addEventListener('click', () => canvas.zoom(1.2));
 $('zoom-out').addEventListener('click', () => canvas.zoom(1 / 1.2));
 $('zoom-fit').addEventListener('click', () => canvas.fit());
+$('layout-preview').addEventListener('click', () => { void startElkPreview(); });
+$('layout-apply').addEventListener('click', applyElkPreview);
+$('layout-cancel').addEventListener('click', cancelElkPreview);
 window.addEventListener('beforeunload', event => {
   if (!isDirty()) return;
   event.preventDefault();
   event.returnValue = '';
 });
 setupWorkspacePanels();
+layoutStatus();
 setupTopologyContextMenu();
 arrangeFromToRows();
 setupAddressBindings();
