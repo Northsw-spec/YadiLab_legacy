@@ -1,0 +1,41 @@
+name: Install pinned offline ELK assets (feature branch only)
+on:
+  push:
+    branches:
+      - feature/elk-preview-2026-11-22
+permissions:
+  contents: write
+jobs:
+  vendor-layout-runtime:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install exact vendor package and verify bytes
+        run: |
+          if test -f web/vendor/elk-api.js && test -f web/vendor/elk-worker.js; then
+            echo "Vendored ELK assets already committed; no code changes."
+            exit 0
+          fi
+          npm install --ignore-scripts --no-save --package-lock=false elkjs@0.13.0
+          test "$(node -p "require('./node_modules/elkjs/package.json').version")" = "0.13.0"
+          echo "275e6caf4af71c06f5afd673939bdb4c9a0edf6ad97b32476cb7bc6cfdc09d86  node_modules/elkjs/lib/elk-worker.js" | sha256sum --check
+          test -f node_modules/elkjs/lib/elk-api.js
+          mkdir -p web/vendor
+          cp node_modules/elkjs/lib/elk-api.js web/vendor/elk-api.js
+          cp node_modules/elkjs/lib/elk-worker.js web/vendor/elk-worker.js
+          if test -f node_modules/elkjs/LICENSE.md; then
+            cp node_modules/elkjs/LICENSE.md web/vendor/ELK-LICENSE.md
+          else
+            echo "Published npm package lacks license file; refusing to commit." >&2
+            exit 1
+          fi
+          printf '%s\n' '# elkjs offline runtime' '' 'Package: elkjs 0.13.0' 'License metadata: EPL-2.0 OR GPL-3.0-or-later' 'Source: https://github.com/kieler/elkjs' 'Worker SHA-256: 275e6caf4af71c06f5afd673939bdb4c9a0edf6ad97b32476cb7bc6cfdc09d86' 'The application runs these scripts locally, never from a CDN.' > web/vendor/NOTICE.md
+          git add web/vendor/elk-api.js web/vendor/elk-worker.js web/vendor/ELK-LICENSE.md web/vendor/NOTICE.md
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "build(layout): vendor pinned local ELK 0.13.0 browser runtime"
+          git push origin HEAD:feature/elk-preview-2026-11-22
