@@ -151,6 +151,19 @@ for(const option of scenarios){
       rooting:option.orient==="bfs"?{center:model.orientation.center,
       maxDepth:model.orientation.maxDepth}:undefined,
       layoutOptions:model.graph.layoutOptions};
+    if(option.name==="wrapped_multi" && metric.fullRectFits && metric.rectOverlaps===0){
+      const byElkId=new Map(out.children.map(n=>[n.id,n]));
+      const proposed=structuredClone(p);
+      for(const n of proposed.nodes){
+        const en=byElkId.get(model.idByName.get(n.id));
+        if(!en)throw Error("Missing node when exporting accepted-coordinate proposal");
+        n.x=Math.round(en.x)+metric.normalization.dx;
+        n.y=Math.round(en.y)+metric.normalization.dy;
+      }
+      fs.mkdirSync("research/elk-results",{recursive:true});
+      fs.writeFileSync("research/elk-results/wrapped_candidate.json",JSON.stringify(proposed)+"\n");
+      results.scenarios[option.name].candidatePath="research/elk-results/wrapped_candidate.json";
+    }
     if(JSON.stringify(p)!==before)throw Error("Source project mutated");
     console.log("BOUNDS",option.name,JSON.stringify(results.scenarios[option.name]));
   } catch(error){
