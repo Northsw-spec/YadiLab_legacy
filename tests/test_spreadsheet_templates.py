@@ -85,6 +85,27 @@ class TemplateUnitTests(unittest.TestCase):
                 self.assertEqual(validate_project(project),project)
         self.assertEqual(projects[0],projects[1])
 
+    def test_downloadable_templates_physically_omit_node_coordinates(self):
+        for ext in ("xlsx","ods"):
+            with self.subTest(ext=ext):
+                payload=template_bytes(ext)
+                with zipfile.ZipFile(io.BytesIO(payload)) as archive:
+                    if ext=="xlsx":
+                        doc=ET.fromstring(archive.read("xl/worksheets/sheet2.xml"))
+                        ns="{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
+                        row=doc.find(f".//{ns}sheetData/{ns}row")
+                        header=[c.find(f"{ns}is/{ns}t").text for c in row.findall(f"{ns}c")]
+                    else:
+                        doc=ET.fromstring(archive.read("content.xml"))
+                        ns="{urn:oasis:names:tc:opendocument:xmlns:table:1.0}"
+                        txt="{urn:oasis:names:tc:opendocument:xmlns:text:1.0}"
+                        sheet=next(t for t in doc.findall(f".//{ns}table")
+                                   if t.attrib.get(ns+"name")=="Devices")
+                        header=[c.find(f"{txt}p").text for c in
+                                sheet.find(f"{ns}table-row").findall(f"{ns}table-cell")]
+                self.assertEqual(header,["id","label","kind","zoneId"])
+        self.assertTrue(all(len(row)==4 for row in SAMPLE["Devices"]))
+
     def test_templates_are_labeled_demos_not_external_network_facts(self):
         for row in SAMPLE["Devices"]:
             self.assertTrue(row[0].startswith("demo-"))

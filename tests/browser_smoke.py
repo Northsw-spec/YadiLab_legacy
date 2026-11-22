@@ -6220,7 +6220,7 @@ def run():
                     'projectName':before_export['name'],
                     'contentBase64':encoded,
                 })
-                assert restored == before_export
+                assert without_positions(restored) == without_positions(before_export)
                 assert restored['nodes'][0]['staticRoutes'][0]['nextHop'] == (
                     before_export['nodes'][0]['staticRoutes'][0]['nextHop'])
                 workbook_downloads[extension] = raw
@@ -6243,7 +6243,7 @@ def run():
                 assert imported_event.value.status == 200
                 result = imported_event.value.json()['project']
                 assert result['schemaVersion'] == before_export['schemaVersion']
-                assert result['nodes'] == before_export['nodes']
+                assert without_positions(result) == without_positions(before_export)
                 assert result['links'] == before_export['links']
                 assert result['zones'] == before_export['zones']
                 await_import_layout(page)
