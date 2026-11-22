@@ -1,0 +1,83 @@
+name: Isolated ELK bounds and port compatibility research
+on:
+  push:
+    branches:
+      - research/elk-bounds-ports-2026-11-22
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  elk-bounds:
+    name: A - Layout coordinate bounds
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned research-only elkjs
+        run: npm install --ignore-scripts --no-save --package-lock=false elkjs@0.13.0
+      - name: Validate experiment code and report worker hash
+        run: |
+          node --check research/elk_bounds_experiment.mjs
+          sha256sum node_modules/elkjs/lib/elk-worker.js
+          npm ls elkjs
+      - name: Run 2000-node / 5000-link bounds experiments
+        run: timeout 240s node --max-old-space-size=4096 research/elk_bounds_experiment.mjs
+      - name: Reject out-of-bounds, overlapped, or incomplete alternatives
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const d=JSON.parse(fs.readFileSync('research/elk-results/bounds.json'));
+          const found=Object.entries(d.scenarios).filter(([n,x])=>x.fullRectFits&&x.rectOverlaps===0&&x.identitiesPreserved);
+          console.log('BOUND_PASS_CANDIDATES',JSON.stringify(found.map(([n,x])=>({name:n,width:x.layoutBounds.width,height:x.layoutBounds.height,durationMs:x.durationMs}))));
+          if(!found.length) {console.error('BOUND_FAIL: No safe strategy for this corpus');process.exit(1);}
+          JS
+      - name: Upload independent bounds evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: elk-bounds-results
+          path: research/elk-results/bounds.json
+          if-no-files-found: warn
+
+  elk-ports:
+    name: B - ELK fixed position ports and cables
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned research-only elkjs
+        run: npm install --ignore-scripts --no-save --package-lock=false elkjs@0.13.0
+      - name: Validate experiment code and package hash
+        run: |
+          node --check research/elk_ports_experiment.mjs
+          sha256sum node_modules/elkjs/lib/elk-worker.js
+          npm ls elkjs
+      - name: Compare ELK full routing and YadiLab's existing port formula
+        run: timeout 240s node --max-old-space-size=4096 research/elk_ports_experiment.mjs
+      - name: Strict port and section geometry gate
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const d=JSON.parse(fs.readFileSync('research/elk-results/ports.json'));
+          for(const [name,c] of Object.entries(d.cases)){
+            const modes=['fixed_pos_12','fixed_pos_zero'];
+            const good=modes.some(m=>c[m]?.truePortGeometricCompatibility&&
+              c[m].edgeSegmentsThroughOtherNodes===0&&c[m].nonOrthogonalSegments===0);
+            console.log('PORT_RESULT',name,good?'PASS':'FAIL',
+              JSON.stringify(modes.map(m=>({mode:m,metrics:c[m]}))));
+            if(!good)process.exitCode=1;
+          }
+          JS
+      - name: Upload independent port evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: elk-port-results
+          path: research/elk-results/ports.json
+          if-no-files-found: warn
