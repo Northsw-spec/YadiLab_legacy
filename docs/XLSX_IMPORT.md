@@ -1,5 +1,7 @@
 # Explicit XLSX workbook import (first bounded Excel format)
 
+> **Status för nuvarande äldre kod, inte framtida importkrav:** Detta kapitel beskriver den strikta XLSX-importen före ELK-06A; dess `Devices`-blad kräver i dag `x/y`. Det är teknisk skuld, **inte ett krav på externa nätverksdokument**. Den bindande [kodplanen](ELK_IMPLEMENTATION_PLAN.md) kräver koordinatfri CSV/XLSX/ODS-inläsning i ELK-06A, automatisk initial ELK-layout i 06B och koordinatfri dokumentexport/mallar i 06C. Efter kodmerge ska huvudtextens äldre header-/testbeskrivningar uppdateras mot verifierad implementation. Celladresser (t.ex. B12) är källhänvisningar, **inte** nodpositioner.
+
 ## Intended use and scope
 
 A network consultant may receive documentation as an XLSX workbook. This implementation accepts **one explicit interchange format**, not arbitrary exported Excel documents or inferred network facts. It is the *same* schema 1.0 four-table contract already used by the CSV importer:

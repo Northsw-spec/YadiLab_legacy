@@ -1,5 +1,7 @@
 # OpenDocument Spreadsheet import — explicit four-table ODS (PR #24)
 
+> **Status för nuvarande äldre kod, inte framtida importkrav:** Den här strikta ODS-importen kräver fortfarande `x/y` i `Devices`, eftersom den delar det äldre CSV-kontraktet. Nätverksdokument ska **inte** behöva innehålla nodkoordinater. [ELK-06A–C](ELK_IMPLEMENTATION_PLAN.md) åtgärdar koordinatfri inläsning, automatisk första ELK-layout och koordinatfri dokumentexport/mallar i separata kodleveranser. Övriga nuvarande säkerhets-, typ- och fältkontroller ska bibehållas. Källcellspositioner är proveniens, inte visuella nodkoordinater.
+
 ## Scope and source identity
 
 A single genuine **.ods** file may contain named worksheets `Devices` (required), `Interfaces`, `Links`, and `Zones` (optional). Each must have exactly the **same headers, in any order**, as the documented CSV files. Table and column order may differ. The importer does **not** guess network assets from arbitrary spreadsheet columns, IP, geography or nearby visual positions.

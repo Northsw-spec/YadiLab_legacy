@@ -1,5 +1,7 @@
 # Explicit versioned XLSX/ODS interchange format — schema 1.3
 
+> **Historiskt formatkontrakt – kodförändring planerad:** Tabellen nedan visar de **faktiska** schema-1.3-kolumnerna före ELK-06A; `Devices` innehåller fortfarande obligatoriska `x/y` i nuvarande kod. Detta är **inte ett acceptabelt krav på framtida källdokument**. [Kodplan ELK-06A–C](ELK_IMPLEMENTATION_PLAN.md) avskaffar det obligatoriska importkravet, kör ELK efter godkänd dokumentimport och tar bort koordinater från nya dokumentexporter/mallar. Kanoniska projektfiler behåller X/Y för Save/Open.
+
 The Builder offers two real binary schema-1.3 example workbooks (XLSX and ODS) under the saved-project controls. Each is a **labelled demo**, not an observed network. Their routes are declared facts but do not imply successful reachability. Validation failures for versioned cells include the original source cell address when the row/column is unambiguous. See [template downloads and diagnostics](SPREADSHEET_TEMPLATES.md).
 
 ## Schema version selection
