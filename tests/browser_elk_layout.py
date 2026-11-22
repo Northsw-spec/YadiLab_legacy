@@ -143,7 +143,12 @@ def run():
                 fresh.wait_for_function("document.querySelector('#count-nodes').textContent==='0'")
                 assert fresh.locator("#layout-apply").is_disabled()
                 fresh.wait_for_timeout(1200)
-                assert fresh.locator("#count-nodes").inner_text()=="0"
+                after_count=fresh.locator("#count-nodes").text_content()
+                after_label=fresh.locator("#breadcrumb").text_content()
+                after_status=fresh.locator("#layout-status").text_content()
+                print("STALE_DIAGNOSTICS",json.dumps({"count":after_count,"project":after_label,
+                    "status":after_status,"applyDisabled":fresh.locator("#layout-apply").is_disabled()},ensure_ascii=False),flush=True)
+                assert after_count.strip()=="0",("stale workspace changed",after_count,after_label,after_status)
                 assert fresh.locator("#layout-apply").is_disabled()
                 records["staleResponseRejected"]=True
                 assert not js_errors,js_errors
