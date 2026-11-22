@@ -18,6 +18,45 @@ def source(**overrides):
 
 
 class CsvImportTests(unittest.TestCase):
+    def test_coordinate_free_explicit_layer2_network_and_stable_positions(self):
+        devices = "zoneId,kind,label,id\noffice,switch,Switch,sw-a\noffice,host,Client,pc-a\n"
+        project = import_csv_tables(source(**{"Devices.csv": devices,
+            "Interfaces.csv": PORTS.replace("192.0.2.5/24", "")}))
+        self.assertEqual([(n["id"], n["x"], n["y"]) for n in project["nodes"]],
+                         [("sw-a", 370, 110), ("pc-a", 110, 110)])
+        self.assertEqual(project["links"][0]["b"], {"node": "sw-a", "port": "gi1"})
+        self.assertIsNone(project["nodes"][1]["ports"][0]["ipv4"])
+        reversed_rows = devices.splitlines()
+        reversed_rows[1:] = reversed(reversed_rows[1:])
+        other = import_csv_tables(source(**{"Devices.csv": "\n".join(reversed_rows) + "\n"}))
+        self.assertEqual({n["id"]: (n["x"], n["y"]) for n in other["nodes"]},
+                         {n["id"]: (n["x"], n["y"]) for n in project["nodes"]})
+
+    def test_coordinate_free_header_and_network_errors_rejected(self):
+        good = "id,label,kind,zoneId\npc-a,Client,host,office\nsw-a,Switch,switch,office\n"
+        bad = [good.replace("zoneId", "x,zoneId"), good.replace("zoneId", "y,zoneId"),
+               good.replace("zoneId", "zoneId,zoneId"), good.replace("zoneId", "unknown"),
+               good.replace("pc-a,Client", "bad id,Client")]
+        for devices in bad:
+            with self.subTest(devices=devices), self.assertRaises(ProjectValidationError):
+                import_csv_tables(source(**{"Devices.csv": devices}))
+        with self.assertRaises(ProjectValidationError):
+            import_csv_tables(source(**{"Devices.csv": good,
+                "Links.csv": LINKS.replace("sw-a,gi1", "sw-a,unknown")}))
+
+    def test_coordinate_free_model_limit_and_bounds(self):
+        text = "id,label,kind,zoneId\n" + "".join(
+            f"n-{i:04},Node {i},switch,\n" for i in range(2000))
+        project = import_csv_tables({"projectName": "Large Layer 2", "files": [
+            {"name": "Devices.csv", "text": text}]})
+        self.assertEqual(len(project["nodes"]), 2000)
+        self.assertEqual(len({(n["x"], n["y"]) for n in project["nodes"]}), 2000)
+        self.assertTrue(all(max(abs(n["x"]), abs(n["y"])) <= 100000
+                            for n in project["nodes"]))
+        with self.assertRaises(ProjectValidationError):
+            import_csv_tables({"projectName": "Too many", "files": [
+                {"name": "Devices.csv", "text": text + "n-2000,Extra,switch,\n"}]})
+
     def test_source_identity_and_literal_ports(self):
         doc = import_csv_tables(source())
         self.assertEqual([x["id"] for x in doc["nodes"]], ["pc-a", "sw-a"])

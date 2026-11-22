@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import base64
+import csv
 import hashlib
+import io
 import json
 import os
 import shutil
@@ -6045,6 +6047,54 @@ def run():
                 assert hashlib.sha256((store/'ods-demo.yadilab').read_bytes()).hexdigest() == previous_sha
                 assert hashlib.sha256((store/'xlsx-demo.yadilab').read_bytes()).hexdigest() == xlsx_sha
                 assert hashlib.sha256((store/'csv-demo.yadilab').read_bytes()).hexdigest() == csv_sha
+
+            # Real coordinate-free documents through the same Chromium import
+            # controls, including an explicit cable and a disk Save/Open.
+            from test_csv_import import DEV, PORTS, LINKS, ZONES
+            def without_coordinates(text):
+                records = list(csv.DictReader(io.StringIO(text)))
+                output = io.StringIO()
+                writer = csv.DictWriter(output, fieldnames=('zoneId', 'kind', 'label', 'id'),
+                                        lineterminator='\n')
+                writer.writeheader()
+                writer.writerows({key: row[key] for key in writer.fieldnames} for row in records)
+                return output.getvalue()
+
+            legacy_tables = {'Devices': without_coordinates(DEV), 'Interfaces': PORTS,
+                             'Links': LINKS, 'Zones': ZONES}
+            rich_tables = dict(TABLES_13, Devices=without_coordinates(TABLES_13['Devices']))
+            for ext, payload, mime, expected_node, expected_link in (
+                ('csv', legacy_tables, 'text/csv', 'pc-a', 'cable-1'),
+                ('xlsx', make_workbook(rich_tables, shared_strings=True),
+                 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'ha', 'trunk'),
+                ('ods', make_ods(rich_tables, trailing=True),
+                 'application/vnd.oasis.opendocument.spreadsheet', 'ha', 'trunk'),
+            ):
+                if ext == 'csv':
+                    page.locator('#import-file').set_input_files([
+                        {'name': name+'.csv', 'mimeType': mime, 'buffer': data.encode('utf-8')}
+                        for name, data in payload.items()])
+                else:
+                    with page.expect_response('**/api/import/'+ext) as coordinate_free_response:
+                        page.locator('#import-file').set_input_files({
+                            'name':'coordinate-free.'+ext, 'mimeType':mime, 'buffer':payload})
+                    assert coordinate_free_response.value.status == 200
+                expect(page.locator('[data-node-id="'+expected_node+'"]')).to_have_count(1)
+                expect(page.locator('[data-link-id="'+expected_link+'"]')).to_have_count(1)
+                saved_name = 'coordinate-free-'+ext
+                assert not (store/(saved_name+'.yadilab')).exists()
+                page.locator('#project-filename').fill(saved_name)
+                page.locator('#project-filename').dispatch_event('change')
+                page.locator('#save-project').click()
+                expect(page.locator('#save-indicator')).to_contain_text(
+                    'Sparat · '+saved_name+'.yadilab', timeout=12000)
+                saved = json.loads((store/(saved_name+'.yadilab')).read_bytes())
+                assert all(0 <= node['x'] <= 100000 and 0 <= node['y'] <= 100000
+                           for node in saved['nodes'])
+                page.locator('#new-project').click()
+                page.locator('#saved-projects').select_option(saved_name)
+                page.locator('#open-project').click()
+                expect(page.locator('[data-link-id="'+expected_link+'"]')).to_have_count(1)
 
             # PR26: actual browser download from the local server, real ZIP
             # persisted by Playwright, then uploaded through the same UI.

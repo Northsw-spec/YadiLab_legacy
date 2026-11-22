@@ -168,7 +168,9 @@ def import_spreadsheet_tables(value: object) -> dict:
             continue
         legacy_files.append({
             "name": filename,
-            "text": _as_csv(rows[filename], TABLES[filename]),
+            "text": _as_csv(rows[filename],
+                            tuple(rows[filename][0]) if filename == "Devices.csv" and rows[filename]
+                            else TABLES[filename]),
         })
     try:
         document = import_csv_tables({"projectName": value["projectName"], "files": legacy_files})
