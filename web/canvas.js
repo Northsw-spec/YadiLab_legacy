@@ -214,7 +214,7 @@ export class TopologyCanvas {
         if (!rect.width || !rect.height) return;
         this.view.x = current.start.x - (event.clientX - current.x) * this.view.w / rect.width;
         this.view.y = current.start.y - (event.clientY - current.y) * this.view.h / rect.height;
-        this.setView();
+        this.setView(rect);
       } else if (current.kind === 'node') {
         const world = this.toWorld(event.clientX, event.clientY);
         const x = Math.round(current.nodeX + world.x - current.worldX);
@@ -322,21 +322,23 @@ export class TopologyCanvas {
     state.raf = requestAnimationFrame(tick);
   }
 
-  toWorld(clientX, clientY) {
-    const rect = this.svg.getBoundingClientRect();
+  toWorld(clientX, clientY, rect = this.svg.getBoundingClientRect()) {
     return {x: this.view.x + (clientX - rect.left) / Math.max(1, rect.width) * this.view.w,
       y: this.view.y + (clientY - rect.top) / Math.max(1, rect.height) * this.view.h};
   }
 
-  setView() {
+  setView(rect = this.svg.getBoundingClientRect()) {
+    // Read CSS geometry before writing viewBox. Reading it afterwards forced
+    // expensive synchronous SVG layout for every gesture on large diagrams.
+    // Callers that already measured the viewport pass the same rectangle.
     this.svg.setAttribute('viewBox', `${this.view.x} ${this.view.y} ${this.view.w} ${this.view.h}`);
-    const r = this.svg.getBoundingClientRect();
-    this.callbacks.onScale(Math.round((r.width || 900) / this.view.w * 100));
+    this.callbacks.onScale(Math.round((rect.width || 900) / this.view.w * 100));
   }
 
   zoom(factor, x, y) {
-    const point = this.toWorld(x ?? (this.svg.getBoundingClientRect().left + this.svg.clientWidth / 2),
-      y ?? (this.svg.getBoundingClientRect().top + this.svg.clientHeight / 2));
+    const rect = this.svg.getBoundingClientRect();
+    const point = this.toWorld(x ?? (rect.left + this.svg.clientWidth / 2),
+      y ?? (rect.top + this.svg.clientHeight / 2), rect);
     // Never jump from a fitted large topology to a 9000-unit viewport on the
     // first wheel event. Preserve the cursor anchor and allow some overview margin.
     const w = Math.max(160, Math.min(this.zoomOutLimit, this.view.w / factor));
@@ -344,7 +346,7 @@ export class TopologyCanvas {
     const fx = (point.x - this.view.x) / this.view.w;
     const fy = (point.y - this.view.y) / this.view.h;
     this.view = {x: point.x - fx * w, y: point.y - fy * h, w, h};
-    this.setView();
+    this.setView(rect);
   }
 
   fit() {
@@ -367,7 +369,7 @@ export class TopologyCanvas {
     // Reset the cap on every Fit, including when switching to a smaller project.
     // Do not retain a previous project's potentially enormous zoom-out limit.
     this.zoomOutLimit = Math.max(9000, this.view.w * 1.5);
-    this.setView();
+    this.setView(rect);
   }
 
   setData(project, selected, pending, highlighted = [], presentation = null) {
