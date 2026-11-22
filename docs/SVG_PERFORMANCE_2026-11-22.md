@@ -5,7 +5,7 @@
 **Baseline:** `main@fda26052be5ba5376e64793cb780079f7e841718`, `web/canvas.js` hämtad med `git show`.  
 **Experiment:** `perf/svg-indexed-render-2026-11-22`, `elkjs` och befintlig projekt-/importsemantik lämnas orörda.  
 **Mätmiljö:** GitHub Actions Ubuntu 24.04, riktig headless Chromium, Node 22 och Playwright 1.57.0.  
-**Bevis:** [Chromium-mätning 45051779956](https://github.com/Northsw-spec/topologieditorn/actions/runs/45051779956).
+**Bevis:** GitHub Actions-körning `45051779956` med loggar och JSON-artefakt under repositoryts Actions-vy.
 
 ## Teknisk förändring
 
