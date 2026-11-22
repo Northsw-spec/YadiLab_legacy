@@ -171,7 +171,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(200, self.server.store.read(path[len("/api/projects/"):]))
             elif path in ("/", "/index.html", "/app.js", "/model.js", "/canvas.js",
                           "/ui/dom.js", "/services/api.js", "/features/projects/persistence.js",
-                          "/features/projects/transfer.js",
+                          "/features/projects/transfer.js", "/features/layout/elk.js",
+                          "/vendor/elk-api.js", "/vendor/elk-worker.js",
                           "/features/projects/mapping-profiles.js",
                           "/features/projects/import-review.js",
                           "/features/diagnostics/queries.js", "/features/diagnostics/presenters.js",

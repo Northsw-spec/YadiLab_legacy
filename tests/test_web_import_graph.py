@@ -14,8 +14,16 @@ class WebImportGraphTests(unittest.TestCase):
         scripts = re.findall(r'<script\s+type="module"\s+src="([^"]+)"', html)
         self.assertEqual(scripts, ["/app.js"])
 
+        # These two version-locked classic/Worker assets are not ES modules.
+        vendor = {WEB / "vendor" / "elk-api.js", WEB / "vendor" / "elk-worker.js"}
+        self.assertEqual(set((WEB / "vendor").glob("*.js")), vendor)
+        for asset in vendor:
+            self.assertTrue(asset.is_file(), f"missing pinned layout asset: {asset}")
+        self.assertIn('<script src="/vendor/elk-api.js"></script>', html)
         graph = {}
         for source in WEB.rglob("*.js"):
+            if source in vendor:
+                continue
             targets = []
             for specifier in IMPORT.findall(source.read_text(encoding="utf-8")):
                 self.assertTrue(specifier.startswith("."), (source, specifier))
