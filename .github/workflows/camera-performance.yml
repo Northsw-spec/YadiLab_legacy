@@ -3,11 +3,6 @@ on:
   push:
     branches:
       - perf/svg-camera-raf-2026-11-22
-  pull_request:
-    paths:
-      - 'web/canvas.js'
-      - 'tests/browser_camera_performance.py'
-      - 'tests/canvas_zoom_bounds_test.mjs'
 permissions:
   contents: read
 jobs:
