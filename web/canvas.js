@@ -103,6 +103,8 @@ export class TopologyCanvas {
     this.svg = svg;
     this.callbacks = {onSelect, onPort, onMove, onEndMove, onScale};
     this.view = {x: -30, y: -30, w: 1200, h: 740};
+    // Full ELK layouts can be far wider than the former fixed 9000-unit zoom cap.
+    this.zoomOutLimit = 9000;
     this.project = null;
     this.presentation = null;
     this.selected = null;
@@ -297,7 +299,9 @@ export class TopologyCanvas {
   zoom(factor, x, y) {
     const point = this.toWorld(x ?? (this.svg.getBoundingClientRect().left + this.svg.clientWidth / 2),
       y ?? (this.svg.getBoundingClientRect().top + this.svg.clientHeight / 2));
-    const w = Math.max(160, Math.min(9000, this.view.w / factor));
+    // Never jump from a fitted large topology to a 9000-unit viewport on the
+    // first wheel event. Preserve the cursor anchor and allow some overview margin.
+    const w = Math.max(160, Math.min(this.zoomOutLimit, this.view.w / factor));
     const h = this.view.h * w / this.view.w;
     const fx = (point.x - this.view.x) / this.view.w;
     const fy = (point.y - this.view.y) / this.view.h;
@@ -322,6 +326,9 @@ export class TopologyCanvas {
       const cy = (minY + maxY) / 2;
       this.view = {x: cx - w / 2, y: cy - h / 2, w, h};
     }
+    // Reset the cap on every Fit, including when switching to a smaller project.
+    // Do not retain a previous project's potentially enormous zoom-out limit.
+    this.zoomOutLimit = Math.max(9000, this.view.w * 1.5);
     this.setView();
   }
 
