@@ -26,6 +26,9 @@ jobs:
       - name: Historical receipt verification tests on unchanged production source
         run: python3 -m unittest discover -s tests -p 'test_import_verification.py' -v
         continue-on-error: true
+      - name: Explicit historical receipt plus Save/Open acceptance probe
+        run: python3 research/elk_historical_guard_probe.py
+        continue-on-error: true
       - name: Browser prerequisites
         run: |
           python3 -m pip install playwright==1.57.0
@@ -43,3 +46,21 @@ jobs:
           name: elk-hypotheses-evidence
           path: research/elk-results/
           if-no-files-found: warn
+      - name: Strict aggregate verdict (fail CI on real hypothesis failure)
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('research/elk-results')
+          errors=[]
+          for name in ('node','browser','stress'):
+              f=p/(name+'.json')
+              if not f.exists(): errors.append(name+' evidence missing'); continue
+              data=json.loads(f.read_text())
+              if data.get('errors'):errors.append(name+' execution errors: '+str(list(data['errors'])))
+              if name=='stress' and data.get('results',{}).get('H7_stress_2000_5000',{}).get('acceptedByYadiLabModel') is not True:
+                  errors.append('H7 coordinate bounds FAIL')
+          print('RESEARCH_VERDICT:', 'FAIL / corrective research required' if errors else 'PASS', errors)
+          raise SystemExit(1 if errors else 0)
+          PY
