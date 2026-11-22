@@ -77,7 +77,9 @@ def run():
                 before=copy.deepcopy(store.read("elk_example"))
                 page.locator("#layout-preview").click()
                 page.locator("#layout-apply").wait_for(state="visible")
-                page.wait_for_function("!document.querySelector('#layout-apply').disabled")
+                page.wait_for_function("""() => !document.querySelector('#layout-apply').disabled ||
+                  document.querySelector('#layout-status').textContent.startsWith('Ingen layout tillämpades')""",timeout=25000)
+                assert not page.locator("#layout-apply").is_disabled(), page.locator("#layout-status").inner_text()
                 assert store.read("elk_example")["sha256"]==before["sha256"],"Preview wrote to disk"
                 records["previewDiskUnchanged"]=True
                 records["previewGeometry"]=paths_match_visible_ports(page,demo)
@@ -94,7 +96,9 @@ def run():
                 records["cancelNoMutation"]=True
 
                 page.locator("#layout-preview").click()
-                page.wait_for_function("!document.querySelector('#layout-apply').disabled")
+                page.wait_for_function("""() => !document.querySelector('#layout-apply').disabled ||
+                  document.querySelector('#layout-status').textContent.startsWith('Ingen layout tillämpades')""",timeout=25000)
+                assert not page.locator("#layout-apply").is_disabled(), page.locator("#layout-status").inner_text()
                 records["secondPreviewGeometry"]=paths_match_visible_ports(page,demo)
                 page.locator("#layout-apply").click()
                 assert "Osparade" in page.locator("#save-indicator").inner_text()
