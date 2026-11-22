@@ -2121,7 +2121,7 @@ async function exportSpreadsheet(format) {
     const result = await prepareSpreadsheetExport(context.snapshot, format);
     if (!transferCurrent(context)) return transferStale();
     downloadExport(result);
-    notify('Kalkylbladsexport initierad. Projektet har inte sparats. Webbläsarens faktiska nedladdning är inte verifierad.');
+    notify('Nätverksdokumentation exporterad utan nodernas X/Y. Layout bevaras endast i projektfilens Save/Export. Webbläsarens faktiska nedladdning är inte verifierad.');
   } catch (error) {
     if (!transferCurrent(context)) return transferStale();
     notify('Kalkylbladsexport avvisad: ' + error.message, true);
