@@ -134,8 +134,10 @@ test('dense wheel burst commits one SVG viewBox per animation frame', () => {
     assert.equal(canvas.pendingViewFrame,null);
 
     canvas.zoom(1.12,350,250,true);
-    assert.equal(scheduled.size,1);
+    assert.equal(scheduled.size,0,'an isolated new-frame event paints without an rAF');
     assert.equal(writes,4,'new frame begins with immediate paint');
+    canvas.zoom(1/1.12,350,250,true);
+    assert.equal(scheduled.size,1,'subsequent same-frame event queues one rAF');
     canvas.fit();
     assert.equal(scheduled.size,0,'Fit must cancel obsolete wheel frame');
     assert.equal(cancelled,1);
@@ -163,14 +165,38 @@ test('pending wheel frame is flushed before a new pointer gesture', () => {
     canvas.fit();
     canvas.zoom(1.12,390,340,true);
     assert.equal(writes,2,'first pointer event should update the visible camera');
-    assert.equal(pending.size,1);
+    assert.equal(pending.size,0,'a single wheel event must not schedule an rAF');
     // A second event is deferred; pointer capture must commit it before drag.
     canvas.zoom(1.12,390,340,true);
+    assert.equal(pending.size,1);
     assert.equal(writes,2);
     canvas.capture({pointerId:42},{kind:'pan',x:390,y:340,start:{...canvas.view}});
     assert.equal(writes,3);
     assert.equal(pending.size,0);
     assert.equal(canvas.interaction.pointerId,42);
+  } finally {
+    globalThis.requestAnimationFrame=oldRAF;
+    globalThis.cancelAnimationFrame=oldCancel;
+  }
+});
+
+test('frame-spaced wheel gestures paint immediately without an extra frame', () => {
+  const oldRAF=globalThis.requestAnimationFrame,oldCancel=globalThis.cancelAnimationFrame;
+  const frames=new Map();
+  globalThis.requestAnimationFrame=fn=>{frames.set(1,fn);return 1;};
+  globalThis.cancelAnimationFrame=id=>{frames.delete(id);};
+  try {
+    const canvas=camera(large);
+    canvas.pendingViewFrame=null;
+    let writes=0;
+    canvas.svg.setAttribute=(name,value)=>{writes++;canvas.viewBox=value;};
+    canvas.fit();
+    for(let i=0;i<8;i++){
+      canvas.lastGesturePaintAt=performance.now()-100;
+      canvas.zoom(i%2===0?1.12:1/1.12,350,250,true);
+      assert.equal(frames.size,0,'a single frame-spaced event must not be deferred');
+    }
+    assert.equal(writes,9,'Fit plus each of 8 isolated events paints immediately');
   } finally {
     globalThis.requestAnimationFrame=oldRAF;
     globalThis.cancelAnimationFrame=oldCancel;
