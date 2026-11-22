@@ -1,6 +1,6 @@
 # OpenDocument Spreadsheet import — explicit four-table ODS (PR #24)
 
-> **Status för nuvarande äldre kod, inte framtida importkrav:** Den här strikta ODS-importen kräver fortfarande `x/y` i `Devices`, eftersom den delar det äldre CSV-kontraktet. Nätverksdokument ska **inte** behöva innehålla nodkoordinater. [ELK-06A–C](ELK_IMPLEMENTATION_PLAN.md) åtgärdar koordinatfri inläsning, automatisk första ELK-layout och koordinatfri dokumentexport/mallar i separata kodleveranser. Övriga nuvarande säkerhets-, typ- och fältkontroller ska bibehållas. Källcellspositioner är proveniens, inte visuella nodkoordinater.
+> **ELK-06A–C:** Strikt ODS accepterar `Devices` utan X/Y och, för bakåtkompatibilitet, gamla fullständiga X/Y-par. Godkänd dokumentimport får automatiskt en första ELK-layout utan autosparande. Nya mallar och dokumentexporter saknar koordinater; den kanoniska projektfilen behåller dem.
 
 ## Scope and source identity
 
@@ -8,7 +8,7 @@ A single genuine **.ods** file may contain named worksheets `Devices` (required)
 
 | ODS table | CSV contract | Exact column names |
 | --- | --- | --- |
-| Devices | Devices.csv | id, label, kind, x, y, zoneId |
+| Devices | Devices.csv | id, label, kind, zoneId (äldre: även x, y tillsammans) |
 | Interfaces | Interfaces.csv | nodeId, id, name, enabled, ipv4 |
 | Links | Links.csv | id, aNode, aPort, bNode, bPort, enabled |
 | Zones | Zones.csv | id, label |
@@ -19,7 +19,7 @@ Unversioned ODS workbooks retain canonical **schema 1.0**. An explicit `Project`
 
 The import reads a real ODF ZIP archive, not XML masquerading as ODS. The first ZIP entry must be uncompressed `mimetype` with value `application/vnd.oasis.opendocument.spreadsheet`. Required files include `content.xml` and `META-INF/manifest.xml` with declared spreadsheet root and content entries. Supported optional package members are `styles.xml`, `meta.xml`, and `settings.xml`; unlisted/unknown ZIP entries, macros, external resources, ZIP duplicates and encryption are rejected.
 
-Every data worksheet must be visible, explicitly named and contain a header row with exact named columns. Plain ODF text cells (`office:value-type="string"` with `text:p`) preserve IDs and Unicode, including intentional text line breaks and tabs. Literal numeric cells are accepted **only** for `x` and `y`, and boolean cells **only** for `enabled`. A number where an ID is required is not accepted (e.g. Excel-style numeric coercion/leading-zero loss). Unknown cell value types, spreadsheet formulas, rich markup, merged/covered cells, filtered/hidden rows or columns, unrecognized table objects or undocumented attributes are rejected rather than guessed.
+Every data worksheet must be visible, explicitly named and contain a header row with exact named columns. Plain ODF text cells (`office:value-type="string"` with `text:p`) preserve IDs and Unicode, including intentional text line breaks and tabs. Legacy numeric cells are accepted **only** when both `x` and `y` columns are present, and boolean cells **only** for `enabled`. A number where an ID is required is not accepted (e.g. Excel-style numeric coercion/leading-zero loss). Unknown cell value types, spreadsheet formulas, rich markup, merged/covered cells, filtered/hidden rows or columns, unrecognized table objects or undocumented attributes are rejected rather than guessed.
 
 ODF writers may compact repeated empty cells and trailing blank rows. Those are accepted only if **empty**, with no further populated rows after padding. Repeated nonempty cells/rows are rejected. The importer keeps the four-table row order and does not invent entities, links or inferred port attachments. All imported data goes through the existing `csv_import.TABLES` and `import_csv_tables` canonical validation chain.
 
@@ -27,7 +27,7 @@ ODF writers may compact repeated empty cells and trailing blank rows. Those are 
 
 `POST /api/import/ods` takes exactly `filename`, `projectName`, and `contentBase64` (base64-encoded raw file bytes). Limits are 5 MiB compressed, 12 MiB expanded, 5 MiB per part, 10 ZIP entries and 5000 populated rows per table; invalid input yields HTTP 422.
 
-Builder's existing **Importera** accepts one `.ods` file, reads its bytes with `arrayBuffer()`, and invokes the local HTTP endpoint. **Only after the entire ODF and canonical project validate successfully** does Builder request permission to discard unsaved changes and replace the current workspace. An imported project stays unsaved until explicit **Save**. No hidden overwrite, automatic on-disk changes, or claims of real network reachability.
+Builder's existing **Importera** accepts one `.ods` file, reads its bytes with `arrayBuffer()`, and invokes the local HTTP endpoint. **Only after the entire ODF and canonical project validate successfully** does Builder request permission to discard unsaved changes and replace the current workspace. After acceptance ELK runs automatically, and the imported project stays unsaved until explicit **Save**. No hidden overwrite, automatic on-disk changes, or claims of real network reachability.
 
 ## Verification
 

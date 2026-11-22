@@ -1,6 +1,6 @@
 # Downloadable schema 1.3 workbook templates and diagnostics (PR #26)
 
-> **Historiska mallar före ELK-06C:** Nuvarande nedladdningsbara XLSX-/ODS-demomallar har fortfarande X/Y-kolumner i `Devices` eftersom de följer det gamla strikta schema-1.3-kontraktet. **Detta är en känd kodlucka**, inte ett krav att användaren ska mäta eller ange koordinater. [ELK-06A](ELK_IMPLEMENTATION_PLAN.md) öppnar koordinatfri inläsning, **06B** lägger på automatisk första ELK-layout och **06C** ändrar verkliga mallbytes och tester så nya mallar inte innehåller X/Y. Endast projektfilens Save/Export bevarar exakt diagramposition.
+> **ELK-06C:** De nedladdningsbara verkliga XLSX-/ODS-mallarna innehåller **inte** X/Y i `Devices`. De deklarerar endast dokumenterade nätverksfakta. Efter godkänd import föreslår ELK den första layouten automatiskt; Save/Export av projektfil behövs för att bevara koordinaterna.
 
 ## How to use
 
@@ -11,11 +11,11 @@ In Builder, under **Sparade projekt**, choose **Excel-mall (.xlsx)** or **Calc-m
 
 Each response uses a binary MIME type, an attachment filename, an explicit byte length and `Cache-Control: no-store`. It does not read, create or overwrite any stored project. Your browser decides where downloads are placed; the application does not claim that download succeeded without browser acceptance evidence.
 
-Both workbooks follow the **same** schema-1.3 table definitions used by the XLSX and ODS importers (see [SPREADSHEET_V13.md](SPREADSHEET_V13.md)). They contain six sheets: `Project`, `Devices`, `Interfaces`, `Links`, `Zones`, and `StaticRoutes`. Example data includes a client, two switches, VLAN 10 access ports and a trunk with explicitly allowed VLANs 10 and 20, a router and a static route to the example subnet 203.0.113.0/24.
+Both workbooks use the strict coordinate-free variant of the schema-1.3 table definitions accepted by the XLSX and ODS importers (see [SPREADSHEET_V13.md](SPREADSHEET_V13.md)). They contain six sheets: `Project`, `Devices`, `Interfaces`, `Links`, `Zones`, and `StaticRoutes`. Example data includes a client, two switches, VLAN 10 access ports and a trunk with explicitly allowed VLANs 10 and 20, a router and a static route to the example subnet 203.0.113.0/24.
 
 **Every device and link is explicitly labeled `DEMO` or named `demo-...`.** These are fictitious documentation examples using reserved documentation IPv4 networks, *not* information collected from a real environment. The router's example WAN interface is deliberately **not connected**, and the static route is not a promise of reachability. Replace or delete all demo rows with your own verified facts before using the workbook as inventory. Remember to keep IDs consistent across worksheets and to document physical links only in `Links`.
 
-Import the edited file with **Importera**. The complete workbook is validated **before** Builder asks whether to replace existing unsaved work. A successful import stays unsaved until the user explicitly selects **Save**.
+Import the edited file with **Importera**. The complete workbook is validated **before** Builder asks whether to replace existing unsaved work. After explicit acceptance the first ELK-layout is automatic. A successful import stays unsaved until the user explicitly selects **Save**.
 
 ## Error messages
 
@@ -33,6 +33,6 @@ An invalid workbook returns HTTP 422 and cannot replace the working project or c
 
 ## Independent verification
 
-`tests/test_spreadsheet_templates.py` performs real ZIP/XML inspection, downloads both binary files over localhost HTTP and reimports them through the actual XLSX/ODS readers, comparing canonical equality and retained MAC/VLAN/route facts. Negative tests verify invalid and reordered-column data really produce accurate source cell references.
+`tests/test_spreadsheet_templates.py` performs real ZIP/XML inspection, downloads both binary files over localhost HTTP and reimports them through the actual XLSX/ODS readers, comparing all documented network facts (excluding new, internal X/Y placement) and retained MAC/VLAN/route facts. Negative tests verify invalid and reordered-column data really produce accurate source cell references.
 
 `tests/browser_smoke.py` uses **real Chromium downloads**, saves the returned bytes to disk, reuploads exactly those bytes, verifies the resulting schema-1.3 working project and no autosave, and explicitly saves/reopens a real file with unchanged SHA-256 for all prior projects. Compiled-CI tests are required to use **DIRECT_HTTP**.

@@ -2,23 +2,19 @@
 
 ## Purpose and boundaries
 
-Automatic **manual re-layout of an existing diagram** is opt-in. The **initial**
-ELK placement after an explicitly accepted, validated network-document import
-is mandatory and automatic (ELK-06 target, **not yet implemented on this baseline**).
-External CSV/XLSX/ODS network documents must not be required to contain node
-X/Y columns. Source cell coordinates identify original facts, not SVG geometry.
-The legacy strict four-table importer currently requires those columns, as do
-its schema-1.0/1.3 workbook paths. ELK-06A must fix that input requirement.
-ELK-06B must then automatically produce the first validated layout after
-accepted document import, and ELK-06C must remove X/Y from new documentary
-XLSX/ODS exports and templates (preserving canonical project Save/Open).
-These are planned code deliverables, not claims that today's code already works.
-ELK is never a network import engine or an
-authority for cables, ports, IP addresses, routing, simulation, or topology.
-The layout engine receives only already-declared `project.links` with both
-canonical node/port endpoints. It can position existing nodes and suggest
-visual cable paths; it cannot invent physical links or rewrite historical
-import receipts.
+ELK calculates presentation geometry only; it never creates or changes network
+facts, declared ports, physical cables, IP addresses, routes or import evidence.
+After a user explicitly accepts a valid CSV/XLSX/ODS or flexible mapped
+documentation import, the existing ELK Worker computes the **first** diagram
+automatically (ELK-06B). This result affects only node X/Y and temporary edge
+paths; Save remains an explicit separate action. Existing manually placed or
+saved projects keep their positions until the user requests manual re-layout.
+
+New external documentation exports and demo templates omit X/Y (ELK-06C).
+Legacy strict inputs with both columns remain accepted for compatibility;
+incomplete pairs are rejected. Canonical `.yadilab`/JSON project files
+**still save X/Y** and remain the only layout-preserving project backup.
+Document source cell addresses are factual provenance, not display geometry.
 
 ## Offline dependency
 
