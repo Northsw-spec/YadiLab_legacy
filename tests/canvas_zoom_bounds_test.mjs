@@ -96,3 +96,79 @@ test('zoom and Fit reuse exactly one pre-write CSS viewport measurement', () => 
   assert.equal(reads,4,'Standalone setView reads before writing');
   assert.equal(writes,4);
 });
+
+test('dense wheel burst commits one SVG viewBox per animation frame', () => {
+  const originalRAF = globalThis.requestAnimationFrame;
+  const originalCancel = globalThis.cancelAnimationFrame;
+  const scheduled = new Map();
+  let token=0, cancelled=0;
+  globalThis.requestAnimationFrame = callback => {
+    const id=++token;
+    scheduled.set(id,callback);
+    return id;
+  };
+  globalThis.cancelAnimationFrame = id => {
+    if(scheduled.delete(id))cancelled++;
+  };
+  try {
+    const canvas=camera(large);
+    canvas.pendingViewFrame=null;
+    let writes=0, scales=0;
+    canvas.callbacks.onScale=()=>{scales++;};
+    const oldWrite=canvas.svg.setAttribute;
+    canvas.svg.setAttribute=(name,value)=>{writes++;oldWrite(name,value);};
+    canvas.fit();
+    const initial={...canvas.view};
+    assert.equal(writes,1);
+    for(let i=0;i<40;i++)canvas.zoom(i%2===0?1.12:1/1.12,350,250,true);
+    assert.equal(writes,1,'viewBox must not be rewritten for every wheel event');
+    assert.equal(scales,1,'scale label stays aligned to the painted view');
+    assert.equal(scheduled.size,1,'only one requestAnimationFrame is queued');
+    close(canvas.view.w,initial.w);
+    const [id,callback]=[...scheduled.entries()][0];
+    scheduled.delete(id);
+    callback(1234);
+    assert.equal(writes,2);
+    assert.equal(scales,2);
+    close(canvas.view.w,initial.w);
+    assert.equal(canvas.pendingViewFrame,null);
+
+    canvas.zoom(1.12,350,250,true);
+    assert.equal(scheduled.size,1);
+    canvas.fit();
+    assert.equal(scheduled.size,0,'Fit must cancel obsolete wheel frame');
+    assert.equal(cancelled,1);
+    assert.equal(writes,3);
+    close(canvas.view.w,initial.w);
+  } finally {
+    globalThis.requestAnimationFrame=originalRAF;
+    globalThis.cancelAnimationFrame=originalCancel;
+  }
+});
+
+test('pending wheel frame is flushed before a new pointer gesture', () => {
+  const oldRAF=globalThis.requestAnimationFrame;
+  const oldCancel=globalThis.cancelAnimationFrame;
+  const pending=new Map();
+  let id=0;
+  globalThis.requestAnimationFrame=callback=>{pending.set(++id,callback);return id;};
+  globalThis.cancelAnimationFrame=key=>{pending.delete(key);};
+  try {
+    const canvas=camera(large);
+    canvas.pendingViewFrame=null;
+    let writes=0;
+    canvas.svg.setPointerCapture=()=>{};
+    canvas.svg.setAttribute=(name,value)=>{writes++;canvas.viewBox=value;};
+    canvas.fit();
+    canvas.zoom(1.12,390,340,true);
+    assert.equal(writes,1);
+    assert.equal(pending.size,1);
+    canvas.capture({pointerId:42},{kind:'pan',x:390,y:340,start:{...canvas.view}});
+    assert.equal(writes,2);
+    assert.equal(pending.size,0);
+    assert.equal(canvas.interaction.pointerId,42);
+  } finally {
+    globalThis.requestAnimationFrame=oldRAF;
+    globalThis.cancelAnimationFrame=oldCancel;
+  }
+});
