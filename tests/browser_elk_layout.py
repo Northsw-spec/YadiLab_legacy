@@ -70,7 +70,7 @@ def run():
                 js_errors=[]
                 page.on("pageerror",lambda exc:js_errors.append(str(exc)))
                 page.goto(url,wait_until="domcontentloaded")
-                page.locator('#saved-projects option[value="elk_example"]').wait_for()
+                page.locator('#saved-projects option[value="elk_example"]').wait_for(state="attached")
                 page.locator("#saved-projects").select_option("elk_example")
                 page.locator("#open-project").click()
                 page.get_by_text("Öppnade verklig projektfil",exact=False).wait_for()
@@ -117,7 +117,7 @@ def run():
                 # Open from a new browser page: temporary routed paths do not persist.
                 fresh=browser.new_page(viewport={"width":1440,"height":900})
                 fresh.goto(url,wait_until="domcontentloaded")
-                fresh.locator('#saved-projects option[value="elk_example"]').wait_for()
+                fresh.locator('#saved-projects option[value="elk_example"]').wait_for(state="attached")
                 fresh.locator("#saved-projects").select_option("elk_example")
                 fresh.locator("#open-project").click()
                 fresh.get_by_text("Öppnade verklig projektfil",exact=False).wait_for()
