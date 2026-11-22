@@ -143,9 +143,10 @@ export class TopologyCanvas {
     this.view = {x: -30, y: -30, w: 1200, h: 740};
     // Full ELK layouts can be far wider than the former fixed 9000-unit zoom cap.
     this.zoomOutLimit = 9000;
-    // Coalesce high-frequency pointer/wheel input to at most one SVG viewBox
-    // update per animation frame. Programmatic zoom and Fit remain immediate.
+    // The first gesture input paints immediately. Additional inputs arriving
+    // before the next frame are reduced to one final viewBox commit.
     this.pendingViewFrame = null;
+    this.viewDirty = false;
     this.project = null;
     this.presentation = null;
     this.selected = null;
@@ -217,7 +218,7 @@ export class TopologyCanvas {
         if (!rect.width || !rect.height) return;
         this.view.x = current.start.x - (event.clientX - current.x) * this.view.w / rect.width;
         this.view.y = current.start.y - (event.clientY - current.y) * this.view.h / rect.height;
-        this.queueView();
+        this.queueView(rect);
       } else if (current.kind === 'node') {
         const world = this.toWorld(event.clientX, event.clientY);
         const x = Math.round(current.nodeX + world.x - current.worldX);
@@ -339,11 +340,19 @@ export class TopologyCanvas {
       y: this.view.y + (clientY - rect.top) / Math.max(1, rect.height) * this.view.h};
   }
 
-  queueView() {
-    if (this.pendingViewFrame != null) return;
+  queueView(rect) {
+    if (this.pendingViewFrame != null) {
+      // Camera world coordinates still track all input events immediately;
+      // only the SVG repaint is coalesced.
+      this.viewDirty = true;
+      return;
+    }
+    // Paint first input immediately, so one event per frame behaves like the
+    // original camera and never waits an extra frame before showing motion.
+    this.setView(rect);
     this.pendingViewFrame = requestAnimationFrame(() => {
       this.pendingViewFrame = null;
-      this.setView();
+      if (this.viewDirty) this.setView();
     });
   }
 
@@ -351,7 +360,7 @@ export class TopologyCanvas {
     if (this.pendingViewFrame == null) return;
     cancelAnimationFrame(this.pendingViewFrame);
     this.pendingViewFrame = null;
-    this.setView();
+    if (this.viewDirty) this.setView();
   }
 
   setView(rect = this.svg.getBoundingClientRect()) {
@@ -360,8 +369,9 @@ export class TopologyCanvas {
       cancelAnimationFrame(this.pendingViewFrame);
       this.pendingViewFrame = null;
     }
-    // Geometry is measured before viewBox mutation. A gesture batch writes at
-    // most once per animation frame even if dozens of input events arrive.
+    this.viewDirty = false;
+    // Geometry is measured before viewBox mutation. A gesture batch writes
+    // immediately once, then at most once more for a burst in the same frame.
     this.svg.setAttribute('viewBox', `${this.view.x} ${this.view.y} ${this.view.w} ${this.view.h}`);
     this.callbacks.onScale(Math.round((rect.width || 900) / this.view.w * 100));
   }
@@ -377,7 +387,7 @@ export class TopologyCanvas {
     const fx = (point.x - this.view.x) / this.view.w;
     const fy = (point.y - this.view.y) / this.view.h;
     this.view = {x: point.x - fx * w, y: point.y - fy * h, w, h};
-    if (fromWheel) this.queueView();
+    if (fromWheel) this.queueView(rect);
     else this.setView(rect);
   }
 
