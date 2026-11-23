@@ -223,7 +223,7 @@ Kör minst `python3 -m unittest discover -s tests -p 'test_*.py' -v`, `npm run c
 
 ## 10. QUALITY-006 – Verklig dokumentationsimport och proveniens
 
-**Syfte:** pröva källtrogen import av oberoende insamlade, anonymiserade arbetsböcker och CSV-filer som **inte** skapats utifrån YadiLabs egna mallar.
+**Syfte:** pröva källtrogen import av oberoende insamlade, anonymiserade arbetsböcker och CSV-filer som **inte** skapats utifrån applikationens egna mallar.
 
 **6A Korpus:** CSV, XLSX, ODS, flera blad/roller, tomma eller oregelbundna rader, avvikande rubriker, partiella och motsägelsefulla port-/VLAN-/länkfakta samt dokumentfamiljer med olika organisationskonventioner. Avidentifiera före offentlig incheckning.
 
@@ -281,7 +281,7 @@ Kör minst `python3 -m unittest discover -s tests -p 'test_*.py' -v`, `npm run c
 
 ## 13. QUALITY-009 – Linux-exklusiv distribution och kompatibilitet mellan Linuxdistributioner
 
-**Bindande plattformspolicy – ENDAST LINUX:** YadiLab är en **Linuxapplikation**. Endast Linuxdistributioner är avsedda målplattformar. **Windows och macOS är uttryckligen exkluderade (UNSUPPORTED), inte alternativa, kommande eller valfria supportmål.** Denna etapp får inte användas för att porta, anpassa, paketera, testa eller lägga till kompatibilitetslager för Windows, macOS eller andra operativsystem utanför Linux. Ingen Windows-/macOS-CI, installerare, plattformsspecifik fallback eller plattformsoberoende ombyggnad får införas i QUALITY-009. Om en åtgärd skulle kräva sådant arbete: stoppa den som **OUT_OF_SCOPE**, inte som en uppgift att lösa. Eventuell oavsiktlig exekverbarhet på ett annat OS ger varken supportåtagande eller utvecklingsmål; ingen särskild saboterande OS-spärr ingår i detta dokumentationsuppdrag.
+**Bindande plattformspolicy – ENDAST LINUX:** applikationen är en **Linuxapplikation**. Endast Linuxdistributioner är avsedda målplattformar. **Windows och macOS är uttryckligen exkluderade (UNSUPPORTED), inte alternativa, kommande eller valfria supportmål.** Denna etapp får inte användas för att porta, anpassa, paketera, testa eller lägga till kompatibilitetslager för Windows, macOS eller andra operativsystem utanför Linux. Ingen Windows-/macOS-CI, installerare, plattformsspecifik fallback eller plattformsoberoende ombyggnad får införas i QUALITY-009. Om en åtgärd skulle kräva sådant arbete: stoppa den som **OUT_OF_SCOPE**, inte som en uppgift att lösa. Eventuell oavsiktlig exekverbarhet på ett annat OS ger varken supportåtagande eller utvecklingsmål; ingen särskild saboterande OS-spärr ingår i detta dokumentationsuppdrag.
 
 **Syfte:** verifiera reproducerbar installation, drift och distribution **inom Linux-ekosystemet**. Kompatibilitetsmatrisen får innehålla enbart uttryckligt testade Linuxdistributioner och Linuxmiljöer, t.ex. specificerad distribution/version, x86_64 eller annan faktiskt byggd Linuxarkitektur, glibc-/runtimekrav, webbläsarversion samt X11/Wayland när respektive fönstersystem har verifierats. Ej testade Linuxkombinationer anges **NOT_VERIFIED**, inte PASS. Windows och macOS hör inte hemma i en möjlig framtida supportmatris.
 
