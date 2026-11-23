@@ -2,7 +2,7 @@
 
 **Datum:** 2026-11-23 (ISO)  
 **Källbas efter fyra test-PR:er:** `main@a41f9d2dd866dd2069c547bc98677c4dc84505ca`  
-**Status:** **EVIDENCE INTEGRATED / FINAL MAIN-CI PENDING**. **Inte formellt ACCEPTED** förrän slutlig CI och acceptansgrind kontrollerats på exakt `main`-SHA.
+**Status 2026-11-23:** **ACCEPTED – VERIFIED SUPPORTED SUBSET**, verifierad mot `main@ba674047e779750f5c8efa7739cf0f80a26fd5d6`, mandatory `unit-tests` SUCCESS i GitHub Actions run `45238708767`. Ingen generell RFC-/IEEE-överensstämmelse utlovas. Rapportens äldre CI-anteckningar nedan är historiska kontrollpunkter; slutresultatet står i §4.
 
 ## 1. Metod och källgräns
 
@@ -21,7 +21,7 @@ Metoden avser endast den **implementerade och uttryckligen begränsade simulator
 
 **Vad SUCCESS bevisar:** körning av `.github/workflows/ci.yml` på var och en av de fyra verifierade PR-HEAD:arna; det workflowet omfattar full Python unittest discovery, `npm run check`, riktig Chromium/Save-Open, X11 PRIMARY, ELK-browserregressioner. Den här rapporten påstår **inte** att en viss körning på en *annan* SHA var PASS.
 
-**Separat `main`-grind:** efter #103 är `main@a41f9d2dd866dd2069c547bc98677c4dc84505ca` aktuell. Main-run `45235004665` var **IN_PROGRESS** vid verifieringen; slutligt SUCCESS/FAIL måste kontrolleras. CI på eventuellt kommande dokumentations-PR måste också granskas på dess egen slutliga HEAD och efter merge på ny `main`.
+**Separat `main`-grind, nu verifierad:** `main@a41f9d2dd866dd2069c547bc98677c4dc84505ca` fick SUCCESS i run `45235004665`; därefter mergades rapport-PR #104 efter båda obligatoriska `unit-tests`-körningarna SUCCESS på HEAD `022434353def6db0b0ae6c8742c3ee708cb04b5b`. Den efterföljande main-commiten `ba674047e779750f5c8efa7739cf0f80a26fd5d6` fick **SUCCESS** i run `45238708767` (GitHub Actions app `15368`). Kontrollerna är skilda och tillskrivs endast respektive exakta SHA. En ny PR för statusuppdatering har alltid egen separat CI-/mergegrind.
 
 ## 2. Regelklass: förväntat kontra observerat
 
@@ -49,10 +49,10 @@ Alla ovanstående PASS betyder att exakt dessa tester rapporterade godkända ass
 
 ## 4. Återstående beslut och acceptans
 
-1. **Obligatorisk slutgrind:** main-CI `45235004665` på exakt `a41f9d2dd866dd2069c547bc98677c4dc84505ca` måste få `SUCCESS`. Tills dess: **NOT_VERIFIED för slutlig main-CI**.
-2. **Rapport-PR:** detta documents egen PR-kontroll ska vara SUCCESS på exakt sista HEAD, och ny `main`-commit ska följas upp separat. Inga andra filer, testgrindar eller motorer får ändras.
-3. **Beslut:** om alla dokumenterade referensfall är gröna och inga oavslutade bekräftade protokolldefekter finns inom de uttryckligen stödda reglerna får *den begränsade QUALITY-003-etappen* markeras ACCEPTED i egen verifierad statusuppdatering. Markera aldrig full generell RFC/IEEE-konformitet.
+1. **Obligatorisk slutgrind – UPPFYLLD:** `main@a41f9d2dd866dd2069c547bc98677c4dc84505ca` → run `45235004665`: **SUCCESS**. Efter PR #104: `main@ba674047e779750f5c8efa7739cf0f80a26fd5d6` → run `45238708767`: **SUCCESS**. Båda körningarna har slutförts av rätt GitHub Actions-app.
+2. **Rapport-PR – UPPFYLLD:** PR #104, sista HEAD `022434353def6db0b0ae6c8742c3ee708cb04b5b`, hade både push-/PR-`unit-tests` SUCCESS; squash-merge till `ba674047e779750f5c8efa7739cf0f80a26fd5d6`. Ingen produktionskod, testgrind eller protokollmotor ändrades.
+3. **Beslut – ACCEPTED för dokumenterad begränsad stödomfattning:** Fyra förhandsdefinierade referensdelar 3A–3F och specificerade metamorfa invarianttester har green checks på respektive exakta HEAD, och efterföljande main-CI har godkänts på rapportens slutcommit. Inga oförklarade avvikelser i dessa tester är kända i den verifierade revisionen. **Alla andra regler/protokollvarianter är NOT_VERIFIED eller UNSUPPORTED**, inte godkända per automatik. Extern packet capture eller referensrouter ingick inte och kan därför inte påstås vara verifierad.
 4. **QUALITY-002 är separat oavslutad:** den avsiktligt röda PR #99 stängdes utan merge; GitHub rapporterade `blocked`, men ett icke-muterande regler-/enforcementbevis kunde inte hämtas (403). Status för QUALITY-002 förblir **ENFORCEMENT NOT_VERIFIED**, inte PASS.
-5. **Nästa etapp:** QUALITY-004 först **efter** begränsad, evidensgrundad acceptans av QUALITY-003. QUALITY-004 börjar med skrivskyddad modul-/ansvarsrevision och kan sluta med KEEP utan produktionskodändringar.
+5. **Nästa etapp:** QUALITY-004/4A får nu påbörjas som **READ_ONLY-arkitekturrevision** med en spårbar ansvarskarta, KEEP som standard och inga produktionskodändringar utan reproducerad defekt. QUALITY-002:s separata enforcement-grind förblir öppen.
 
 **Känd verifieringslucka:** oberoende laboratoriemätning mot extern referensstack eller riktig utrustning har inte genomförts, inte heller heltäckande fuzz-/kombinatorisk täckning. Dessa resultat får inte beskrivas som PASS. Unsupported: full STP, IPv6 NDP, TCP/UDP-tjänster, NAT, DHCP relay, godtyckliga ICMP-felkoder och verklig nätverkskommunikation. **Linux är enda målplattform; Windows och macOS är UNSUPPORTED.**
