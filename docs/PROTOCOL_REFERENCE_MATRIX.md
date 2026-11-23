@@ -140,13 +140,13 @@ Explicit synthetic client MAC/IP allocation and server on a two-link Ethernet se
  
 This is a fourth **reference slice**, not a completion declaration. A PASS requires full mandatory CI **on exact PR HEAD** and independent review of any discrepancy without changing expected outcomes to match implementation.
 
-### Cumulative evidence (verified for earlier slices)
+### Cumulative evidence (verified on exact PR HEADs, 2026-11-23)
 
 | Slice | GitHub PR | Final PR HEAD | Required PR check | Status |
 |---|---|---|---|---|
 | Fixed packet vectors | #100 | `82fb026185304259a996ea583866cc74b0d75c5b` | `unit-tests` x2 | **PASS** (both completed SUCCESS, then squash merged) |
 | Ethernet/VLAN/ARP traces | #101 | `db8524b58b6b03e56841224e20292f369b2a2356` | `unit-tests` x2 | **PASS** (both completed SUCCESS, then squash merged) |
 | IPv4/ICMP/DHCP | #102 | `7b76369bf947091f4e9a7b252fae34642158918e` | `unit-tests` x2 | **PASS** (both completed SUCCESS, then squash merged) |
-| Boundary/metamorphic invariants | Fourth test slice | Pending test file + final PR HEAD | `unit-tests` x2 | **NOT_VERIFIED** until CI finishes |
+| Boundary/metamorphic invariants | #103 | `b2a35f7f61fa133f8b4c0b6fd754d167927e7107` | `unit-tests` x2 | **PASS** (both completed SUCCESS, then squash merged) |
 
-**Status separation:** CI on a PR HEAD is not a claim that post-merge `main` CI passed; verify each main SHA separately. Unsupported behaviors (e.g., STP, IPv6, DHCP relay/NAT, arbitrary UDP/TCP and real NIC packet transmission) remain **UNSUPPORTED**. QUALITY-003 remains **IN PROGRESS** until the entire agreed reference-matrix contract and regressions are verified and all exceptions closed.
+**Status separation:** CI on a PR HEAD is not a claim that post-merge `main` CI passed; verify each main SHA separately. The observed outcomes, run IDs, method limits and formal acceptance gate are recorded in [QUALITY_003_VERIFICATION_REPORT.md](QUALITY_003_VERIFICATION_REPORT.md). Unsupported behaviors (e.g., STP, IPv6, DHCP relay/NAT, arbitrary UDP/TCP and real NIC packet transmission) remain **UNSUPPORTED**. QUALITY-003 remains **IN PROGRESS** until the required final main-CI and documented acceptance checks pass.
