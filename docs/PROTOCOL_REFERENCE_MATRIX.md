@@ -121,3 +121,32 @@ Explicit synthetic client MAC/IP allocation and server on a two-link Ethernet se
 - Separate negative experiment: after initial ACK, intentionally disable the **existing** server cable in the *simulation session*, not the project. At **40**, T1 unicast cannot reach server; at **70**, T2 **broadcast** cannot reach server; neither can renew the lease. At **80**, lease must expire (no BOUND lease remains), despite the previous simulated address. No real time or real network change is involved.
 
 **Status:** tests from this third slice must be executed at exact PR HEAD and mandatory Linux CI must pass; until then **NOT_VERIFIED**. The entire QUALITY-003 stage still requires broader independent protocol coverage, including a richer DHCP state-machine oracle and unsupported scenarios. A green CI does not promote all implementation paths to RFC compliance.
+
+
+## QUALITY-003 fourth slice — address boundaries and metamorphic integrity (pre-registered)
+
+**Date:** 2026-11-23. **Baseline:** `main@65f275ab240155430cdfaccf8ecc546802a97584`. This scope is recorded *before* the fourth test slice executes. It narrows supported rules rather than claiming complete RFC implementations. Standards: [RFC 791](https://www.rfc-editor.org/rfc/rfc791.html) (IPv4 addresses), [RFC 3021](https://www.rfc-editor.org/rfc/rfc3021.html) (/31 address interpretation on point-to-point links), [RFC 1812](https://www.rfc-editor.org/rfc/rfc1812.html) (forwarding and routes), [RFC 826](https://www.rfc-editor.org/rfc/rfc826.html) (ARP), and [RFC 2131](https://www.rfc-editor.org/rfc/rfc2131.html) (DHCP leases). All tests exercise *synthetic declared networks*, not hardware connectivity or full standards compliance.
+
+| Rule | Independent expected observation | Negative control |
+|---|---|---|
+| **IPv4 /30** | For `192.0.2.0/30`, usable host addresses `.1` and `.2`; a direct, explicitly wired two-host simulation can produce Echo Reply | `.0` is network and `.3` is broadcast; reject these as endpoint host addresses |
+| **IPv4 /31** | `192.0.2.0/31` and `192.0.2.1/31` are both valid endpoint addresses under the model's deliberately supported /31 rule | No fallback to an invented third address or inferred link; the shared-switch lab is an implementation-scope test, not a claim that RFC 3021 requires switched Ethernet |
+| **IPv4 /32** | A /32 interface contributes only its **exact** address as a connected route | A different IPv4 destination cannot match that interface without an explicit static/connected route |
+| **Connectivity monotonicity** | Baseline explicit one-router path `a -> sw-left -> r -> sw-right -> b` has reachable forward and reverse routes: Echo **REPLIED**; expected forward IP route nodes `a,r`, reverse `b,r` | Disabling *any one* of `la,lr1,lr2,lb` must prevent successful ping; a broken link cannot improve reachability |
+| **Irrelevant node / coordinates** | Add a disconnected host on a different explicit subnet, change X/Y and node order but leave real network facts intact: same **REPLIED**, same `a,r` and `b,r` trace | Irrelevant isolated node must not create a new route, cable, learned MAC or new recipient |
+| **Save → Open** | Save the declared one-router topology explicitly as a real temporary file, reopen using a fresh store and rerun Echo; **REPLIED** with same declared hop/link IDs | Simulations before/after reading must not modify the saved file bytes or SHA-256, and the on-disk document must not gain inferred cables |
+| **DHCP virtual clock** | After DORA of an 80-second lease, reading state repeatedly without `advance` leaves clock at **0**, expiry at **80**, T1 at **40**, T2 at **70** | Explicit `advance(39)` must still reject premature renewal; no wall-clock-based renewal or mutation |
+| **DHCP pool uniqueness** | In one explicit three-client session with exactly two addresses `192.0.2.70` and `.71`, first two clients get unique `BOUND` leases, deterministically .70 then .71 | Third request must fail with **pool exhausted**; no duplicated or silently invented lease |
+ 
+This is a fourth **reference slice**, not a completion declaration. A PASS requires full mandatory CI **on exact PR HEAD** and independent review of any discrepancy without changing expected outcomes to match implementation.
+
+### Cumulative evidence (verified for earlier slices)
+
+| Slice | GitHub PR | Final PR HEAD | Required PR check | Status |
+|---|---|---|---|---|
+| Fixed packet vectors | #100 | `82fb026185304259a996ea583866cc74b0d75c5b` | `unit-tests` x2 | **PASS** (both completed SUCCESS, then squash merged) |
+| Ethernet/VLAN/ARP traces | #101 | `db8524b58b6b03e56841224e20292f369b2a2356` | `unit-tests` x2 | **PASS** (both completed SUCCESS, then squash merged) |
+| IPv4/ICMP/DHCP | #102 | `7b76369bf947091f4e9a7b252fae34642158918e` | `unit-tests` x2 | **PASS** (both completed SUCCESS, then squash merged) |
+| Boundary/metamorphic invariants | Fourth test slice | Pending test file + final PR HEAD | `unit-tests` x2 | **NOT_VERIFIED** until CI finishes |
+
+**Status separation:** CI on a PR HEAD is not a claim that post-merge `main` CI passed; verify each main SHA separately. Unsupported behaviors (e.g., STP, IPv6, DHCP relay/NAT, arbitrary UDP/TCP and real NIC packet transmission) remain **UNSUPPORTED**. QUALITY-003 remains **IN PROGRESS** until the entire agreed reference-matrix contract and regressions are verified and all exceptions closed.
