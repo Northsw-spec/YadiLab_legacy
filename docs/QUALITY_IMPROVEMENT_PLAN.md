@@ -86,7 +86,7 @@ Redan korrigerade fel: PR #76 (importacceptans), #77 (stale Builder HTTP-svar), 
 | QUALITY-001 | VLAN-kandidatstatistik + full JS-CI | Hög | ACCEPTED |
 | QUALITY-002 | Bevisat obligatoriskt GitHub-mergeskydd | Kritisk | CONFIGURED / ENFORCEMENT NOT_VERIFIED |
 | QUALITY-003 | Oberoende nätverksprotokollverifiering | Kritisk | ACCEPTED – VERIFIED SUPPORTED SUBSET; broader cases NOT_VERIFIED/UNSUPPORTED |
-| QUALITY-004 | Skrivskyddad arkitekturrevision; endast verifierat motiverade små extraktioner (KEEP som standard) | Hög | NEXT: READ_ONLY 4A; NOT_STARTED |
+| QUALITY-004 | Skrivskyddad arkitekturrevision; endast verifierat motiverade små extraktioner (KEEP som standard) | Hög | 4A REVIEWED / REPORT PR PENDING; NO CODE CHANGE |
 | QUALITY-005 | Dataintegritet, samtidighet och robusthet | Kritisk | PLANNED |
 | QUALITY-006 | Verklig dokumentationsimport och proveniens | Hög | PLANNED |
 | QUALITY-007 | Prestanda, skalning och resursgränser | Hög | PLANNED |
@@ -164,7 +164,7 @@ Redan korrigerade fel: PR #76 (importacceptans), #77 (stale Builder HTTP-svar), 
 
 ## 8. QUALITY-004 – Begränsad arkitekturrevision och endast bevisat motiverad modularisering
 
-**Status: NEXT – QUALITY-003:s verifierade stödomfattning är accepterad; börja med skrivskyddad QUALITY-004/4A. Inga kodändringar godkända.** QUALITY-004 är **inte** en beställning av ny allmän modularisering, totalrenovering eller automatisk refaktorering. Syftet är att bedöma om någon *konkret* återstående ansvarskonflikt, duplicerad affärsregel eller testbarhetsbrist medför påvisbar underhålls- eller regressionsrisk. **KEEP är grundbeslutet. Noll ändrade rader produktionskod är ett fullt godkänt resultat.**
+**Status: 4A REVIEWED / REPORT PR PENDING – skrivskyddad ansvarskarta och KEEP-/INVESTIGATE-beslut finns i [QUALITY_004_4A_ARCHITECTURE_AUDIT.md](QUALITY_004_4A_ARCHITECTURE_AUDIT.md). På exakt läsbas `main@f243a626ff0943090d9216ac6eb1d4d84e431317` hittades ingen konkret verifierad arkitekturdefekt som berättigar en kodextraktion. Detta är inte formell QUALITY-004-acceptans förrän rapport-PR och efterföljande `main`-CI är godkända. QUALITY-002:s GitHub-enforcement är fortfarande NOT_VERIFIED.** QUALITY-004 är **inte** en beställning av ny allmän modularisering, totalrenovering eller automatisk refaktorering. Syftet är att bedöma om någon *konkret* återstående ansvarskonflikt, duplicerad affärsregel eller testbarhetsbrist medför påvisbar underhålls- eller regressionsrisk. **KEEP är grundbeslutet. Noll ändrade rader produktionskod är ett fullt godkänt resultat.**
 
 ### 4A – Obligatorisk, skrivskyddad nulägesrevision före kodförändring
 
