@@ -2026,6 +2026,10 @@ async function openProject() {
   const slug = $('saved-projects').value;
   if (!slug) return notify('Välj en sparad projektfil först.',true);
   if (!confirmDiscard()) return;
+  // User committed to Open. Cancel the prior ELK Worker before awaiting HTTP,
+  // otherwise automatic import layout can change editRevision and reject Open.
+  invalidateElk();
+  render();
   const requestedWorkspace = workspaceRevision;
   const requestedEdit = editRevision;
   const requestedFilename = filename;
@@ -2082,6 +2086,10 @@ async function importProjects(files) {
       projectName = prompt(`Projektnamn för ${label}-importen:`, project.name);
       if (projectName === null) return;
     }
+    // The next document import wins over an older import's pending ELK layout.
+    // Cancel before reading files or awaiting the import HTTP response.
+    invalidateElk();
+    render();
     const prepared = await prepareImport(files, kind, projectName);
     if (!transferCurrent(context)) return transferStale();
     const result = await submitImport(prepared);

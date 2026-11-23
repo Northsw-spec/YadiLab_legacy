@@ -57,6 +57,30 @@ def wait_layout(page):
     assert page.locator('#layout-apply').is_disabled()
 
 
+def hold_http_response(page, path):
+    """Keep one real HTTP request pending while the browser's ELK Worker settles."""
+    page.evaluate("""path => {
+      const nativeFetch = window.fetch.bind(window);
+      window.__heldHttp = {started: false, release: null, nativeFetch};
+      window.fetch = (...args) => args[0] === path
+        ? new Promise(resolve => {
+            window.__heldHttp.started = true;
+            window.__heldHttp.release = () => resolve(nativeFetch(...args));
+          })
+        : nativeFetch(...args);
+    }""", path)
+
+
+def release_http_response(page):
+    page.evaluate("""() => {
+      const pending = window.__heldHttp;
+      if (!pending?.started || !pending.release) throw Error('HTTP hold was not reached');
+      window.fetch = pending.nativeFetch;
+      pending.release();
+      delete window.__heldHttp;
+    }""")
+
+
 def run():
     with tempfile.TemporaryDirectory() as directory:
         store = ProjectStore(Path(directory))
@@ -169,6 +193,48 @@ def run():
                       setTimeout(() => super.layout(graph).then(resolve, reject), 900)); }
                   };
                 }""")
+                # ELK-05 regression: Open intent must cancel the previous import's
+                # in-flight ELK before awaiting a deliberately held REAL HTTP read.
+                # Otherwise auto-layout can change editRevision and reject Open.
+                saved_ods_before = store.read('auto-ods')['sha256']
+                hold_http_response(page, '/api/projects/auto-ods')
+                with page.expect_response('**/api/import/csv'):
+                    page.locator('#import-file').set_input_files(csv_files)
+                expect(page.locator('#layout-status')).to_contain_text('ELK beräknar')
+                page.locator('#saved-projects').select_option('auto-ods')
+                page.locator('#open-project').click()
+                page.wait_for_function('window.__heldHttp?.started === true')
+                # With the fix, the pending Worker is canceled immediately;
+                # without it, wait for its real two-pass result to settle.
+                page.wait_for_function("""() => !document.querySelector('#layout-status')
+                  .textContent.startsWith('ELK beräknar')""", timeout=25000)
+                release_http_response(page)
+                expect(page.locator('#count-nodes')).to_have_text('5')
+                assert page.locator('#layout-controls').is_hidden(), 'Open left stale ELK UI'
+                assert store.read('auto-ods')['sha256'] == saved_ods_before
+
+                # The same user-intent race exists when the *new import's* HTTP
+                # response is delayed while the earlier import's ELK completes.
+                hold_http_response(page, '/api/import/ods')
+                with page.expect_response('**/api/import/csv'):
+                    page.locator('#import-file').set_input_files(csv_files)
+                expect(page.locator('#layout-status')).to_contain_text('ELK beräknar')
+                page.locator('#import-file').set_input_files({
+                    'name': 'race-replacement.ods',
+                    'mimeType': 'application/vnd.oasis.opendocument.spreadsheet',
+                    'buffer': make_ods(rich),
+                })
+                page.wait_for_function('window.__heldHttp?.started === true')
+                page.wait_for_function("""() => !document.querySelector('#layout-status')
+                  .textContent.startsWith('ELK beräknar')""", timeout=25000)
+                release_http_response(page)
+                wait_layout(page)
+                expect(page.locator('#count-nodes')).to_have_text('5')
+                assert store.read('auto-ods')['sha256'] == saved_ods_before
+
+                # Restore the known blank workspace before the existing tests.
+                page.locator('#new-project').click()
+
                 with page.expect_response('**/api/import/csv'):
                     page.locator('#import-file').set_input_files(csv_files)
                 expect(page.locator('#layout-status')).to_contain_text('ELK beräknar')
