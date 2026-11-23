@@ -5,7 +5,7 @@
 **Repository:** [Repositoryts rot](../)  
 **Historisk, ursprungligen verifierad bascommit (inte aktuell HEAD):** `32bcefdf3eff25bc6a4f7986a7d88c05f704214c`  
 **Mål:** Högsta möjliga verifierbara källkodskvalitet inom appens uttryckligen stödda omfattning.  
-**Status:** QUALITY-001 integrerad; QUALITY-002 konfigurerad men inte negativt enforcement-testad; QUALITY-003–011 planerade.
+**Status:** QUALITY-001 ACCEPTED; QUALITY-002 CONFIGURED / ENFORCEMENT NOT_VERIFIED (röd PR #99 stängd utan merge); QUALITY-003 fyra oberoende testdelar integrerade (#100–#103), slutlig main-CI och acceptans kvarstår; QUALITY-004–011 planerade.
 
 > **Gällande styrning:** `AGENTS.md` och `docs/MASTERPROMPT.md` gäller övergripande. För import gäller dessutom `docs/IMPORT_SOURCE_CONTRACT.md` och tillhörande tekniska kontrakt. Denna fil är den **enda aktuella samlade kvalitetsfärdplanen**, inte en ersättning för dessa kontrakt. Faktisk kod, CI och den senaste uttryckliga användarinstruktionen avgör aktuell implementationsstatus. Äldre etappanteckningar har bevarats oförändrade i [QUALITY_IMPROVEMENT_HISTORY.md](QUALITY_IMPROVEMENT_HISTORY.md); deras historiska framtidsuttalanden är **inte** aktuella order eller verifierade nulägesuppgifter.
 
@@ -85,7 +85,7 @@ Redan korrigerade fel: PR #76 (importacceptans), #77 (stale Builder HTTP-svar), 
 | QUALITY-000 | Spårbar baslinje för kod, tester och risker | Hög | DELVIS |
 | QUALITY-001 | VLAN-kandidatstatistik + full JS-CI | Hög | ACCEPTED |
 | QUALITY-002 | Bevisat obligatoriskt GitHub-mergeskydd | Kritisk | CONFIGURED / ENFORCEMENT NOT_VERIFIED |
-| QUALITY-003 | Oberoende nätverksprotokollverifiering | Kritisk | PLANNED |
+| QUALITY-003 | Oberoende nätverksprotokollverifiering | Kritisk | EVIDENCE INTEGRATED / FINAL MAIN-CI PENDING |
 | QUALITY-004 | Skrivskyddad arkitekturrevision; endast verifierat motiverade små extraktioner (KEEP som standard) | Hög | PLANNED |
 | QUALITY-005 | Dataintegritet, samtidighet och robusthet | Kritisk | PLANNED |
 | QUALITY-006 | Verklig dokumentationsimport och proveniens | Hög | PLANNED |
@@ -134,6 +134,9 @@ Redan korrigerade fel: PR #76 (importacceptans), #77 (stale Builder HTTP-svar), 
 **Acceptans:** `REQUIRED STATUS CHECKS: ENFORCED` först efter ett otvetydigt **icke-destruktivt GitHub-blockeringsbevis** för en verkligt röd PR från rätt integrationskälla. Inga merge-API-försök på test-PR tillåts. Räcker inte verktygsinformationen: NOT_VERIFIED och stopp med exakt saknat bevis, inte PASS.
 
 ## 7. QUALITY-003 – Oberoende protokollverifiering
+
+**Verifieringsläge per 2026-11-23:** Fyra avgränsade oberoende test-PR:er #100–#103 har mergats med båda obligatoriska `unit-tests`-kontrollerna SUCCESS på **exakt respektive PR-HEAD**. Testmatrisen och observerat resultat per 3A–3F, metamorfa regressioner, SHA-/run-ID:n och återstående UNSUPPORTED/NOT_VERIFIED finns i [QUALITY_003_VERIFICATION_REPORT.md](QUALITY_003_VERIFICATION_REPORT.md). Slutlig `main`-CI på `a41f9d2dd866dd2069c547bc98677c4dc84505ca` var IN_PROGRESS vid kontroll (`45235004665`), därför är **formell QUALITY-003-acceptans ännu PENDING**, inte ACCEPTED. Den här evidensuppdateringen ger inget tillstånd att ändra protokollmotorer eller hoppa över slutgrinden.
+
 
 **Prioritet: KRITISK.** Referensmatrisen ska fastställa förväntat utfall **före** den granskade motorns körning. Förväntade svar får inte genereras av testad produktionskod.
 
