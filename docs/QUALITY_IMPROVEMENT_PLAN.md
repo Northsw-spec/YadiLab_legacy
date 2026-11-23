@@ -91,7 +91,7 @@ Redan korrigerade fel: PR #76 (importacceptans), #77 (stale Builder HTTP-svar), 
 | QUALITY-006 | Verklig dokumentationsimport och proveniens | Hög | PLANNED |
 | QUALITY-007 | Prestanda, skalning och resursgränser | Hög | PLANNED |
 | QUALITY-008 | Frontend, pedagogik och tillgänglighet | Medel–hög | PLANNED |
-| QUALITY-009 | Distribution och plattformsmatris | Medel–hög | PLANNED |
+| QUALITY-009 | Linux-exklusiv distribution och Linuxkompatibilitet | Medel–hög | PLANNED |
 | QUALITY-010 | Aktuell dokumentation och reproducerbar QA | Hög | PLANNED |
 | QUALITY-011 | Oberoende slutrevision och betyg | Kritisk | PLANNED |
 
@@ -223,7 +223,7 @@ Kör minst `python3 -m unittest discover -s tests -p 'test_*.py' -v`, `npm run c
 
 ## 10. QUALITY-006 – Verklig dokumentationsimport och proveniens
 
-**Syfte:** pröva källtrogen import av oberoende insamlade, anonymiserade arbetsböcker och CSV-filer som **inte** skapats utifrån YadiLabs egna mallar.
+**Syfte:** pröva källtrogen import av oberoende insamlade, anonymiserade arbetsböcker och CSV-filer som **inte** skapats utifrån applikationens egna mallar.
 
 **6A Korpus:** CSV, XLSX, ODS, flera blad/roller, tomma eller oregelbundna rader, avvikande rubriker, partiella och motsägelsefulla port-/VLAN-/länkfakta samt dokumentfamiljer med olika organisationskonventioner. Avidentifiera före offentlig incheckning.
 
@@ -279,21 +279,23 @@ Kör minst `python3 -m unittest discover -s tests -p 'test_*.py' -v`, `npm run c
 
 **Acceptans:** UI avspeglar alltid kanoniskt tillstånd, begränsningar och faktiska simuleringsresultat; kärnuppgifter kräver inte rå JSON.
 
-## 13. QUALITY-009 – Distribution och plattformskompatibilitet
+## 13. QUALITY-009 – Linux-exklusiv distribution och kompatibilitet mellan Linuxdistributioner
 
-**Syfte:** endast annonsera plattformar som faktiskt verifierats.
+**Bindande plattformspolicy – ENDAST LINUX:** applikationen är en **Linuxapplikation**. Endast Linuxdistributioner är avsedda målplattformar. **Windows och macOS är uttryckligen exkluderade (UNSUPPORTED), inte alternativa, kommande eller valfria supportmål.** Denna etapp får inte användas för att porta, anpassa, paketera, testa eller lägga till kompatibilitetslager för Windows, macOS eller andra operativsystem utanför Linux. Ingen Windows-/macOS-CI, installerare, plattformsspecifik fallback eller plattformsoberoende ombyggnad får införas i QUALITY-009. Om en åtgärd skulle kräva sådant arbete: stoppa den som **OUT_OF_SCOPE**, inte som en uppgift att lösa. Eventuell oavsiktlig exekverbarhet på ett annat OS ger varken supportåtagande eller utvecklingsmål; ingen särskild saboterande OS-spärr ingår i detta dokumentationsuppdrag.
 
-**Verifierad plattformsrisk:** `network_core/storage.py` importerar Unix-specifika `fcntl`; detta är **inte** en bekräftelse på fungerande Windows-stöd. Linux-binärer från separata bygg-/artifact-branches bevisar inte att varje framtida main-SHA är releasetestad.
+**Syfte:** verifiera reproducerbar installation, drift och distribution **inom Linux-ekosystemet**. Kompatibilitetsmatrisen får innehålla enbart uttryckligt testade Linuxdistributioner och Linuxmiljöer, t.ex. specificerad distribution/version, x86_64 eller annan faktiskt byggd Linuxarkitektur, glibc-/runtimekrav, webbläsarversion samt X11/Wayland när respektive fönstersystem har verifierats. Ej testade Linuxkombinationer anges **NOT_VERIFIED**, inte PASS. Windows och macOS hör inte hemma i en möjlig framtida supportmatris.
 
-**X11-regressionens CI-grind (introducerad i PR #86):** Den tidigare branchbundna X11-testningen ingick inte i obligatorisk `main`-CI. Det verkliga testet `xvfb-run -a python3 tests/browser_primary_selection_x11.py` är nu ett okonditionellt steg i det redan obligatoriska GitHub Actions-jobbet `unit-tests` i `.github/workflows/ci.yml`, för både `push` och `pull_request`. Det äldre fristående workflowet är endast manuell diagnostik, inte en alternativ kvalitetsgrind. **Verifiering måste göras per exakt SHA:** teststeget ska ha SUCCESS på slutlig PR-HEAD och efterföljande `main`-SHA för att anses godkänt; FAIL, SKIPPED eller PENDING betyder att grinden inte är godkänd. Äldre körningar räknas aldrig som verifiering av en ny release-SHA. Att X11-testet passerar innebär inte att Windows-support eller en binär release är verifierad.
+**Verifierad plattformsrisk:** `network_core/storage.py` importerar Unix-specifika `fcntl`. Detta är inte ett skäl att införa Windows-/macOS-abstraktioner. Linux-binärer från separata bygg-/artifact-branches bevisar inte att varje framtida `main`-SHA är releasetestad.
 
-Definiera uttryckligt supportkontrakt för Linux, Windows om avsett, webbläsare, Python, lokalt filsystem, installation, uppstart, nedstängning och uppgradering.
+**X11-regressionens CI-grind (introducerad i PR #86):** Den tidigare branchbundna X11-testningen ingick inte i obligatorisk `main`-CI. Det verkliga testet `xvfb-run -a python3 tests/browser_primary_selection_x11.py` är nu ett okonditionellt steg i det redan obligatoriska GitHub Actions-jobbet `unit-tests` i `.github/workflows/ci.yml`, för både `push` och `pull_request`. Det äldre fristående workflowet är endast manuell diagnostik, inte en alternativ kvalitetsgrind. **Verifiering måste göras per exakt SHA:** teststeget ska ha SUCCESS på slutlig PR-HEAD och efterföljande `main`-SHA för att anses godkänt; FAIL, SKIPPED eller PENDING betyder att grinden inte är godkänd. Äldre körningar räknas aldrig som verifiering av en ny release-SHA. X11-PASS bevisar varken Wayland-stöd eller generell kompatibilitet mellan Linuxdistributioner.
 
-För varje **stödd** kombination: ren installation, skapa/topologi, import, simulering, Save, processstopp, återstart och Open av exakt samma fil med oförändrade ID:n/bytes. Exakta versioner och miljöer ska anges.
+**Linux-supportkontrakt:** definiera stödda Linuxdistributioner och versioner, CPU-arkitekturer, libc-/runtimeberoenden, lokalt filsystem, webbläsare och fönstersystem, installation, uppstart, nedstängning och uppgradering. Om en del av Linuxmiljön inte är verifierad markeras den NOT_VERIFIED. **Inget** stödarbete för Windows eller macOS får tolkas in i ord som ”plattformskompatibilitet”, ”portabilitet” eller ”supportkontrakt”.
 
-**Paketeringsspärr:** märk endast binärer för uttryckligen verifierad OS/arkitektur. Bygg från exakt redovisad käll-SHA; kontrollera kedjan source → build-logg → artefakt → SHA-256 → verklig start, HTTP, Save/Open och portkonflikt. Bygggrenar, ändrade workflows, lokala proxyer och äldre artefakter får inte användas som oberoende bevis för main utan verifierad identisk källkod och relevant testning. Ingen obeställd port till Windows eller ny installationsarkitektur.
+För varje **verifierad Linuxkombination**: ren installation, skapa topologi, import, simulering, Save, processstopp, återstart och Open av exakt samma fil med oförändrade ID:n/bytes. Ange exakta versioner, byggmiljö och begränsningar.
 
-**Acceptans:** reproducerbar ren installation enligt dokumentationen. Allt annat märks NOT_VERIFIED och marknadsförs inte som färdigt.
+**Paketeringsspärr:** märk enbart binärer för uttryckligen verifierade **Linux-OS/arkitekturkombinationer**. Bygg från exakt redovisad käll-SHA; kontrollera kedjan source → build-logg → artefakt → SHA-256 → verklig start, HTTP, Save/Open och portkonflikt. Bygggrenar, ändrade workflows, lokala proxyer och äldre artefakter får inte användas som oberoende bevis för `main` utan verifierad identisk källkod och relevant testning. Inga Windows-/macOS-byggen, cross-platform-installerare eller portar ingår.
+
+**Acceptans:** reproducerbar ren installation och verkliga integrationstester på de **specifikt angivna Linuxdistributionerna**. Andra Linuxmiljöer märks NOT_VERIFIED; Windows/macOS märks alltid UNSUPPORTED och är utanför projektets plattformsmål.
 
 ## 14. QUALITY-010 – Dokumentation och reproducerbar QA
 
@@ -380,7 +382,7 @@ Förbjudet: `sleep` för CI-väntan, polling-loop, `gh run watch`, upprepade sta
 5. Genomför QUALITY-006 med autentiskt varierade, anonymiserade externa dokument.
 6. Genomför QUALITY-007 med baslinje och deklarerade prestandabudgetar.
 7. Genomför QUALITY-008 med verkliga användaruppgifter och tillgänglighet.
-8. Genomför QUALITY-009 med deklarerad plattformsmatris.
+8. Genomför QUALITY-009 med en deklarerad, verifierad matris **endast för Linuxdistributioner**; Windows och macOS är utanför projektets supportmål.
 9. Genomför QUALITY-010 med aktuellt och reproducerbart dokument-/QA-underlag.
 10. Genomför QUALITY-011 som oberoende slutrevision på exakt release-SHA.
 
