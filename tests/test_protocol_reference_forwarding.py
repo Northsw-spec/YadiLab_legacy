@@ -75,8 +75,10 @@ class IndependentEthernetForwardingTests(unittest.TestCase):
         self.assertEqual(_endpoints(dropped), [("c", "eth0")])
         self.assertNotIn("lb", _links(dropped))
         self.assertEqual(set(_endpoints(dropped)), {("c", "eth0")})
-        self.assertEqual(broken["links"][1]["enabled"], original["links"][1]["enabled"]
-                         if broken["links"][1]["id"] != "lb" else False)
+        self.assertEqual(
+            next(link for link in broken["links"] if link["id"] == "lb")["enabled"],
+            False,
+        )
 
 
 class IndependentVlanForwardingTests(unittest.TestCase):
