@@ -217,6 +217,9 @@ class ConcurrentRealHttpOracles(unittest.TestCase):
         project = persisted_topology()
         self.stored_snapshot(project)
         n = MAX_SESSIONS + 4
+        # This burst must be accepted by the local listener so the application
+        # registry, not the TCP accept backlog, returns the four explicit 422s.
+        self.assertGreaterEqual(self.server.request_queue_size, n)
         gate = threading.Barrier(n + 1)
 
         def start():
