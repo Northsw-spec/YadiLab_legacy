@@ -46,3 +46,40 @@ This first slice is PASS **only when** these exact tests and the regular require
 **Still outside the demonstrated slice (QUALITY-003 remains open):** 3A learned/unlearned MAC forwarding, unknown-unicast and loop/STP boundaries; 3B VLAN end-to-end isolation and trunk/drop paths; 3C ARP cache and silent-peer paths; 3D multi-hop IPv4 with independent return-route and /31 boundary references; 3E router-generated ICMP errors and full Echo roundtrip; 3F DORA/leases/T1/T2/rebinding with an external state-machine oracle. Each requires independent expected traces and their own positive/negative tests; existing tests cannot be relabeled as independent simply because they are green.
 
 **No changes authorized:** production protocol code, canonical schema, implicit network facts, real network commands, Windows/macOS support, or required CI gates. On a confirmed discrepancy, propose a separate minimal correction instead of changing expected values to match an implementation.
+
+
+## QUALITY-003 second slice: independent forwarding, VLAN, and ARP state oracles
+
+**Pre-registered on 2026-11-23 before executing the added tests.** The topology descriptions below explicitly determine expected forwarding behavior using the known rules of Ethernet MAC learning, 802.1Q access/trunk forwarding and RFC 826 ARP exchange. These expectations are declared before observing production `EthernetFabric` or `ArpSession` output, and must not be relaxed to match the engine. Their source references remain RFC 826 and IEEE 802.1Q, with standard transparent bridging MAC learning as captured by the product's explicitly limited forwarding contract in `docs/ETHERNET_FORWARDING.md`. The contract intentionally **rejects** switch loops rather than pretending to support STP.
+
+### 3A: Three-host single-switch forwarding, predetermined trace
+
+Declared links: host `a:eth0` — `la` — switch `sw:p1`; host `b:eth0` — `lb` — `sw:p2`; host `c:eth0` — `lc` — `sw:p3`. Fixed endpoint MACs: A=`02:00:00:00:00:0A`, B=`02:00:00:00:00:0B`, C=`02:00:00:00:00:0C`. Initially empty learning table.
+
+1. `a -> B`: destination B unknown; expected physical links `la, lb, lc` (flood), endpoint arrivals `b,c`, learned `A:p1`.
+2. `b -> A`: A known on `p1`; expected links `lb,la`, arrival `a`, `FORWARD_UNICAST`, learned `B:p2`.
+3. `c -> B`: B known on `p2`; expected links `lc,lb`, arrival `b`, `FORWARD_UNICAST`, learned `C:p3`.
+4. Same physical links but reversed document array order, different diagram coordinates: expected same endpoint *sets* and switch decision under a new session. No network paths can be created or removed by changing diagram geometry.
+
+**Negative:** if link `lb` is disabled before any session traffic, there can be no arrival at `b`, even if its MAC is the destination. The engine must not infer another link from destination MAC.
+
+### 3B: Two-switch VLAN isolation and prohibited trunk ingress
+
+Explicit topology from `tests/test_vlan.py::two_switches`: `a--la--s1--lt--s2--lb--b` in VLAN 10, plus `c--lc--s1--lt--s2--ld--d` in VLAN 20. `s1:t`/`s2:t` are 802.1Q trunk ports; all host-facing ports are access ports with their specified VLAN. No VLAN routing exists.
+
+- `a` broadcasts in VLAN 10: expected `la,lt,lb`, tagged flags `false,true,false`, only `b` arrives, switch MAC learning in VLAN 10.
+- `c` broadcasts in VLAN 20: expected `lc,lt,ld`, tagged flags `false,true,false`, only `d` arrives, independent switch MAC learning in VLAN 20.
+- With `s2:t` allowed **only VLAN 10**, `c` broadcasts: expected `lc,lt`, no `d` arrival, exactly one `TRUNK_NOT_ALLOWED` ingress drop for VLAN 20 at `s2:t` and no VLAN-20 learning at `s2`. VLAN 10 must still cross the trunk as above.
+
+**Negative:** VLAN 20 being denied must never silently reroute it over VLAN 10 or manufacture a receiving port.
+
+### 3C: RFC 826 ARP over those same VLANs
+
+Hosts `a,b,c,d` have explicit IPv4s `192.0.2.10, .20, .30, .40/24` and distinct MACs ending `0A,0B,0C,0D`. Although the IPv4 prefix is shared, **physical VLAN isolation** defines separate broadcast domains.
+
+1. `a` ARPs for `.40` (host `d`, VLAN 20): request travels only `la,lt,lb`, **NO_REPLY**, no `.40` cache entry. Common IP subnet cannot override VLAN isolation.
+2. `a` ARPs for `.20` (host `b`, VLAN 10): request `la,lt,lb`, reply `lb,lt,la`, **RESOLVED** MAC B; only `.20 -> B` is cached.
+3. Same query, unchanged simulation session: **CACHE_HIT** and zero request/reply transmissions.
+4. No canonical project data changes from these simulations; a new session starts without the prior ARP cache.
+
+These are **simulated outcomes**, not claims of real NIC acceptance or complete RFC 826 compliance. Remaining QUALITY-003 work: independent IPv4 multi-hop / ICMP error traces, DHCP DORA/T1/T2 state-machine cases, and broader negative conditions. No protocol engine, project schema, CI gate or Linux platform policy is changed by this reference-test slice.
