@@ -16,128 +16,72 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Freeze offline runtime and web assets into one Linux executable
+      - name: Freeze offline runtime and web assets
         run: |
           python3 -m pip install pyinstaller==6.16.0
-          pyinstaller --clean --noconfirm --onefile --name NetworkLab --paths . \
-            --add-data "web:web" packaging/linux_entry.py
-      - name: Verify ELF and executable startup with real local HTTP
+          pyinstaller --clean --noconfirm --onefile --name NetworkLab --paths . --add-data "web:web" packaging/linux_entry.py
+      - name: Verify ELF and local HTTP with bundled assets
         run: |
           file dist/NetworkLab
           file dist/NetworkLab | grep -q 'ELF 64-bit LSB executable, x86-64'
           test -x dist/NetworkLab
           dist/NetworkLab --help
           python3 - <<'PY'
-          import os
-          import re
           import subprocess
           import tempfile
           import urllib.request
           from pathlib import Path
 
-          with tempfile.TemporaryDirectory() as d:
-              process = subprocess.Popen(
-                  ['./dist/NetworkLab', '--no-browser', '--port', '0', '--data-dir', d],
+          with tempfile.TemporaryDirectory() as data_dir:
+              proc = subprocess.Popen(
+                  ['./dist/NetworkLab', '--no-browser', '--port', '0', '--data-dir', data_dir],
                   stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
               try:
-                  first = process.stdout.readline().strip()
-                  match = re.search(r'at (http://127\.0\.0\.1:\d+/), first)
-                  assert match, (first, process.poll())
-                  url = match.group(1)
-                  for path, snippet in [('', b'html'), ('app.js', b'canvas'),
-                                        ('vendor/elk-worker.js', b'')]:
+                  line = proc.stdout.readline().strip()
+                  assert ' at http://127.0.0.1:' in line, (line, proc.poll())
+                  url = line.split(' at ')[-1]
+                  assert url.endswith('/')
+                  for path, marker in [('', b'html'), ('app.js', b'canvas'), ('vendor/elk-worker.js', b'')]:
                       with urllib.request.urlopen(url + path, timeout=20) as response:
                           body = response.read()
                           assert response.status == 200, (path, response.status)
                           assert len(body) > (100000 if path.endswith('elk-worker.js') else 100), (path, len(body))
-                          assert snippet.lower() in body.lower(), (path, len(body))
-                  assert not list(Path(d).glob('*.yadilab')), 'unexpected project autosave'
-                  print('PASS: packaged ELF starts and serves offline HTML, app.js and ELK worker')
+                          assert marker.lower() in body.lower(), (path, len(body))
+                  assert not list(Path(data_dir).glob('*.yadilab')), 'unexpected autosave'
+                  print('PASS: frozen ELF serves real offline HTML, JavaScript and ELK Worker')
               finally:
-                  process.terminate()
-                  try: process.wait(timeout=10)
-                  except subprocess.TimeoutExpired: process.kill(); process.wait(timeout=10)
+                  proc.terminate()
+                  try:
+                      proc.wait(timeout=10)
+                  except subprocess.TimeoutExpired:
+                      proc.kill()
+                      proc.wait(timeout=10)
           PY
-      - name: Package binary, usage instructions, SHA256
+      - name: Package binary and SHA256
         run: |
           mkdir -p package
           cp dist/NetworkLab package/NetworkLab
           cat > package/README.txt <<'TXT'
-          Network Lab (YadiLab source) — Linux x86_64 executable
+          Network Lab (YadiLab source) - Linux x86_64 executable
 
-          Built from project baseline:
-          2108567382c9b458d5d2e79aed8e64d576ac6648
+          Source baseline commit: 2108567382c9b458d5d2e79aed8e64d576ac6648
+          Build runner: Ubuntu 22.04 x86_64, Python 3.11, PyInstaller 6.16.0
+          Compatibility target: Linux x86_64 with glibc >= 2.35.
 
-          Compatible: Linux x86_64 with glibc >= 2.35 (Ubuntu 22.04+ and similar).
-          Offline: Browser UI + ELK JavaScript assets are bundled.
+          Extract and run:
+            chmod +x NetworkLab
+            ./NetworkLab
 
-          Extract the archive, then:
-              chmod +x NetworkLab
-              ./NetworkLab
+          Manual browser launch:
+            ./NetworkLab --no-browser --port 8765
+            Browse to http://127.0.0.1:8765/
 
-          For manual browser access:
-              ./NetworkLab --no-browser --port 8765
-              Open http://127.0.0.1:8765/
+          Project storage: ~/.local/share/network-projects by default.
+          Override with --data-dir DIRECTORY. Stop via Ctrl+C.
 
-          Save directory defaults to ~/.local/share/network-projects.
-          Override using --data-dir /path/to/folder.
-
-          This is a PyInstaller-frozen ELF (bundled CPython), not a fully
-          statically linked native-code translation. No system Python needed.
-          Stop with Ctrl+C. Binds only to loopback (127.0.0.1).
-          TXT
-          (cd package && sha256sum NetworkLab > SHA256SUMS)
-          tar -C package -czf NetworkLab-linux-x86_64.tar.gz NetworkLab README.txt SHA256SUMS
-          ls -lh NetworkLab-linux-x86_64.tar.gz
-      - uses: actions/upload-artifact@v4
-        with:
-          name: NetworkLab-linux-x86_64
-          path: NetworkLab-linux-x86_64.tar.gz
-          if-no-files-found: error
-          retention-days: 30
-, first)
-                  assert match, (first, process.poll())
-                  url = match.group(1)
-                  for path, snippet in [('', b'html'), ('app.js', b'canvas'),
-                                        ('vendor/elk-worker.js', b'ELK')]:
-                      with urllib.request.urlopen(url + path, timeout=20) as response:
-                          body = response.read()
-                          assert response.status == 200, (path, response.status)
-                          assert snippet.lower() in body.lower(), (path, len(body))
-                  assert not list(Path(d).glob('*.yadilab')), 'unexpected project autosave'
-                  print('PASS: packaged ELF starts and serves offline HTML, app.js and ELK worker')
-              finally:
-                  process.terminate()
-                  try: process.wait(timeout=10)
-                  except subprocess.TimeoutExpired: process.kill(); process.wait(timeout=10)
-          PY
-      - name: Package binary, usage instructions, SHA256
-        run: |
-          mkdir -p package
-          cp dist/NetworkLab package/NetworkLab
-          cat > package/README.txt <<'TXT'
-          Network Lab (YadiLab source) — Linux x86_64 executable
-
-          Built from project baseline:
-          2108567382c9b458d5d2e79aed8e64d576ac6648
-
-          Compatible: Linux x86_64 with glibc >= 2.35 (Ubuntu 22.04+ and similar).
-          Offline: Browser UI + ELK JavaScript assets are bundled.
-
-          Extract the archive, then:
-              chmod +x NetworkLab
-              ./NetworkLab
-
-          For manual browser access:
-              ./NetworkLab --no-browser --port 8765
-              Open http://127.0.0.1:8765/
-
-          Save directory defaults to ~/.local/share/network-projects.
-          Override using --data-dir /path/to/folder.
-
-          This is a PyInstaller-frozen ELF (bundled CPython), not a fully
-          statically linked native-code translation. No system Python needed.
-          Stop with Ctrl+C. Binds only to loopback (127.0.0.1).
+          This is a PyInstaller-frozen ELF (CPython bundled, no system Python
+          needed), not native machine-code compilation. Web assets included.
+          The local HTTP server binds 127.0.0.1 only.
           TXT
           (cd package && sha256sum NetworkLab > SHA256SUMS)
           tar -C package -czf NetworkLab-linux-x86_64.tar.gz NetworkLab README.txt SHA256SUMS
