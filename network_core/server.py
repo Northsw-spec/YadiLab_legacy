@@ -46,6 +46,10 @@ DEFAULT_PORT_CANDIDATES = 10
 
 
 class LabHTTPServer(ThreadingHTTPServer):
+    # Linux loopback bursts can exceed TCPServer's default backlog of 5 before
+    # the bounded session registries return explicit HTTP 422 capacity errors.
+    # This queue is only pending TCP accepts, not the 16-session application cap.
+    request_queue_size = 32
     daemon_threads = True
 
     def __init__(self, address: tuple[str, int], store: ProjectStore,
