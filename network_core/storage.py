@@ -9,6 +9,7 @@ import re
 import tempfile
 from pathlib import Path
 
+from .json_boundary import decode_json_document
 from .model import ProjectValidationError, validate_project
 
 FILENAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
@@ -40,10 +41,7 @@ class ProjectStore:
             raw = path.read_bytes()
         except FileNotFoundError:
             raise FileNotFoundError("project does not exist") from None
-        try:
-            document = json.loads(raw)
-        except (UnicodeDecodeError, json.JSONDecodeError):
-            raise ProjectValidationError("saved project contains invalid JSON") from None
+        document = decode_json_document(raw, context="saved project")
         try:
             project = validate_project(document)
         except ProjectValidationError as error:
