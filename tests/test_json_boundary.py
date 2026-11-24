@@ -51,8 +51,10 @@ class StrictJsonBoundaryTests(unittest.TestCase):
         self.assertFalse(self.store.path("invalid").exists())
 
     def test_deeply_nested_input_is_rejected_not_exposed_as_recursion_crash(self):
-        data = b"[" * 1500 + b"0" + b"]" * 1500
-        with self.assertRaises(ProjectValidationError):
+        # Always exceeds the explicit schema boundary, irrespective of
+        # Python's interpreter-specific recursion limit.
+        data = b"[" * 66 + b"0" + b"]" * 66
+        with self.assertRaisesRegex(ProjectValidationError, "JSON nesting exceeds 64"):
             decode_json_document(data, context="test")
 
     def test_valid_unicode_and_explicit_project_facts_are_preserved(self):
