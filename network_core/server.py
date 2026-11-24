@@ -137,8 +137,10 @@ class Handler(BaseHTTPRequestHandler):
                 (api_path == "/api" or api_path.startswith("/api/")) and
                 api_path not in public):
             values = self.headers.get_all("Authorization", [])
-            authorized = (len(values) == 1 and hmac.compare_digest(
-                values[0], "Bearer " + self.server.auth_token))
+            expected = "Bearer " + self.server.auth_token
+            authorized = (len(values) == 1 and isinstance(values[0], str)
+                          and values[0].isascii() and len(values[0]) == len(expected)
+                          and hmac.compare_digest(values[0], expected))
             if not authorized:
                 self._json(HTTPStatus.UNAUTHORIZED, {
                     "error": "AUTH_REQUIRED",

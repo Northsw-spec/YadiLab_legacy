@@ -215,6 +215,7 @@ class ProtectedLocalAPITests(unittest.TestCase):
     def test_bad_duplicate_or_wrong_scheme_authorization_is_denied(self):
         for extra in ((("Authorization", "Bearer " + "A" * 43),),
                       (("Authorization", "Basic abc"),),
+                      (("Authorization", "Bearer é"),),
                       (("Authorization", "Bearer " + self.key),
                        ("Authorization", "Bearer " + self.key))):
             with self.subTest(extra=extra):
