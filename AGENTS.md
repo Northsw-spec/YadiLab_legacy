@@ -1,5 +1,9 @@
 # Utvecklingskontrakt för nätverksapplikationen
 
+## Verifierad status och dokumentationsföreträde
+
+**Läs [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md)** före ny planering, felsökning eller protokollimplementering. Dokumentet förklarar tidsstämplad kod-/PR-status och vilka äldre anteckningar som är historik. Det ersätter **inte** aktuell källkod, tekniska kontrakt, användarbeslut eller CI-HEAD. Vid konflikt mellan gammal text och verklig kod: stoppa den riskabla ändringen, verifiera, rätta dokumentationen – gissa inte. Pedagogikplanen beskriver en beslutad framtida funktion, inte en befintlig komplett Incidentverkstad.
+
 ## Samlad kvalitetsfärdplan mot 10/10
 
 Den enda aktuella etappindelade kvalitetsfärdplanen finns i [docs/QUALITY_IMPROVEMENT_PLAN.md](docs/QUALITY_IMPROVEMENT_PLAN.md). Den omfattar QUALITY-000–011, oberoende protokollreferenser, dataintegritet, import, skalning, användbarhet, distribution och slutrevision. Kontrollera faktisk HEAD/CI och uppdatera verifieringslägen innan en etapp startas. Historiken finns separat i `docs/QUALITY_IMPROVEMENT_HISTORY.md`. Planen **kompletterar**, men ersätter aldrig detta utvecklingskontrakt, [docs/MASTERPROMPT.md](docs/MASTERPROMPT.md), [docs/IMPORT_SOURCE_CONTRACT.md](docs/IMPORT_SOURCE_CONTRACT.md) eller tekniska protokollkontrakt.
