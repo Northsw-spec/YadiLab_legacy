@@ -4,6 +4,7 @@ must enter a process-scoped key before Save/Open succeeds.
 from __future__ import annotations
 
 import json
+import sys
 import tempfile
 import threading
 from pathlib import Path
@@ -11,6 +12,9 @@ from urllib.error import HTTPError
 from urllib.request import urlopen
 
 from playwright.sync_api import sync_playwright
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 from network_core.server import LabHTTPServer
 from network_core.storage import ProjectStore
 from test_model import example
