@@ -58,6 +58,10 @@
 - Upprepa aldrig färdiga ELK-06A–C, importer 4A–4D eller protokolletapper endast för att ett äldre dokument säger ”nästa steg”.
 - Dokumentation får aldrig kringgå CI-/mergegrindarna. **Namnkontraktets justerade gräns 2026-11-24:** Markdown-prosa (inklusive `AGENTS.md`, `README.md`, `docs/*.md`) får använda projektnamnet `YadiLab`, utan att detta ändrar det deklarerade UI-namnet. `tests/test_naming_contract.py` förbjuder fortfarande gamla/hårdkodade produktnamn i icke-Markdown-kod/fixturer och i filvägar, samt ytterligare `APP_NAME`-deklarationer. Det tekniska projektformatet `.yadilab` är ett uttryckligt kompatibilitetsundantag. Namn i dokumentation är inte underlag för nya klass-/funktionsnamn.
 
+## 4A. IPv4-scopegrind efter fortsatt oberoende revision (planerat tills PR godkänd)
+
+Ytterligare avgränsade specialadressregler enligt RFC 1122, RFC 3927 och IANA har fått en separat test-/kod-PR (2026-11-24). Avsikten är att avvisa trådburen simulering med 127/8 eller 0/8 och förbjuda routertransit för 169.254/16 utan att förbjuda direkt Ethernet-länk-lokal trafik. Se [IPV4_FORWARDING.md](IPV4_FORWARDING.md) och [PROTOCOL_REFERENCE_MATRIX.md](PROTOCOL_REFERENCE_MATRIX.md). Detta är **inte** generell IPv4-konformitet; verifiera den faktiska PR-HEAD och dess exakta CI innan status ändras från **PROPOSED** till **VERIFIED SUPPORTED SUBSET**.
+
 ## 5. Slutlig gräns för försäkran
 
 **Riskbaserad källkodsrevision, 2026-11-24:** [SOURCE_INTEGRITY_AUDIT_2026-11-24.md](SOURCE_INTEGRITY_AUDIT_2026-11-24.md) redovisar den avgränsade kontrollen av HTTP, JSON, import, lagring, protokollsteg och CI samt öppna fynd. JSON-avvikelserna behandlas i separat PR #111 och får inte kallas verifierat åtgärdade förrän den PR:en och aktuell relevant CI är godkända. Lär ut dess uttryckliga ICMP-reply-TTL-begränsning som en modellförenkling, inte som verkligt nätverksfaktum. Rapportens kvarstående lokala API-/interoperabilitetsrisker är ingen automatisk kodorder.
