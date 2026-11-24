@@ -19,6 +19,7 @@ from .model import ProjectValidationError
 ARP_ETHER_TYPE = 0x0806
 _ZERO_MAC = "00:00:00:00:00:00"
 _HEADER = struct.Struct("!HHBBH")
+_THIS_NETWORK = ipaddress.IPv4Network("0.0.0.0/8")
 
 
 def _ipv4(value: str, where: str) -> str:
@@ -28,8 +29,14 @@ def _ipv4(value: str, where: str) -> str:
         address = ipaddress.IPv4Address(value)
     except ipaddress.AddressValueError:
         raise ProjectValidationError(f"arp: {where} must be an IPv4 address") from None
-    if address.is_unspecified or address.is_multicast or int(address) == 0xFFFFFFFF:
-        raise ProjectValidationError(f"arp: {where} must be a usable unicast IPv4 address")
+    # RFC 1122 loopback never appears on Ethernet. This narrow module also
+    # excludes "this-network" and class-E addresses from ordinary ARP probes;
+    # RFC 5227's 0.0.0.0 sender ARP probes are not implemented here.
+    if (address.is_unspecified or address.is_multicast or address.is_reserved
+            or address.is_loopback or address in _THIS_NETWORK
+            or int(address) == 0xFFFFFFFF):
+        raise ProjectValidationError(
+            f"arp: {where} must be a usable unicast IPv4 address on an Ethernet wire")
     return str(address)
 
 
