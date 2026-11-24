@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-23 (ISO)  
 **Base:** `main@cad82c5b68eb0451f59ddb7d2f3e5a0c8355875b` following merged #108.  
-**Status:** PRE-REGISTERED / NOT_VERIFIED until mandatory CI completes on the exact final HEAD.  
+**Statuskorrigering 2026-11-24:** Ursprunglig PRE-REGISTERED / NOT_VERIFIED-status gällde före CI. Testerna och den begränsade Linux-loopback-backlog-fixen mergades i PR #109 (final PR HEAD `3955199a79011806cf84d66f63842d2425980d2e`, båda obligatoriska `unit-tests` SUCCESS; squash-mergad till `main@b1c6fb0323fc93085084128e3ff4382f2b3a9576`). Detta bevisar inte alla möjliga produktionsraces eller full QUALITY-005-acceptans.  
 **Scope:** Linux-only local `LabHTTPServer`, `SimulationRegistry` and `DhcpSessionRegistry`, real HTTP requests to a loopback test server and files strictly within `tempfile.TemporaryDirectory()`. No live NICs, user home directories or external services.
 
 ## Existing coverage and reason to add tests
@@ -32,4 +32,4 @@ Test command: `python3 -m unittest discover -s tests -p 'test_quality_005_http_r
 
 **Cause and scope of fix:** `LabHTTPServer` inherited Python `TCPServer`'s default pending TCP accept backlog of **5** despite allowing **16** active simulated sessions. Twenty simultaneous real loopback clients can overload the accept backlog before the application-level registry gets a chance to return a deterministic error. In this PR only, the existing Linux local listener's `request_queue_size` is set to **32**, enough to queue the specifically tested burst without increasing `MAX_SESSIONS`, changing protocol engines, or relaxing the four expected **422** results. The new negative test also asserts that the listener's advertised backlog is at least `MAX_SESSIONS + 4`. **The original 5D-4 oracle and 20-simultaneous-request load remain unchanged.**
 
-This finding is a real **test-observed transport robustness issue**, not evidence of lost project files. The correction's efficacy remains **NOT_VERIFIED** until required CI passes on the *new* exact PR HEAD. If it fails, retain the same application-level expectation and diagnose the specific transport error again. No production server is contacted: only a temporary loopback server is used in the test.
+This finding is a real **test-observed transport robustness issue**, not evidence of lost project files. The scoped correction later passed both mandatory `unit-tests` check runs on final PR #109 HEAD before squash merge; the observed tests do not prove every possible transport race. If it fails, retain the same application-level expectation and diagnose the specific transport error again. No production server is contacted: only a temporary loopback server is used in the test.
