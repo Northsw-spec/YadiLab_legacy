@@ -22,7 +22,7 @@ Den snäva Ethernet-/IPv4-ARP-modellen får **inte** rapportera ett simulerat AR
 
 **Kvarvarande begränsning:** Enligt RFC 5227 kan ARP-probing i verkliga nätverk använda `0.0.0.0` som avsändar-IP. Detta beteende ingår **inte** i denna smala ARP-simulator; ett avvisat `0.0.0.0` här betyder inte att användningen är förbjuden i all verklig ARP-trafik. DHCP:s separata BOOTP/UDP-modell med `0.0.0.0` vid DISCOVER ändras inte.
 
-Oberoende positiva/negativa regressioner: `tests/test_arp_special_addresses.py`, inklusive att direkt 169.254/16 på samma VLAN, RFC1918 och TEST-NET fortsatt fungerar. **Acceptans kräver full obligatorisk CI på exakt PR-HEAD; inget allmänt ARP-/IPv4-compliancepåstående.**
+Oberoende positiva/negativa regressioner: `tests/test_arp_special_addresses.py`, inklusive att direkt 169.254/16 på samma VLAN, RFC1918 och TEST-NET fortsatt fungerar. **Verifiering:** Båda obligatoriska `unit-tests` var SUCCESS på exakt PR #121 HEAD `dbb90e131df730d6f9aeb3d05f4d4337496aa29d`; identiskt Git-träd har tillämpats på `main@7e8c423c8823fc3b40dc89b591160d5bb52aec13`. Merge-svar timeout gav manuell PR-stängning med `merged=false`; se PR-kommentaren. Ingen allmän ARP-/IPv4-compliance påstås.
 
 ### Sanningsgränser och negativa beteenden
 
