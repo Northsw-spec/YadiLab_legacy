@@ -2,7 +2,7 @@
 
 **Självständig nyimplementation.** Repositoryts tekniska namn är inte produktens namn. Ändra endast `APP_NAME` i `network_core/config.py` för att byta appens visningsnamn. Alla användarsynliga namn hämtas från den deklarationen. Ingen äldre produktkod har kopierats in.
 
-Applikationen är en lokal, Linux-exklusiv nätverkslabb- och dokumentationsmiljö. Den har utvecklats stegvis från en enkel topologimodell till avgränsade Ethernet/ARP/VLAN/IPv4/ICMP/DHCP-simuleringar och felövningar. Följ respektive protokollkontrakt för exakt stöd; programmet återskapar **inte** automatiskt godtyckliga kundnätverk eller alla protokoll. Projekt lagras lokalt i `.yadilab`-filer; YadiLab kör ingen live-discovery genom pedagogikplanen.
+Applikationen är en lokal, Linux-exklusiv nätverkslabb- och dokumentationsmiljö. Den har utvecklats stegvis från en enkel topologimodell till avgränsade Ethernet/ARP/VLAN/IPv4/ICMP/DHCP-simuleringar och felövningar. Följ respektive protokollkontrakt för exakt stöd; programmet återskapar **inte** automatiskt godtyckliga kundnätverk eller alla protokoll. Projekt lagras lokalt i `.yadilab`-filer; Applikationen kör ingen live-discovery genom pedagogikplanen.
 
 > **Dokumentstatus 2026-11-24:** README innehåller fortfarande **historiska, kronologiska** funktionsbeskrivningar. Äldre begränsningar i en tidigare etapp får inte användas som aktuell helhetsstatus när senare kod har tillkommit. Verifiera aktuell HEAD, implementation, protokollkontrakt och tester. Den nya [pedagogiska arkitekturen](docs/PEDAGOGICAL_TROUBLESHOOTING_PLAN.md) är ett uttryckligt **framtida utbildningskontrakt, inte en redan färdig incidentverkstad**. För faktiskt nuläge gäller verifierad kod och CI. Den aktuella [kvalitetsfärdplanen QUALITY-000–011](docs/QUALITY_IMPROVEMENT_PLAN.md) är styrande för kommande kvalitetsarbete tillsammans med [AGENTS.md](AGENTS.md) och [MASTERPROMPT.md](docs/MASTERPROMPT.md). Den ersätter inte [importkontraktet](docs/IMPORT_SOURCE_CONTRACT.md) eller protokollens tekniska kontrakt. Tidigare kvalitetsanteckningar finns i [historikarkivet](docs/QUALITY_IMPROVEMENT_HISTORY.md).
 
@@ -118,11 +118,11 @@ Longest-prefix match omfattar nu både `CONNECTED` och `STATIC`; lika specifika 
 
 ## Bevisgränser och avsiktligt ej stödda områden
 
-**Topologisk grafväg är inte paketleverans, routing eller ping.** YadiLabs senare IPv4/ARP/Ethernet/ICMP-motor har egna uttryckligt avgränsade leverans- och returkriterier. För verkliga kundnätverk är dessa resultat fortfarande modellberäknade, inte uppmätta.
+**Topologisk grafväg är inte paketleverans, routing eller ping.** applikationens senare IPv4/ARP/Ethernet/ICMP-motor har egna uttryckligt avgränsade leverans- och returkriterier. För verkliga kundnätverk är dessa resultat fortfarande modellberäknade, inte uppmätta.
 
 Denna arkitektur har **inte** generell inbyggd OSPF-, BGP-, STP-, ACL-, NAT-, DNS-, IPv6- eller Wi-Fi-simulering och ingen automatisk discovery av verkliga nätverk. Godtycklig heuristisk kalkylbladsimport eller skanningsverktygsadapter ska inte antas. Avgränsade DHCP- och felinjektionsfunktioner beskrivs **i senare avsnitt** och får inte döljas av äldre text. Andra funktionsgränser måste kontrolleras mot aktuell kod och protokollkontrakt, inte gissas.
 
-YadiLabs [pedagogiska undervisningsplan](docs/PEDAGOGICAL_TROUBLESHOOTING_PLAN.md) lär ut verktygsval och verktygsutdata med statiska granskade exempel, men installerar, integrerar eller anropar **inte** Batfish, SuzieQ, Netshot, Wireshark, FRRouting, containerlab eller andra externa verktyg. De är referenser, inte runtimefunktioner.
+applikationens [pedagogiska undervisningsplan](docs/PEDAGOGICAL_TROUBLESHOOTING_PLAN.md) lär ut verktygsval och verktygsutdata med statiska granskade exempel, men installerar, integrerar eller anropar **inte** Batfish, SuzieQ, Netshot, Wireshark, FRRouting, containerlab eller andra externa verktyg. De är referenser, inte runtimefunktioner.
 
 
 
