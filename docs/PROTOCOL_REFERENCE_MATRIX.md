@@ -3,7 +3,7 @@
 **Date:** 2026-11-23 (ISO).  
 **Source baseline:** `main@11bdcbc8819c27df5b74172139615d699e08e1a8`.  
 **Scope:** Linux-only network simulation. No Windows or macOS target.  
-**Status:** **EVIDENCE IN PROGRESS**; this small reference-vector slice is not the full QUALITY-003 acceptance or an assertion of standards compliance.
+**Status correction 2026-11-24:** The original **first slice** was historically EVIDENCE IN PROGRESS. Four reference slices (#100–#103) were later merged and QUALITY-003 was accepted **only for the explicitly VERIFIED SUPPORTED SUBSET**; consult [QUALITY_003_VERIFICATION_REPORT.md](QUALITY_003_VERIFICATION_REPORT.md) and [QUALITY_IMPROVEMENT_PLAN.md](QUALITY_IMPROVEMENT_PLAN.md) for final evidence. This document is not evidence of universal RFC compliance, OSPF/BGP/STP/ACL implementations or real-network reachability. Pedagogical explanations must also follow [PEDAGOGICAL_TROUBLESHOOTING_PLAN.md](PEDAGOGICAL_TROUBLESHOOTING_PLAN.md).
 
 ## Method and provenance
 
