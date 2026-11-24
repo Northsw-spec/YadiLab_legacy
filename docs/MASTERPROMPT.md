@@ -1,7 +1,8 @@
 # MASTERPROMPT — REN NÄTVERKSAPPLIKATION
 ## Permanent utvecklingsdirektiv: bygg en verifierbar, avgränsad nätverkssimulator med tydlig felsökningspedagogik
 
-**Repository:** Detta GitHub-repository (det tekniska repositorynamnet är inte produktnamnet).  
+**Repository:** Detta GitHub-repository (det tekniska repositorynamnet är inte produktnamnet).
+**Verifierad nulägesöversikt:** [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) – historikgrind, inte automatisk bekräftelse på senare HEAD.  
 **Huvudgren:** `main`.  
 **Utvecklingsmodell:** Högst en aktiv utvecklingsgren och en PR åt gången.  
 **Produktnamn:** Hämtas endast från `APP_NAME` i `network_core/config.py`.  
