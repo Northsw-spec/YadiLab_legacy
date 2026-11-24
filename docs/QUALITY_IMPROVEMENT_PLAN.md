@@ -9,6 +9,8 @@
 
 > **Gällande styrning:** `AGENTS.md` och `docs/MASTERPROMPT.md` gäller övergripande. För import gäller dessutom `docs/IMPORT_SOURCE_CONTRACT.md` och tillhörande tekniska kontrakt. Denna fil är den **enda aktuella samlade kvalitetsfärdplanen**, inte en ersättning för dessa kontrakt. Faktisk kod, CI och den senaste uttryckliga användarinstruktionen avgör aktuell implementationsstatus. Äldre etappanteckningar har bevarats oförändrade i [QUALITY_IMPROVEMENT_HISTORY.md](QUALITY_IMPROVEMENT_HISTORY.md); deras historiska framtidsuttalanden är **inte** aktuella order eller verifierade nulägesuppgifter.
 
+> **Pedagogisk arkitektur, beslut 2026-11-24:** [PEDAGOGICAL_TROUBLESHOOTING_PLAN.md](PEDAGOGICAL_TROUBLESHOOTING_PLAN.md) är normerande för framtida Om–Då-undervisningsinnehåll, epistemiska gränser, verktygskort och negativa pedagogiska tester. Den är **inte** en ny roadmap, ger inget nytt kodmandat och ändrar inte QUALITY-000–011:s status eller ordning. Externa NMS-/simuleringsverktyg förblir fristående undervisningsreferenser; ingen extern runtimeintegration är beslutad. Bevara befintliga funktioner och Linux-only.
+
 ## 1. Syfte och kvalitetsprinciper
 
 Applikationen ska gå från en användbar simulator till en kodbas vars korrekthet, underhållbarhet och tillförlitlighet kan bedömas oberoende. 10/10 är ett **krävande revisionsmål**, aldrig något som deklareras därför att CI är grön eller en viss mängd kod levererats. Det kräver inte stöd för alla nätverksprotokoll eller operativsystem. En smal, korrekt modell är bättre än ett brett system med falska resultat.
@@ -267,6 +269,8 @@ Kör minst `python3 -m unittest discover -s tests -p 'test_*.py' -v`, `npm run c
 **Acceptans:** uppfyllda reproducerbara budgetar inom uttalade gränser; utanför gräns tydligt fel utan datatapp.
 
 ## 12. QUALITY-008 – Frontend, pedagogik och tillgänglighet
+
+**Särskild pedagogisk sanningsgrind:** Framtida undervisning ska följa [den bindande niorubriks-mallen](PEDAGOGICAL_TROUBLESHOOTING_PLAN.md) med ordagrant ”Om [observerat]”, ”Då [vad det faktiskt betyder]” och ”Möjliga orsaker [inte fastställda/hypoteser]” samt motbevisbara hypoteser, källspårning och explicita negativa tester. Detta är ingen instruktion att ombygga UI automatiskt, införa nya runtimeprotokoll eller integrera externa appar. QUALITY-008 kan bara skapa kod efter ett separat avgränsat användarbeslut och enligt 1A.
 
 **8A Builder:** förståelig port-/kabelgeometri, tydliga valideringsfel, exakta projektmutationer, rätt Save-indikator och skiljelinje mellan dokumenterat fakta och temporär simulering.
 
