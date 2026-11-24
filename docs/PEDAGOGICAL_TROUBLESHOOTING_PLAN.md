@@ -1,12 +1,12 @@
 # YadiLab – pedagogisk felsökningsarkitektur: evidens, orsak och lärande
 
 **Datum:** 2026-11-24 (ISO)  
-**Beslut:** Bindande produkt- och undervisningskontrakt för framtida *uttryckligen beställd* pedagogik.  
-**Status:** PLANNED / NOT_IMPLEMENTED som sammanhållet nytt undervisningsgränssnitt. Befintliga appfunktioner listas som befintliga endast när de har stöd i kod och tester.  
+**Beslut:** **Enda aktiva utvecklingsplanen (P0–P7)** och bindande undervisningskontrakt. Övriga Markdown-filer är operativa regler eller tekniska referenser, inte roadmaps.  
+**Status:** Den sammanhållna nya undervisningsarbetsytan är **PLANNED / NOT_IMPLEMENTED**. Befintliga funktioner finns endast när de har stöd i aktuell kod och tester. Fortsatt implementation sker först när användaren begär arbete (t.ex. ”fortsätt”).  
 **Historisk granskad bas:** `main@b1c6fb0323fc93085084128e3ff4382f2b3a9576`. Läs om aktuell HEAD/CI före varje ändring.  
 **Plattform:** Linuxdistributioner endast. Windows och macOS är UNSUPPORTED.
 
-> **LÄS FÖRST – ingen automatisk utvecklingsorder.** Detta dokument anger hur applikationen ska undervisa om nätverk. Det godkänner inte automatiskt en ny PR, ett nytt protokoll, API, schemaversion, datalager, verktygsintegration eller ombyggnad av UI. Fortsatt utveckling följer `AGENTS.md`, `docs/MASTERPROMPT.md`, `docs/QUALITY_IMPROVEMENT_PLAN.md`, `docs/IMPORT_SOURCE_CONTRACT.md` och aktuellt kod-/testläge. Dokumentet är inte en parallell utvecklingskö. Vid konflikt: senaste uttryckliga användarbeslut, befintligt styrkontrakt och verifierad källkod; rapportera olösta konflikter, gissa inte.
+> **LÄS FÖRST – enda aktiva roadmapen.** P0–P7 är YadiLabs enda framtida utvecklingsordning vid nytt användaruppdrag. Inget steg ger i sig mandat att införa nytt protokoll, API, schema, datalager, OS-stöd, extern integration eller stor UI-ombyggnad. Operativa regler: `AGENTS.md`; produktkontrakt: `docs/MASTERPROMPT.md`; importgräns: `docs/IMPORT_SOURCE_CONTRACT.md`. Vid konflikt gäller senaste uttryckliga användarbeslut och verifierad kod/test på aktuell HEAD.
 
 ## 1. Produktmål och orubbliga avgränsningar
 
@@ -109,7 +109,7 @@ RFC 2328, särskilt OSPF Neighbor State Machine och Hello processing: https://ww
 
 ## 4. Den befintliga simuleringsmotorns gränser
 
-**Vid granskad baslinje finns källkod för:** deklarerade noder/portar/kablar, importerade nätverksfakta med validering och proveniens, SVG/ELK-rendering, ARP/Ethernet/MAC-inlärning, explicita VLAN, connected och statiska IPv4-routes, IPv4-forwarding/ICMP Echo och begränsade router-ICMP-fel, DHCPv4 DORA/sessionsfall, kontrollerade feljämförelser samt dolda ICMP- och DHCP-utredningar. **Detta är en kodinventering, inte nytt bevis för generell protokollkorrekthet eller fullständigt stödda implementationer.** Se `network_core/`, `docs/ICMP_INVESTIGATION.md`, `docs/DHCP_DORA.md`, `docs/TROUBLESHOOTING.md`, `docs/PROTOCOL_REFERENCE_MATRIX.md` och relevanta tester; kontrollera aktuell HEAD.
+**Vid granskad baslinje finns källkod för:** deklarerade noder/portar/kablar, importerade nätverksfakta med validering och proveniens, SVG/ELK-rendering, ARP/Ethernet/MAC-inlärning, explicita VLAN, connected och statiska IPv4-routes, IPv4-forwarding/ICMP Echo och begränsade router-ICMP-fel, DHCPv4 DORA/sessionsfall, kontrollerade feljämförelser samt dolda ICMP- och DHCP-utredningar. **Detta är en kodinventering, inte nytt bevis för generell protokollkorrekthet eller fullständigt stödda implementationer.** Se `network_core/`, `docs/ICMP_INVESTIGATION.md`, `docs/DHCP_DORA.md`, `docs/TROUBLESHOOTING.md`, `tests/test_protocol_reference_vectors.py` och relevanta tester; kontrollera aktuell HEAD.
 
 **Inte tillåtet att utge som native-simulering med detta dokument:** godtyckligt OSPF/BGP, STP, generella ACL eller stateful-brandväggspolicys, NAT, VRF, IPv6, generell TCP/UDP-session, DNS, Wi-Fi, VPN, nätverksskanning, SNMP-övervakning och okända tillverkares exakta CLI-semantik. En fungerande route lookup innebär inte ett lyckat ping; en ritad kabel är inte ett verkligt datapakets transmission; en exporterad konfiguration är inte ett observerat driftstillstånd.
 
@@ -184,9 +184,9 @@ Separera i all presentation:
 
 Använd inte diagramposition, subnät, hostnamn, routerroll, ritade pilar eller en LLDP-indikation för att hitta på kablar, routes, MAC eller trafik. Ett fungerande ICMP Echo under modellen visar endast lyckad kommunikation enligt modellen; ACL/NAT/OSPF/STP på verkligt nät får inte ignoreras om slutsatsen sägs avse verklig reachability.
 
-## 9. Genomförandeordning – BESLUTAD DESIGN, INTE AUTOMATISK KODKÖ
+## 9. Enda aktiva genomförandeordning – P0–P7
 
-Dessa kort är endast förslag som kräver separat uttryckligt, avgränsat användaruppdrag. De tar inte över QUALITY- eller ELK-kön. Nuvarande produktion ska fortsätta fungera oförändrad tills ett specifikt godkänt kodkort startar.
+**P0–P7 är den enda aktiva pedagogiska utvecklingsordningen** och ersätter gamla kvalitets-, ELK-, import- och fasroadmaps. När användaren senare ber att fortsätta ska aktuell kod kontrolleras och det minsta återstående, verifierbara pedagogiska steget väljas. Tidigare genomförda funktioner ska inte återskapas. Nya protokoll, schema, runtimeintegrationer och brytande redesign kräver separat uttryckligt beslut.
 
 **P0 – kort, skrivskyddad evidensgrind:** Kontrollera senaste huvudgren, aktiv PR, CI, existerande funktioner och förankra en första liten övning i befintliga `icmp_investigation.py` / `troubleshooting.py` eller `dhcp_investigation.py`. Inga påhittade protokoll.
 
@@ -206,7 +206,7 @@ Dessa kort är endast förslag som kräver separat uttryckligt, avgränsat anvä
 
 ## 10. Acceptans och negativa tester för framtida pedagogiska kodändringar
 
-Varje framtida konkret PR ska enligt `AGENTS.md` och kvalitetsplanen ha en avgränsad funktionsdefinition, positiva och negativa tester, nödvändigt browser- och Save/Open-bevis på **exakt slutlig PR-HEAD**, grön obligatorisk CI och separat relevant användargodkännande om produktkontrakt/schema/motor ändras.
+Varje framtida konkret PR ska enligt `AGENTS.md` och `MASTERPROMPT.md` ha en avgränsad funktionsdefinition, positiva och negativa tester, nödvändigt browser- och Save/Open-bevis på **exakt slutlig PR-HEAD**, grön obligatorisk CI och separat relevant användargodkännande om produktkontrakt/schema/motor ändras.
 
 **Minsta negativa regressionsmatris för undervisning:**
 
@@ -231,13 +231,13 @@ Varje framtida konkret PR ska enligt `AGENTS.md` och kvalitetsplanen ha en avgr�
 
 - `AGENTS.md`: operativa regler, Linux-only, inga hallucinerade kablar, en PR åt gången, obligatoriska kvalitetsgrindar.
 - `docs/MASTERPROMPT.md`: produktmål, en modell, korrekt motor, verifierbar funktionalitet, utbildningsarkitektur och statusklasser.
-- `docs/QUALITY_IMPROVEMENT_PLAN.md`: **enda aktiva etappindelade kvalitetsfärdplanen**. Pedagogik är relaterad till QUALITY-008 men denna plan ger inte ett nytt generellt redesignmandat.
+- **Detta dokument**: enda aktiva utvecklingsplanen; inga tidigare kvalitetsetapper är aktuella byggorder.
 - `docs/IMPORT_SOURCE_CONTRACT.md`: enda importkontraktet med fail-closed och källproveniens.
-- `docs/ELK_IMPLEMENTATION_PLAN.md`: ELK/layoutens historiska arbetskort och kontrakt. ELK-06A/B/C är redan mergade som PR #94–#96; deras framtidstext får inte användas som aktuella byggorder.
+- `docs/ELK_LAYOUT_CONTRACT.md`: bevarat tekniskt layoutkontrakt, inte en separat ELK-roadmap.
 - `docs/ICMP_INVESTIGATION.md`, `docs/TROUBLESHOOTING.md`, `docs/DHCP_DORA.md`: befintliga native diagnoser, inte OSPF-/brandväggsemulering.
-- `docs/PROTOCOL_REFERENCE_MATRIX.md`: avgränsade oberoende verifieringsfall; inget påstående om alla protokoll.
+- `tests/test_protocol_reference_vectors.py` och andra negativa referenstester: stödda avgränsade fall, ingen generell RFC-certifiering.
 
-När äldre text säger ”nästa PR”, ”inte implementerat” eller ”ny feature” måste aktuell kod, historiska PR-merge och exakt CI kontrolleras. En daterad plan är inte en körbar order. Nya problem får dokumenteras som verifierade fynd eller förslag, aldrig lösas genom gissning. **Denna fil är normerande för pedagogikens innehåll, inte för repositoryts PR-prioritet.**
+När äldre text säger ”nästa PR”, ”inte implementerat” eller ”ny feature” måste aktuell kod, historiska PR-merge och exakt CI kontrolleras. En daterad plan är inte en körbar order. Nya problem får dokumenteras som verifierade fynd eller förslag, aldrig lösas genom gissning. **Denna fil styr även den fortsatta pedagogiska PR-prioriteten; senaste uttryckliga användarbeslut och verifierad kod/CI har fortfarande företräde.**
 
 ## 12. Källor och verifieringsnivå
 
@@ -247,7 +247,7 @@ När äldre text säger ”nästa PR”, ”inte implementerat” eller ”ny fe
 - [ICMP_INVESTIGATION.md](ICMP_INVESTIGATION.md)  
 - [TROUBLESHOOTING.md](TROUBLESHOOTING.md)  
 - [DHCP_DORA.md](DHCP_DORA.md)  
-- [PROTOCOL_REFERENCE_MATRIX.md](PROTOCOL_REFERENCE_MATRIX.md)  
+- [../tests/test_protocol_reference_vectors.py](../tests/test_protocol_reference_vectors.py)  
 
 **Externa referenser för egna undersökningar och kursgranskning (inte integrationsberoenden):**  
 - OSPF RFC 2328: https://www.rfc-editor.org/rfc/rfc2328  
