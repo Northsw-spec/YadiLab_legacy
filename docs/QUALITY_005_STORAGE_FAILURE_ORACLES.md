@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-23 (ISO)  
 **Source baseline:** `main@0a1d51d81250e5b87372b2ec9bc35bda657c0960`  
-**Status:** **PRE-REGISTERED / NOT_VERIFIED UNTIL EXACT-HEAD CI**. QUALITY-004 final main CI for the preceding audit may still be running; this independent test work does not claim QUALITY-004 acceptance.  
+**Statuskorrigering 2026-11-24:** Ursprunglig PRE-REGISTERED-status var korrekt *före* testkörningen. Detta 5A–5B-testkort har nu mergats i PR #107 (final PR HEAD `50becf76db2743a501aeaebfe3fbdc5dbbf64f23`, två `unit-tests` SUCCESS). Det visar endast de särskilda syntetiska spar-/fsync-gränserna; full QUALITY-005, faktisk strömavbrottssäkerhet och okända race är fortsatt **NOT_VERIFIED**. Tidigare framtidstext nedan är historisk.  
 **Scope:** Linux-only local application, `network_core/storage.py`, `ProjectStore` API; test data exclusively under `tempfile.TemporaryDirectory()`. No user files, real network or global settings. This does **not** implement or test any other operating system.
 
 ## Why this slice is necessary
@@ -29,4 +29,4 @@ python3 -m unittest discover -s tests -p 'test_quality_005_storage_faults.py' -v
 
 All tests must pass along with the complete GitHub Actions `unit-tests` workflow (Python, JavaScript, real Chromium Save/Open and Linux X11 regressions) **on exact final PR HEAD**. A green test is evidence of these synthetic fault boundaries, *not* of power-failure guarantees or simultaneous production writes to real user files.
 
-**Further QUALITY-005 work stays NOT_VERIFIED:** 5A schema/identity fuzzing beyond the existing validator cases; 5B crash/power loss and rename/permission failures not simulated here; 5C late HTTP UI responses/overlapping Builder/New/Open/Import; 5D session-registry API races and shutdown; 5E parser/ZIP/ODS/XLSX resource exhaustion. No engine, schema, test workflow, timeouts, OS policy or production files should be modified simply to make tests green.
+**Further QUALITY-005 work stays NOT_VERIFIED:** 5A schema/identity fuzzing beyond the existing validator cases; 5B crash/power loss and rename/permission failures not simulated here; 5C återstående Builder/New/Open/Import-races utanför PR #108:s avgränsade session-controller-fall; 5D race/shutdown-fall **utanför PR #109:s avgränsade parallella HTTP-tester**; 5E parser/ZIP/ODS/XLSX resource exhaustion. No engine, schema, test workflow, timeouts, OS policy or production files should be modified simply to make tests green.
