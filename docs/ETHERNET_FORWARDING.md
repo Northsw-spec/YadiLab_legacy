@@ -1,6 +1,6 @@
 # Isolerad Layer 2-kärna: MAC-forwarding
 
-**Statuskorrigering 2026-11-24:** Den ursprungliga fristående MAC-forwardingmodellen har senare återanvänts av YadiLabs ARP-/IPv4-/ICMP-/DHCP-funktioner och avgränsad UI-diagnostik. Detta dokument anger fortfarande **just Ethernetmodulens** begränsningar – det är fel att läsa äldre ”saknas” som att hela appen saknar dessa protokoll. Kontrollera aktuell kod och [PEDAGOGICAL_TROUBLESHOOTING_PLAN.md](PEDAGOGICAL_TROUBLESHOOTING_PLAN.md).
+**Statuskorrigering 2026-11-24:** Den ursprungliga fristående MAC-forwardingmodellen har senare återanvänts av applikationens ARP-/IPv4-/ICMP-/DHCP-funktioner och avgränsad UI-diagnostik. Detta dokument anger fortfarande **just Ethernetmodulens** begränsningar – det är fel att läsa äldre ”saknas” som att hela appen saknar dessa protokoll. Kontrollera aktuell kod och [PEDAGOGICAL_TROUBLESHOOTING_PLAN.md](PEDAGOGICAL_TROUBLESHOOTING_PLAN.md).
 
 Modulen `network_core/ethernet.py` implementerar en *deterministisk MAC-forwardingmodell*, inte ett komplett Ethernet-, ARP-, VLAN-, IP- eller pingprotokoll.
 
@@ -44,7 +44,7 @@ Exemplet är kodfragment med **platshållar-ID:n**, inte ett bevis att dessa nä
 
 - L2-ramar kan nu serialiseras/parsas **utan FCS** som Ethernet II i `ethernet_frame.py`. Däremot saknas FCS, preamble, tidsfördröjning, länkförhandling och protokollavkodning av payload.
 - Dynamisk MAC-aging, STP/RSTP, multicastgrupper, native VLAN och QinQ. En begränsad VLAN access-/trunkmodell finns via Python-API; se [VLAN.md](VLAN.md).
-- ARP-protokollet finns **inte i forwardingmotorn** `ethernet.py`; en separat begränsad ARP-session finns i [ARP.md](ARP.md). IP, ICMP, ping, DHCP, DNS, routing och brandväggslogik ingår inte i **just denna Ethernet-modul**; avgränsade IPv4/ICMP/DHCP-funktioner finns i separata YadiLab-moduler enligt deras egna kontrakt.
+- ARP-protokollet finns **inte i forwardingmotorn** `ethernet.py`; en separat begränsad ARP-session finns i [ARP.md](ARP.md). IP, ICMP, ping, DHCP, DNS, routing och brandväggslogik ingår inte i **just denna Ethernet-modul**; avgränsade IPv4/ICMP/DHCP-funktioner finns i separata applikationsmoduler enligt deras egna kontrakt.
 - MAC-filtrering eller paketacceptans i mottagande host/NIC. `endpointArrivals` betyder **enbart att ramen nådde ett deklarerat gränssnitt**.
 - Fullständig interaktiv Ethernet-simuleringssession eller beständig lagring av inlärda tabeller. En avgränsad ARP-diagnostik finns via HTTP/UI, där en ny Python-session skapas per anrop. Konfigurerade switch-VLAN kan sparas i schema 1.2.
 
