@@ -64,7 +64,7 @@ Ytterligare explicit specialadressvalidering enligt RFC 1122, RFC 3927 och IANA 
 
 ## 4B. Säkra CI- och licensgränser (2026-11-24)
 
-**Föreslagen SHA-låsning i separat CI-PR:** Alla fem GitHub Actions-workflows får fullständiga commit-SHA för `actions/checkout`, `actions/setup-python` och `actions/setup-node`, verifierade direkt mot GitHubs aktuella `checkout@v6`, `setup-python@v7` och `setup-node@v7`-refs efter att gammal Node.js 20-runtime visat en deprecationsvarning; `ci.yml` får explicit `permissions: contents: read` och testet för repots lokala ELK-worker kontrollerar SHA-256 mot `web/vendor/NOTICE.md`. **NOT_VERIFIED tills exakt PR-HEAD CI är SUCCESS**. Detta är skydd mot oavsiktlig uppdatering och ökad säkerhetsrisk, men bevisar inte fullständig frånvaro av komprometterade beroenden.
+**Verifierad CI-deländring:** PR #116 låste alla externa Actions i fem workflows till fullständiga commit-SHA, satte minsta explicita tokenbehörighet, avstängd checkout-credentialpersistens och test av lokal ELK-worker mot dokumenterad SHA-256. Båda obligatoriska `unit-tests` på exakt PR-HEAD `6c833ad9aaa3fb4b0bbbb69a973172c838975359` rapporterade **SUCCESS**; squash-commit på `main`: `3d6ff1d1a71b1733e8121606fc47aedd5d42d09c`. **ACCEPTED endast för de specificerade kontrollerna**, inte fullständig dependency-/supply-chain-certifiering.
 
 **Licensbeslut är BLOCKED:** GitHub rapporterade `license=null` och repo-roten har ingen `LICENSE`; README säger att licens inte valts. Vendorns ELK-licens gäller **inte** automatiskt den egna Python-/JavaScript-koden. Se [issue #115](https://github.com/Northsw-spec/YadiLab/issues/115). En publicerad källa är inte automatiskt OSI-licensierad; välj aldrig licens eller upphovsrättsligt ansvar utan rättighetsinnehavarens uttryckliga godkännande.
 
@@ -74,11 +74,11 @@ Ytterligare explicit specialadressvalidering enligt RFC 1122, RFC 3927 och IANA 
 
 **Status:** **ACCEPTED inom specificerat stödomfång**. PR #119:s båda obligatoriska `unit-tests` var SUCCESS på final PR HEAD `81337e72a57493a14d94c792f3a93ed8c4988586` och squash-mergades till `main@f6066038ed07fe6f087fb4d654a7d003d7b60b91`. Specifika tester: 4 Node och 5 verkliga HTTP-regressioner plus Chromium-profiler, import, X11 och ELK. Senare `main`-CI är separat evidens. Inget nytt nätverksimportschema, inga externa verktygsintegrationer, ingen ändrad projektmodell och ingen automatisk Save. Se [SOURCE_INTEGRITY_AUDIT_2026-11-24.md](SOURCE_INTEGRITY_AUDIT_2026-11-24.md) och negativa HTTP-/Node-tester.
 
-## 4D. ARP Ethernetadressgräns (föreslagen tills negativ CI har PASS)
+## 4D. ARP Ethernetadressgräns – testad, tillämpad på main
 
 **Verifierat kodfynd:** Den separata ARP-modulen accepterade adresser ur 127/8, 0/8 och reserverade 240/4 som vanliga Ethernet-ARP-källor/mål, även efter IPv4-dataplanets PR #114. För att förhindra falskt ARP-`RESOLVED` läggs ett snävt ARP-protokollvillkor och fyra positiva/negativa tester till. Befintligt sparat projekt ska fortsatt kunna dokumentera ogiltig adresskonfiguration; DHCP-bootsrapporter med `0.0.0.0` använder separat definierad codec och ska inte påverkas. Se [ARP.md](ARP.md), [PROTOCOL_REFERENCE_MATRIX.md](PROTOCOL_REFERENCE_MATRIX.md) och [issue #120](https://github.com/Northsw-spec/YadiLab/issues/120).
 
-**Status:** PROPOSED för denna nya ARP-del tills exakt PR-HEAD och båda obligatoriska CI-kontroller är SUCCESS; gör inte generella ARP-/RFC-påståenden.
+**Status:** **ACCEPTED inom explicit testad ARP-delmodell.** PR #121 HEAD `dbb90e131df730d6f9aeb3d05f4d4337496aa29d` hade två `unit-tests` med SUCCESS. Git-trädet `1430cb1ec783b75819f8aede419c4cd549ebe4f5` är identiskt mellan denna HEAD och `main@7e8c423c8823fc3b40dc89b591160d5bb52aec13`. **GitHub-avvikelse:** merge-anropets svar fick timeout efter att main uppdaterats; PR #121 stängdes manuellt och står som `merged=false`, vilket dokumenteras i PR-kommentaren. Issue #120 stängdes separat. Detta är inte generell ARP-/RFC-verifiering; senare main-CI och huvudgrenens governance ska bedömas separat.
 
 ## 5. Slutlig gräns för försäkran
 
