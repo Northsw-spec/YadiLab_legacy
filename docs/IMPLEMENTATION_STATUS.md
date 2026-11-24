@@ -60,6 +60,8 @@
 
 ## 5. Slutlig gräns för försäkran
 
+**Riskbaserad källkodsrevision, 2026-11-24:** [SOURCE_INTEGRITY_AUDIT_2026-11-24.md](SOURCE_INTEGRITY_AUDIT_2026-11-24.md) redovisar den avgränsade kontrollen av HTTP, JSON, import, lagring, protokollsteg och CI samt öppna fynd. JSON-avvikelserna behandlas i separat PR #111 och får inte kallas verifierat åtgärdade förrän den PR:en och aktuell relevant CI är godkända. Lär ut dess uttryckliga ICMP-reply-TTL-begränsning som en modellförenkling, inte som verkligt nätverksfaktum. Rapportens kvarstående lokala API-/interoperabilitetsrisker är ingen automatisk kodorder.
+
 Det går att kontrollera konkreta påståenden och upptäcka kända motsägelser. **Ingen engångsgranskning kan garantera total avsaknad av oupptäckta buggar, felaktiga dokumentationspåståenden eller framtida språkmodellsfel.** För att hindra att de blir produktbeteende krävs scope-begränsning, källbevis, negativa regressioner, faktisk driftverifiering, exakt CI-HEAD och förbud mot att kompensera saknade fakta med gissningar.
 
 **Denna fil ändrar inte någon motor, datamodell, nätverksimport, CI-policy eller användarens lagrade projekt.**

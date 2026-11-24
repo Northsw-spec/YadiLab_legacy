@@ -54,6 +54,12 @@ def _array(value: Any, where: str, max_items: int = 2000) -> list:
 def _name(value: Any, where: str) -> str:
     if not isinstance(value, str) or not value.strip() or len(value) > 120:
         _fail(where, "expected a nonempty string of at most 120 characters")
+    # Python callers may bypass HTTP JSON parsing. Reject text that cannot be
+    # encoded as UTF-8 before it reaches Save or an HTTP response.
+    try:
+        value.encode("utf-8")
+    except UnicodeEncodeError:
+        _fail(where, "invalid Unicode surrogate in label or name")
     return value.strip()
 
 
