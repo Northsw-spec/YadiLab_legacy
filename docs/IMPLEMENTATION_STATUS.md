@@ -56,7 +56,7 @@
 - Om det är normerande: korrigera faktapåståendet och verifiera regressioner. Radera aldrig gamla bevis för att få ny text att se konsekvent ut.
 - Om kod inte kan avgöra: använd **NOT_VERIFIED**; hitta inte på en implementation, ett API, en payload, ett protokoll, ett referensvärde eller en confidence-procent.
 - Upprepa aldrig färdiga ELK-06A–C, importer 4A–4D eller protokolletapper endast för att ett äldre dokument säger ”nästa steg”.
-- Dokumentation får aldrig kringgå de riktiga CI-/mergegrindarna. Namngivningskontraktet `tests/test_naming_contract.py` gäller **även alla nya Markdown-filer**: hårdkoda inte tidigare eller aktuellt visningsnamn (undantag för teknisk filändelse som testet uttryckligen accepterar).
+- Dokumentation får aldrig kringgå CI-/mergegrindarna. **Namnkontraktets justerade gräns 2026-11-24:** Markdown-prosa (inklusive `AGENTS.md`, `README.md`, `docs/*.md`) får använda projektnamnet `YadiLab`, utan att detta ändrar det deklarerade UI-namnet. `tests/test_naming_contract.py` förbjuder fortfarande gamla/hårdkodade produktnamn i icke-Markdown-kod/fixturer och i filvägar, samt ytterligare `APP_NAME`-deklarationer. Det tekniska projektformatet `.yadilab` är ett uttryckligt kompatibilitetsundantag. Namn i dokumentation är inte underlag för nya klass-/funktionsnamn.
 
 ## 5. Slutlig gräns för försäkran
 
