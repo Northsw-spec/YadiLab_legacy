@@ -2814,10 +2814,19 @@ for (const id of ['probe-source', 'probe-destination', 'probe-ttl']) {
 $('icmp-lesson-load').addEventListener('click', loadIcmpLesson);
 $('icmp-lesson-start').addEventListener('click', startIcmpLesson);
 $('icmp-lesson-review').addEventListener('click', () => {
-  $('icmp-lesson').dataset.reviewed = 'true';
+  const panel = $('icmp-lesson');
+  const hypothesis = panel.querySelector('input[name="icmp-lesson-hypothesis"]:checked')?.value;
+  const diagnosticTest = panel.querySelector('input[name="icmp-lesson-test"]:checked')?.value;
+  if (!icmpInvestigation.setLessonPlan(hypothesis, diagnosticTest,
+                                     $('icmp-lesson-reason').value)) return;
+  panel.dataset.reviewed = 'true';
   renderIcmpInvestigation();
   $('icmp-lesson-limits').focus();
 });
+for (const choice of document.querySelectorAll(
+    'input[name="icmp-lesson-hypothesis"], input[name="icmp-lesson-test"]')) {
+  choice.addEventListener('change', renderIcmpInvestigation);
+}
 $('icmp-investigation-start').addEventListener('click', startIcmpInvestigation);
 $('icmp-investigation-stop').addEventListener('click', stopIcmpInvestigation);
 $('icmp-investigation-measure').addEventListener('click', measureIcmpInvestigation);
