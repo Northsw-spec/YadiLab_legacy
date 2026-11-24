@@ -92,11 +92,11 @@ Detta repositorys namn är en teknisk adress, **inte** applikationens produktnam
 
 Det finns **exakt en** deklaration av produktens visningsnamn: `APP_NAME` i `network_core/config.py`. Ändras den ska webbläsartitel, visuell branding, sidfot, loggar, hälsosvar, terminal och andra användarsynliga produktreferenser härledas från detta värde.
 
-Hårdkoda inte produktnamn i HTML, JavaScript, Python, CSS, tester, dokumentation eller installationstexter. Interna paket, klasser, funktioner, symboler och filnamn ska vara **generiska och beskrivande**, till exempel `NetworkModel`, `PacketEngine`, `RoutingTable`, `ProjectStore` och `TopologyRenderer`.
+**Skilj projektnamn i text från visningsnamn i kod.** Markdown-dokument (`AGENTS.md`, `README.md`, `docs/*.md` och andra `*.md`) **får nämna `YadiLab`** som namn på repositoryt/projektet i mänskliga rubriker, arbetsinstruktioner, historik och förklaringar. Det är ingen deklaration av UI-namnet, inget API och inget krav att dokumentationen byter namn när `APP_NAME` ändras. Hårdkoda däremot **inte** produktnamn i Python, JavaScript, HTML, CSS, runtimekonfiguration, tester, fixtures, loggar eller installationens exekverbara kod. Detsamma gäller gamla projektnamn i klasser, funktioner, paket, moduler, symboler och källfilnamn: de ska förbli **generiska och beskrivande**, till exempel `NetworkModel`, `PacketEngine`, `RoutingTable`, `ProjectStore` och `TopologyRenderer`. Namn i pedagogiska Markdown-prosa får **inte** användas som förevändning för att införa nya produktnamnsbundna kodidentifierare.
 
 Det befintliga filformatet `.yadilab` är tills vidare en **teknisk kompatibilitetsidentifierare**, inte ett produktnamn. Ändra aldrig format, filändelse eller sparade projekt genom automatisk omprofilering; en sådan migration kräver eget kontrakt och verifiering.
 
-Den automatiska namnkontraktskontrollen i `tests/test_naming_contract.py` ska fortsatt passera. Återinför inte gamla varumärkesidentifierare.
+`tests/test_naming_contract.py` ska fortsatt kontrollera att `APP_NAME` deklareras exakt en gång, att det aktuella UI-namnet inte hårdkodas i icke-Markdown-filer, att gamla varumärken inte återkommer i kod/fixturer/filvägar och att namngivningsundantaget **endast gäller Markdown-innehåll**. Återinför inte gamla varumärkesidentifierare i exekverbar kod. Prosa som nämner projektet i styrdokument är uttryckligen tillåten.
 
 ## 5. Kanonisk nätverksmodell
 
