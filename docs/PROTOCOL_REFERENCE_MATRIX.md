@@ -48,6 +48,12 @@ This first slice is PASS **only when** these exact tests and the regular require
 **No changes authorized:** production protocol code, canonical schema, implicit network facts, real network commands, Windows/macOS support, or required CI gates. On a confirmed discrepancy, propose a separate minimal correction instead of changing expected values to match an implementation.
 
 
+## QUALITY-003 supplementary 2026-11-24: special-purpose IPv4 address semantics
+
+New independent negative oracles are declared in `tests/test_ipv4_special_addresses.py` using published [RFC 1122 §3.2.1.3](https://www.rfc-editor.org/rfc/rfc1122.html), [RFC 3927](https://www.rfc-editor.org/rfc/rfc3927.html) and the [IANA special-purpose IPv4 registry](https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml). The wire simulator must reject both source and destination in 127/8 and 0/8, never report routed delivery for a source or destination in 169.254/16, and retain direct same-link 169.254/16 ICMP/ARP delivery. TEST-NET and RFC 1918 address examples must **not** be rejected simply because they are non-global: they are deliberately used for offline labs.
+
+This is **additional unaccepted evidence until CI passes on the exact final PR HEAD**. Do not retroactively claim earlier QUALITY-003 reports covered these cases. The literal classifications and negative outcomes precede this test run; never change expected results merely to suit a simulator response.
+
 ## QUALITY-003 second slice: independent forwarding, VLAN, and ARP state oracles
 
 **Pre-registered on 2026-11-23 before executing the added tests.** The topology descriptions below explicitly determine expected forwarding behavior using the known rules of Ethernet MAC learning, 802.1Q access/trunk forwarding and RFC 826 ARP exchange. These expectations are declared before observing production `EthernetFabric` or `ArpSession` output, and must not be relaxed to match the engine. Their source references remain RFC 826 and IEEE 802.1Q, with standard transparent bridging MAC learning as captured by the product's explicitly limited forwarding contract in `docs/ETHERNET_FORWARDING.md`. The contract intentionally **rejects** switch loops rather than pretending to support STP.
