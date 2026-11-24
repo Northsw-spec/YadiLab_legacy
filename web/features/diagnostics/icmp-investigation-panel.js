@@ -68,6 +68,9 @@ function renderLesson(session) {
     panel.dataset.sessionId = lessonId;
     delete panel.dataset.reviewed;
     $('icmp-lesson-reason').value = '';
+    for (const hypothesis of panel.querySelectorAll('input[type="radio"]')) {
+      hypothesis.checked = false;
+    }
     if (opening) $('icmp-investigation-diagnosis').selectedIndex = -1;
   }
   const reviewed = panel.dataset.reviewed === 'true';

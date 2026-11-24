@@ -128,6 +128,9 @@ def run_lesson(page, directory):
     expect(diagnose).to_be_disabled()
     expect(repair).to_be_disabled()
     expect(page.locator("#icmp-lesson-action-text")).to_have_text("")
+    hypotheses = panel.get_by_role("radio")
+    expect(hypotheses).to_have_count(3)
+    hypotheses.first.check()
     page.locator("#icmp-lesson-reason").fill("En matchande route skulle tala emot min hypotes.")
 
     # Exercise the real server refusal despite the UI already disabling diagnoses.
@@ -145,6 +148,7 @@ def run_lesson(page, directory):
 
     page.locator("#icmp-lesson-review").click()
     show_sections(panel, 5)
+    expect(hypotheses.first).to_be_checked()
 
     def probe(kind, node=None, destination=None, port=None):
         page.locator("#icmp-investigation-probe").select_option(kind)
@@ -204,6 +208,7 @@ def run_lesson(page, directory):
     assert second["openingObservation"] == opening["openingObservation"]
     show_sections(panel, 3)
     expect(page.locator("#icmp-lesson-reason")).to_have_value("")
+    expect(panel.locator('input[type="radio"]:checked')).to_have_count(0)
     expect(page.locator("#icmp-lesson-action-text")).to_have_text("")
     page.locator("#icmp-lesson-review").click()
     hold_http_reply(page, PROBE)

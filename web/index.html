@@ -468,11 +468,12 @@
             <h4>Då [vad det faktiskt betyder]:</h4>
             <p>Framvägen fungerade för det simulerade paketet. Pingutbytet saknar verifierad returleverans.</p>
             <h4>Möjliga orsaker [inte fastställda/hypoteser]:</h4>
-            <ul>
-              <li>Ingen aktiv returroute matchar källans IPv4-adress.</li>
-              <li>En route matchar, men nästa hopp svarar inte på ARP.</li>
-              <li>En IPv4-adress eller dess nätmask är felkonfigurerad.</li>
-            </ul>
+            <fieldset>
+              <legend>Välj en hypotes att pröva</legend>
+              <label><input type="radio" name="icmp-lesson-hypothesis" value="route"> Ingen aktiv returroute matchar källans IPv4-adress.</label>
+              <label><input type="radio" name="icmp-lesson-hypothesis" value="arp"> En route matchar, men nästa hopp svarar inte på ARP.</label>
+              <label><input type="radio" name="icmp-lesson-hypothesis" value="ipv4"> En IPv4-adress eller dess nätmask är felkonfigurerad.</label>
+            </fieldset>
             <label for="icmp-lesson-reason">Vilken observation skulle tala emot din hypotes?</label>
             <textarea id="icmp-lesson-reason" class="control" rows="2" placeholder="Frivillig anteckning för den här övningen"></textarea>
             <button id="icmp-lesson-review" type="button" class="btn btn-outline full">Gå vidare till mätningar</button>
@@ -484,6 +485,7 @@
             </div>
             <div id="icmp-lesson-interpretation" hidden>
               <h4>Förväntat resultat och tolkning:</h4>
+              <p>Jämför den valda hypotesen med returuppslaget och portmätningen. En fungerande framväg och oförändrad portkonfiguration räcker inte för att identifiera vilken route som används på returen.</p>
               <ul>
                 <li><code>NO_ROUTE</code> betyder att ingen aktiv route matchar måladressen i uppslaget.</li>
                 <li><code>MATCH</code> tillsammans med <code>ARP_FAILED</code> i paketspåret betyder att uppslaget lyckades och adressupplösningen misslyckades.</li>

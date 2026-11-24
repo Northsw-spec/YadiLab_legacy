@@ -150,5 +150,9 @@
 .icmp-lesson h4:first-child{margin-top:0}
 .icmp-lesson p,.icmp-lesson ul{margin:0 0 10px}
 .icmp-lesson ul{padding-left:18px}
+.icmp-lesson fieldset{border:0;margin:0 0 10px;padding:0;min-width:0}
+.icmp-lesson legend{margin-bottom:4px}
+.icmp-lesson fieldset label{display:flex;align-items:baseline;gap:6px;cursor:pointer}
+.icmp-lesson input[type=radio]{accent-color:var(--accent)}
 .icmp-lesson textarea{width:100%;margin:4px 0 8px;resize:vertical;font:inherit}
 .icmp-lesson button{white-space:normal}
