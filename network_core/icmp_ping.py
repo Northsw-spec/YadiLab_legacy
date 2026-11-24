@@ -12,6 +12,8 @@ from .icmp_errors import ICMPError, parse_icmp_message, ICMP_TIME_EXCEEDED, ICMP
 from .model import ProjectValidationError
 
 _ECHO_PAYLOAD = b"echo-check"
+# Synthetic local lab assumption, not a vendor or host-stack claim.
+DEFAULT_SIMULATED_REPLY_TTL = 64
 
 
 class EchoExchange:
@@ -21,7 +23,13 @@ class EchoExchange:
         self.trace = IPv4Trace(project)
 
     def ping(self, source_node: str, source_port: str, destination_ipv4: str,
-             ttl: int, identifier: int, sequence: int) -> dict:
+             ttl: int, identifier: int, sequence: int,
+             *, reply_ttl: int | None = None) -> dict:
+        if reply_ttl is not None and (type(reply_ttl) is not int or not 1 <= reply_ttl <= 255):
+            raise ProjectValidationError("icmp: reply TTL must be an integer 1..255")
+        # Two independently originated IPv4 datagrams. Never reuse Request TTL.
+        initial_reply_ttl = DEFAULT_SIMULATED_REPLY_TTL if reply_ttl is None else reply_ttl
+        ttl_basis = "SIMULATED_DEFAULT" if reply_ttl is None else "EXPLICIT"
         # Validate the concrete Echo identity before any simulated work.
         request_message = ICMPEcho(ICMP_ECHO_REQUEST, identifier, sequence, _ECHO_PAYLOAD)
         request = self.trace.send(
@@ -93,6 +101,8 @@ class EchoExchange:
                 "icmpError": icmp_error,
                 "identifier": identifier,
                 "sequence": sequence,
+                "replyInitialTtl": initial_reply_ttl,
+                "replyTtlBasis": ttl_basis,
                 "replyMatched": status == "REPLIED",
                 "rttMs": None,
                 "ephemeral": True,
@@ -126,7 +136,7 @@ class EchoExchange:
         # must exist explicitly and follow the very same IPv4Trace/ARP/Fabric.
         reply_message = arrived.reply()
         reply = self.trace.send(
-            receiver["node"], receiver["port"], request["sourceIpv4"], ttl,
+            receiver["node"], receiver["port"], request["sourceIpv4"], initial_reply_ttl,
             protocol=ICMP_PROTOCOL, payload=reply_message.serialize(),
         )
         if reply["status"] != "DELIVERED":

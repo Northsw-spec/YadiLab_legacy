@@ -123,9 +123,11 @@ class EchoExchangeTests(unittest.TestCase):
         self.assertEqual(result["request"]["receiver"],{"node":"r","port":"wan"})
         self.assertEqual(result["reply"]["receiver"],{"node":"a","port":"eth0"})
         self.assertEqual(result["request"]["initialTtl"],1)
-        self.assertEqual(result["reply"]["initialTtl"],1)
+        self.assertEqual(result["reply"]["initialTtl"],64)
+        self.assertEqual(result["replyInitialTtl"],64)
+        self.assertEqual(result["replyTtlBasis"],"SIMULATED_DEFAULT")
         self.assertEqual(result["request"]["finalTtl"],1)
-        self.assertEqual(result["reply"]["finalTtl"],1)
+        self.assertEqual(result["reply"]["finalTtl"],64)
         self.assertTrue(result["request"]["icmpSent"])
         self.assertTrue(result["reply"]["icmpSent"])
         self.assertEqual([t["linkId"] for t in result["request"]["steps"][0]["ipv4Transmissions"]],
@@ -143,7 +145,7 @@ class EchoExchangeTests(unittest.TestCase):
         self.assertEqual([s["node"] for s in result["request"]["steps"]],["a","r"])
         self.assertEqual([s["node"] for s in result["reply"]["steps"]],["b","r"])
         self.assertEqual([s["ttlSent"] for s in result["request"]["steps"]],[5,4])
-        self.assertEqual([s["ttlSent"] for s in result["reply"]["steps"]],[5,4])
+        self.assertEqual([s["ttlSent"] for s in result["reply"]["steps"]],[64,63])
         self.assertEqual([s["arp"]["status"] for s in result["request"]["steps"]],
                          ["RESOLVED","RESOLVED"])
         self.assertEqual([s["arp"]["status"] for s in result["reply"]["steps"]],
@@ -181,9 +183,42 @@ class EchoExchangeTests(unittest.TestCase):
         self.assertEqual([s["node"] for s in result["request"]["steps"]],["a","r","r2"])
         self.assertEqual([s["node"] for s in result["reply"]["steps"]],["b","r2","r"])
         self.assertEqual(result["request"]["finalTtl"],2)
-        self.assertEqual(result["reply"]["finalTtl"],2)
+        self.assertEqual(result["reply"]["finalTtl"],62)
         self.assertEqual(result["reply"]["receiver"],{"node":"a","port":"eth0"})
-        self.assertEqual(result["reply"]["deliveredDatagram"]["ttl"],2)
+        self.assertEqual(result["reply"]["deliveredDatagram"]["ttl"],62)
+
+    def test_independent_reply_ttl_and_asymmetric_return_budget(self):
+        p = multihop_reply_lab()
+        # Three-hops request survives TTL 3, return path has two router
+        # decrements and must use the independent response budget.
+        default = EchoExchange(p).ping("a","eth0","198.51.100.20",3,70,1)
+        self.assertEqual(default["status"],"REPLIED")
+        self.assertEqual(default["request"]["initialTtl"],3)
+        self.assertEqual(default["request"]["finalTtl"],1)
+        self.assertEqual(default["reply"]["initialTtl"],64)
+        self.assertEqual(default["reply"]["finalTtl"],62)
+        self.assertEqual(default["replyTtlBasis"],"SIMULATED_DEFAULT")
+        too_short = EchoExchange(p).ping(
+            "a","eth0","198.51.100.20",3,70,2,reply_ttl=2)
+        self.assertEqual(too_short["request"]["status"],"DELIVERED")
+        self.assertEqual(too_short["status"],"REPLY_FAILED")
+        self.assertEqual(too_short["reply"]["status"],"TTL_EXPIRED")
+        self.assertEqual(too_short["reply"]["initialTtl"],2)
+        self.assertEqual(too_short["replyTtlBasis"],"EXPLICIT")
+        self.assertFalse(too_short["replyMatched"])
+        enough = EchoExchange(p).ping(
+            "a","eth0","198.51.100.20",3,70,3,reply_ttl=3)
+        self.assertEqual(enough["status"],"REPLIED")
+        self.assertEqual(enough["reply"]["finalTtl"],1)
+        self.assertEqual(enough["replyInitialTtl"],3)
+
+    def test_explicit_reply_ttl_strict_validation(self):
+        p = routed_reply_lab()
+        for value in (0, -1, 256, True, 3.0, "64", [], {}):
+            with self.subTest(value=value), self.assertRaisesRegex(
+                    ProjectValidationError, "reply TTL"):
+                EchoExchange(p).ping(
+                    "a","eth0","203.0.113.20",4,1,1,reply_ttl=value)
 
     def test_ttl_one_does_not_synthesize_echo_reply_through_router(self):
         result = EchoExchange(routed_reply_lab()).ping("a","eth0","203.0.113.20",1,4,5)
