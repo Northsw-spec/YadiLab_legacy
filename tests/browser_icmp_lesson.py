@@ -128,9 +128,16 @@ def run_lesson(page, directory):
     expect(diagnose).to_be_disabled()
     expect(repair).to_be_disabled()
     expect(page.locator("#icmp-lesson-action-text")).to_have_text("")
-    hypotheses = panel.get_by_role("radio")
+    review = page.locator("#icmp-lesson-review")
+    hypotheses = panel.locator('input[name="icmp-lesson-hypothesis"]')
+    tests = panel.locator('input[name="icmp-lesson-test"]')
     expect(hypotheses).to_have_count(3)
+    expect(tests).to_have_count(3)
+    expect(review).to_be_disabled()
     hypotheses.first.check()
+    expect(review).to_be_disabled()  # A theory alone is not a test plan.
+    tests.first.check()
+    expect(review).to_be_enabled()
     page.locator("#icmp-lesson-reason").fill("En matchande route skulle tala emot min hypotes.")
 
     # Exercise the real server refusal despite the UI already disabling diagnoses.
@@ -146,9 +153,15 @@ def run_lesson(page, directory):
     assert result == "INVALID_PROJECT" and early.value.status == 422
     validate_disclosure(early.value.json())
 
-    page.locator("#icmp-lesson-review").click()
+    review.click()
     show_sections(panel, 5)
     expect(hypotheses.first).to_be_checked()
+    expect(tests.first).to_be_checked()
+    expect(hypotheses.first).to_be_disabled()
+    expect(tests.first).to_be_disabled()
+    expect(page.locator("#icmp-lesson-plan")).to_contain_text("Saknad aktiv returroute")
+    expect(page.locator("#icmp-lesson-plan")).to_contain_text("Mätstatus: inte utförd")
+    expect(page.locator("#icmp-lesson-plan")).to_contain_text("En matchande route")
 
     def probe(kind, node=None, destination=None, port=None):
         page.locator("#icmp-investigation-probe").select_option(kind)
@@ -176,6 +189,7 @@ def run_lesson(page, directory):
     route = probe("route", node="b", destination="source")
     assert route["canDiagnose"] and route["observation"]["status"] == "NO_ROUTE"
     assert route["observation"]["destinationIpv4"] == "192.0.2.10"
+    expect(page.locator("#icmp-lesson-plan")).to_contain_text("Mätstatus: utförd i simuleringen")
     show_sections(panel, 6)
     wrong = click_response(DIAGNOSE, "#icmp-investigation-diagnose")
     assert not wrong["correct"]
@@ -209,8 +223,14 @@ def run_lesson(page, directory):
     show_sections(panel, 3)
     expect(page.locator("#icmp-lesson-reason")).to_have_value("")
     expect(panel.locator('input[type="radio"]:checked')).to_have_count(0)
+    expect(page.locator("#icmp-lesson-plan")).to_have_text("")
+    expect(review).to_be_disabled()
     expect(page.locator("#icmp-lesson-action-text")).to_have_text("")
-    page.locator("#icmp-lesson-review").click()
+    hypotheses.nth(1).check()
+    tests.nth(2).check()
+    expect(review).to_be_enabled()
+    review.click()
+    expect(page.locator("#icmp-lesson-plan")).to_contain_text("Returroute finns men ARP-svar saknas")
     hold_http_reply(page, PROBE)
     page.locator("#icmp-investigation-probe").select_option("ping")
     page.locator("#icmp-investigation-measure").click()
@@ -223,6 +243,7 @@ def run_lesson(page, directory):
     release_http_reply(page)
     expect(page.locator("#icmp-investigation-status")).to_contain_text("Ingen ICMP-övning")
     expect(page.locator("#icmp-investigation-observations")).not_to_contain_text("NO_ROUTE")
+    expect(page.locator("#icmp-lesson-plan")).to_have_text("")
     expect(diagnose).to_be_disabled()
     assert target.read_bytes() == original
     assert attempts_to_save == ["POST"]
