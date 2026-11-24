@@ -792,10 +792,15 @@ export function createImportReview({context, current, getProject, replaceProject
         throw new Error('Välj en JSON-profil på högst 256 KiB.');
       const raw=await file.arrayBuffer();
       if (!valid(token)) return stale();
+      // Validate UTF-8 locally only to preserve the existing precise user
+      // error. This decode is NEVER parsed or submitted: original bytes remain
+      // authoritative and reach the strict server decoder unchanged.
+      const originalBytes=new Uint8Array(raw);
+      try { new TextDecoder('utf-8',{fatal:true}).decode(originalBytes); }
+      catch { throw new Error('Profilen är inte giltig UTF-8.'); }
       // No browser JSON.parse here: it would silently discard duplicate keys.
-      // Submit untouched bytes to the server's strict UTF-8 JSON decoder.
       const {document:parsed}=await api('/api/json/strict',
-        new Uint8Array(raw), {rawJson:true});
+        originalBytes, {rawJson:true});
       if (!valid(token)) return stale();
       const profile=validateMappingProfile(parsed);
       if (!valid(token)) return stale();
