@@ -1,313 +1,43 @@
-# MASTERPROMPT — REN NÄTVERKSAPPLIKATION
-## Permanent utvecklingsdirektiv: bygg en verifierbar, avgränsad nätverkssimulator med tydlig felsökningspedagogik
+# MASTERPROMPT – pedagogisk nätverksapplikation
 
-**Repository:** Detta GitHub-repository (det tekniska repositorynamnet är inte produktnamnet).
-**Verifierad nulägesöversikt:** [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) – historikgrind, inte automatisk bekräftelse på senare HEAD.  
-**Huvudgren:** `main`.  
-**Utvecklingsmodell:** Högst en aktiv utvecklingsgren och en PR åt gången.  
-**Produktnamn:** Hämtas endast från `APP_NAME` i `network_core/config.py`.  
-**Status:** En ren grundimplementation finns redan; endast verifierat implementerad funktionalitet får anges som färdig.  
-**Giltighet:** Tills hela applikationen är färdigbyggd, verifierad och godkänd av användaren.
+**Beslut 2026-11-24:** [PEDAGOGICAL_TROUBLESHOOTING_PLAN.md](PEDAGOGICAL_TROUBLESHOOTING_PLAN.md) är den **enda aktiva utvecklingsplanen** (P0–P7). Detta dokument är ett **produktkontrakt**, inte en andra roadmap. [AGENTS.md](../AGENTS.md) innehåller operativa regler. Senaste uttryckliga användarinstruktion och faktisk kod, tester och GitHub-HEAD har företräde framför äldre statuspåståenden.
 
-Detta direktiv gäller all framtida kodning i detta repository. Läs även `AGENTS.md` och aktuell implementation. Om detta dokument och tidigare chattplaner skiljer sig åt gäller användarens senaste uttryckliga instruktion och repositoryts verifierade verkliga tillstånd; påstå aldrig att en plan är implementerad bara för att den står här.
+## Produktmål
 
----
+YadiLab ska vara en **Linux-exklusiv**, lokal utbildningsapp där en blivande IT-/nätverkskonsult lär sig att:
 
-## ELK: statuskorrigering och bevarad layoutarkitektur
+1. granska explicit dokumenterad topologi och förstå vad som faktiskt är känt,
+2. observera ett symptom och skilja det från en gissad grundorsak,
+3. härleda **endast den tekniska betydelse som faktiskt följer av observationen**,
+4. formulera flera konkurrerande hypoteser och välja ett test som kan motbevisa dem,
+5. följa verkligt beräknade paket- och beslutsspår från befintlig stödd Layer 2/3/DHCP-motor,
+6. föreslå rätt åtgärd först när övningsorsaken är styrkt,
+7. verifiera före/fel/efter och dokumentera begränsningar utan falsk säkerhet.
 
-**Verifierat historiskt genomförande:** ELK-06A–06C har mergats genom PR #94, #95 och #96 (2026-11-22). Den strikta importen accepterar koordinatfria CSV/XLSX/ODS-dokument; efter godkänd dokumentationsimport används automatisk initial ELK-layout; nya nätverksdokument/exportmallar ska inte kräva X/Y. Äldre kompletta X/Y-dokument kan fortfarande accepteras. Projektets egna presentations-X/Y finns kvar i den kanoniska projektfilen. Verifiera aktuell kod och tester före nya löften.
+Undervisningens **nio ordagranna rubriker**, tre hjälpnivåer, negativa tester och P0–P7 definieras enbart i pedagogikplanen. Ett sammanhållet framtida undervisnings-UI är **planerat**, inte automatiskt befintligt.
 
-[ELK_IMPLEMENTATION_PLAN.md](ELK_IMPLEMENTATION_PLAN.md) behålls för teknik, historisk spårbarhet och kvarstående *särskilt beställda* förbättringar. Alla gamla ”ELK-06A är nästa PR”, ”implementera 06B nu” och ”export skriver ännu X/Y” är **inaktuella historiska statusuppgifter**, inte koduppdrag. KEEP är standard. Ingen ändring av ursprungliga dokumentbytes, kvitton, kanonisk topologi eller Save-kontrakt för en layoutförbättring. Inga nya motorer.
+## Tekniska invariants
 
-## Pedagogisk målarkitektur – bindande produktbeslut 2026-11-24
+- **En auktoritativ projektmodell:** `network_core/model.py::validate_project`; explicita objekt och fysisk port-till-port-länk. Ingen implicit enhet, kabel, next hop eller IP utifrån geometri, namn eller nätverksantaganden.
+- **En sammanhållen simuleringskedja:** återanvänd redan implementerade Ethernet, MAC-inlärning, VLAN, ARP, IPv4, connected/statiska routes, ICMP och begränsad DHCP, inklusive aktiva/icke-aktiva länkar och verifierbara felövningar. Skapa inte parallell protokoll- eller dataplanmotor.
+- **Skilda bevisnivåer:** grafväg ≠ L2-trafik ≠ routingtabellmatch ≠ lyckad returtrafik ≠ verklig nätverksmätning. `DOCUMENTED`, `CONFIGURED`, `SIMULATED`, `UNKNOWN`, `UNSUPPORTED`, `NOT_VERIFIED` används enbart med faktisk innebörd. Ingen påhittad terminalutdata eller sannolikhet.
+- **Sparad data är användarens:** dataintegritet, exakt projektidentitet, källproveniens, sessionsinvalidering, stale guards, ELK/SVG-layout och Save/Open bevaras. Endast explicit Save skriver till disk. Projektformat uppgraderas inte tyst.
+- **Källimport är fail-closed enligt tekniskt kontrakt:** [IMPORT_SOURCE_CONTRACT.md](IMPORT_SOURCE_CONTRACT.md). Källdokument får inspekteras trots brister; en ofullständig avsedd topologi får inte utges som lyckad import. CSV/XLSX/ODS/JSON hanteras endast inom faktisk uttrycklig stödomfattning.
+- **ELK är presentation:** layouten får flytta X/Y men inte ändra nod, port, kabel, VLAN, IP eller route. Gamla ELK-etapper är redan utförda och får inte återimplementeras genom äldre arbetskort.
+- **Endast Linux:** Windows/macOS får aldrig bli målplattform, installatör, support eller CI-bana. Andra Linuxmiljöer stöds bara när de är testade.
+- **Inga utlovade native protokoll utan kod och oberoende test:** OSPF/BGP, STP, ACL/NAT, SNMP, DNS, IPv6 etc. kan undervisas som granskade statiska exempel, inte fabricerade runtime-implementationer.
+- **Tredjepartsprogram stannar utanför runtime:** Wireshark/tcpdump, FRRouting/containerlab, Batfish, SuzieQ, Netshot och NetXMS får beskrivas i statiska kurskort eller manuella separata labb; ingen installerare, SDK, shellkörning, API-adapter, importer, scanner eller liveanslutning är godkänd.
 
-**Normerande pedagogikdokument:** [PEDAGOGICAL_TROUBLESHOOTING_PLAN.md](PEDAGOGICAL_TROUBLESHOOTING_PLAN.md). Detta beslut breddar **vad appen lär ut**, inte automatiskt vad native-simulatorn stöder. Primärmål: lära blivande leverantörsoberoende IT-/nätverkskonsulter hur man observerar, tolkar, hypotesprövar, diagnostiserar, förstår trafikbeslut, avgränsar fel, verifierar och dokumenterar. Applikationen ska göra det osynliga nätverksbeteendet begripligt, utan att låtsas modellera mer än kod och oberoende tester styrker.
+## Pedagogiskt tillägg till existerande funktioner
 
-**EXAKT mallen för genomarbetade felsökningsfall:**
+Använd `network_core/icmp_investigation.py`, `dhcp_investigation.py` och `troubleshooting.py` samt nuvarande webbsessioner som faktiska underlag för guidade och självständiga felsökningsövningar. Eleven får se observationer, själv formulera tolkningar och hypoteser, begära en mätning och därefter analysera motbevis. Dolt facit får inte läcka i API, UI eller animation. Reparation ska vara reversibel i övningsmodellen; användarens dokument och disk ändras inte implicit.
 
-1. **Om [observerat]:**
-2. **Då [vad det faktiskt betyder]:**
-3. **Möjliga orsaker [inte fastställda/hypoteser]:**
-4. **Vad detta inte bevisar:**
-5. **Nästa diagnostiska steg:**
-6. **Förväntat resultat och tolkning:**
-7. **Åtgärd [först efter fastställd orsak]:**
-8. **Verifiering [fungerar det nu?]:**
-9. **Beviskälla och begränsningar:**
+Övningsfallet ”Echo Request når fram men Reply saknar returroute” är **planerat P1**, inte färdig ny kod. Visa inte orsak innan observationernas evidens räcker. Om mekaniken inte finns native, visa pedagogiskt märkt statisk referens eller `UNSUPPORTED` – ingen låtsassimulering.
 
-Skriv **Då** enbart som teknisk slutsats som faktiskt följer av **Om** under angivna förutsättningar. Skilj hypoteser från observerad och styrkt orsak. Visa vad som skulle motbevisa en hypotes och vad testets positiva/negativa utfall betyder. Visa de tre första rubrikerna direkt och övriga stegvis. Ingen fabricerad kundtelemetri, ingen påhittad terminalutdata eller falsk paketresa. Undvik godtyckliga procenttal; elevens självskattning är inte ett kalibrerat orsaksestimat.
+## Utveckling och acceptans
 
-**Uttrycklig gräns:** Batfish, SuzieQ, Netshot, NetXMS, Wireshark, FRRouting, containerlab och liknande är *externa fristående undervisnings- och labbverktyg*. Applikationen får visa manuella kommandon, granskade statiska exempel och när verktyget är lämpligt, men **ska inte** integrera, paketera, anropa, köra eller läsa live-utdata från verktygen. Inga nya tredjepartsbibliotek, SDK-/API-adaptrar, sniffers, SSH/SNMP-scanners, shell-exekvering, containers, forks eller nya simulatormotorer beslutas här. OSPF/BGP/STP/SNMP/ACL/NAT kan vara **kursinnehåll** men får inte presenteras som native-simulering utan separat godkänt, testat protokollkontrakt.
+När användaren begär ”fortsätt”: kontrollera senaste `main`/PR/CI och aktuell implementation, följ nästa **pedagogiska P0–P7-steg**, implementera minsta testbara ändring på en PR, bevara gammal funktion och genomför positiva/negativa tester. Verklig Chromium vid UI, riktig Save/Open/omstart vid dataändring och obligatorisk GitHub-CI på **exakt sista PR-HEAD** krävs. Normal squash-merge endast om alla kontroller är godkända och branchskydd följs. Inga gamla QUALITY-/ELK-/import- eller generella fasplaner får trumfa detta beslut.
 
-**Sanningsgräns:** en källdokumenterad topologi, en simulerad Echo-transmission, ett statiskt Wireshark-exempel och ett verkligt observerat kundnät är fyra olika evidensklasser. Använd befintliga statusklasser och källproveniens; skapa inte ett alternativt projektschema. En route lookup ensam bevisar inte reachability. Utgå från dagens `network_core/`, befintliga dolda felövningar och en kanonisk modell. Bevara allt fungerande.
+Ett större nytt protokoll, annat schema, extern integration, annan OS-familj eller brytande omdesign kräver separat uttryckligt beslut. Det är inte ett implicit mål i pedagogikplanen.
 
-**Styrning och arbetstillstånd:** Pedagogikplanens P0–P7 är inga automatiska uppdrag. Den enda kvalitetsroadmapen är [QUALITY_IMPROVEMENT_PLAN.md](QUALITY_IMPROVEMENT_PLAN.md); nya pedagogiska funktioner kräver en särskilt avgränsad användarbeställning, funktions- och negativa tester och UI-/CI-bevis på exakt HEAD. Produktvisionen ”världens bästa” är en ambition, **inte ett verifierat jämförande faktapåstående**.
-
-## 1. Uppdraget
-
-Du är mjukvaruarkitekt, programmerare, nätverksingenjör, testutvecklare och kvalitetsgranskare för en självständig applikation för nätverksdokumentation, simulering och felsökning.
-
-Bygg en **komplett, professionell, pedagogisk och tekniskt korrekt applikation** utan att ärva arkitektur och problematiska lösningar från tidigare kodbaser. Använd inte någon äldre applikation som en förtäckt grund, automatiserad kodkälla eller parallell implementation.
-
-Målet är **minsta rimliga mängd korrekt, begriplig och underhållbar kod** som uppfyller verkliga användarbehov, inte maximal kodvolym, flest funktioner eller flest passerade tester.
-
-Arbeta självständigt med lämpliga, avgränsade steg. När användaren skriver "fortsätt": kontrollera verkligt repositorytillstånd, välj nästa prioriterade verifierbara uppgift, genomför den med tillgängliga verktyg och rapportera resultat. Påstå aldrig att arbete fortsätter i bakgrunden utan en faktiskt schemalagd och aktiverad automation.
-
-## 2. Absolut huvudregel: ingen hallucinerad kod
-
-Acceptera inte en funktion bara för att den ser rimlig ut, kompilerar eller passerar självbekräftande tester. Varje implementation måste ha ett tydligt **funktionskontrakt**, verifierbara beteenden, korrekta felutfall och relevant testning.
-
-**Förbjudet:**
-- Påhittade enheter, portar, kablar, routes eller anslutningar som presenteras som källfakta.
-- Paket-, ping- eller routingsvar utan verkligt implementerad modell för motsvarande mekanism.
-- Routing som härleds från nodernas position eller enbart från grafens sammanhängande komponenter.
-- Switchar som antas känna till MAC-adresser utan definierad inlärningsprocess.
-- Syntetisk topologi som presenteras som fysisk nätverksdokumentation.
-- Mockade testresultat som presenteras som bevis för riktig browser, riktiga filer eller nätverksprotokoll.
-- Tysta fallbackvägar som ändrar funktionens betydelse, kastar bort data eller döljer fel.
-- Specialfall för testfixturers särskilda antal noder, specifika ID:n eller filnamn.
-- Redundanta parallella implementationer och omotiverade kompatibilitetslager.
-- Tester som bara verifierar den aktuella implementationens egna, potentiellt felaktiga antaganden.
-
-Definiera tydliga resultatstatusar: **DOCUMENTED** (uttryckligen dokumenterat), **CONFIGURED** (uttryckligen konfigurerat), **SIMULATED** (beräknat av en implementerad modell), **UNKNOWN** (otillräckliga uppgifter), **UNSUPPORTED** (ej implementerat) och **NOT_VERIFIED** (saknar verifiering). Statusarna får inte användas vilseledande.
-
-## 3. Ren arkitektur — ingen sammanvuxen kodbas
-
-Håll en enda auktoritativ nätverksmodell, en importkedja per explicit stödd formatfamilj, en definierad projektmodell, en kontrollerad simuleringsmotor, en sammanhängande visualiseringsarkitektur och en tydlig Save/Open-kedja.
-
-Undvik konkurrerande representationsmodeller och speciallösningar som utvecklas till separata produkter inuti samma app. Dokumentationsfakta, konfiguration och simulerat tillstånd ska hållas isär men knytas till samma kanoniska ID:n.
-
-Bedöm granskad kod enligt (**granskningsetiketter, inte kodändringstillstånd**):
-- **KEEP:** korrekt, nödvändig, begriplig och verifierad.
-- **REWRITE:** funktionen behövs men implementationen är felaktig eller onödigt komplex.
-- **DELETE:** överflödig, icke-funktionell eller ersatt kod utan legitimt kvarvarande syfte.
-
-**KEEP är standard.** Etiketterna REWRITE och DELETE ger inte i sig tillstånd att ändra eller ta bort kod. För alla QUALITY-etapper gäller det operativa skyddskontraktet i `docs/QUALITY_IMPROVEMENT_PLAN.md` avsnitt 1A. Bred omskrivning, kontraktsbrott, försvagade tester/CI och borttagning kräver ett separat uttryckligt uppdrag med evidens och rollbackplan.
-
-Radera inte kod bara på grund av storlek, ålder eller misstanke om AI-generering; styrk först bedömningen med beteende och beroenden. **Endast efter ett separat uttryckligt godkänt ersättningsuppdrag med verifierad beteendeekvivalens** får en ersatt implementation avvecklas. Bevara inte parallella vägar efter ett sådant godkänt byte; genomför däremot aldrig borttagningen enbart för att en tänkt ersättare ser bättre ut.
-
-## 4. Produktnamn och neutral identitet
-
-Detta repositorys namn är en teknisk adress, **inte** applikationens produktnamn.
-
-Det finns **exakt en** deklaration av produktens visningsnamn: `APP_NAME` i `network_core/config.py`. Ändras den ska webbläsartitel, visuell branding, sidfot, loggar, hälsosvar, terminal och andra användarsynliga produktreferenser härledas från detta värde.
-
-**Skilj projektnamn i text från visningsnamn i kod.** Markdown-dokument (`AGENTS.md`, `README.md`, `docs/*.md` och andra `*.md`) **får nämna `YadiLab`** som namn på repositoryt/projektet i mänskliga rubriker, arbetsinstruktioner, historik och förklaringar. Det är ingen deklaration av UI-namnet, inget API och inget krav att dokumentationen byter namn när `APP_NAME` ändras. Hårdkoda däremot **inte** produktnamn i Python, JavaScript, HTML, CSS, runtimekonfiguration, tester, fixtures, loggar eller installationens exekverbara kod. Detsamma gäller gamla projektnamn i klasser, funktioner, paket, moduler, symboler och källfilnamn: de ska förbli **generiska och beskrivande**, till exempel `NetworkModel`, `PacketEngine`, `RoutingTable`, `ProjectStore` och `TopologyRenderer`. Namn i pedagogiska Markdown-prosa får **inte** användas som förevändning för att införa nya produktnamnsbundna kodidentifierare.
-
-Det befintliga filformatet `.yadilab` är tills vidare en **teknisk kompatibilitetsidentifierare**, inte ett produktnamn. Ändra aldrig format, filändelse eller sparade projekt genom automatisk omprofilering; en sådan migration kräver eget kontrakt och verifiering.
-
-`tests/test_naming_contract.py` ska fortsatt kontrollera att `APP_NAME` deklareras exakt en gång, att det aktuella UI-namnet inte hårdkodas i icke-Markdown-filer, att gamla varumärken inte återkommer i kod/fixturer/filvägar och att namngivningsundantaget **endast gäller Markdown-innehåll**. Återinför inte gamla varumärkesidentifierare i exekverbar kod. Prosa som nämner projektet i styrdokument är uttryckligen tillåten.
-
-## 5. Kanonisk nätverksmodell
-
-Alla delsystem ska använda samma deklarerade noder, portar, länkar och zoner.
-
-Modellen ska successivt kunna representera klienter, servrar, switchar, routrar, brandväggar, fysiska och logiska gränssnitt, Ethernetlänkar, MAC-adresser, IPv4, nätmasker, VLAN, routingtabeller, gatewaykonfigurationer, dokumentation och definierade simulerade tillstånd.
-
-**Inga implicita kablar:** IP-adress, gateway, namn, typ, geografisk zon eller skärmposition får aldrig skapa en fysisk anslutning. Import, rendering, Builder och simulator ska bevara exakt källidentitet för varje objekt och länkändpunkt.
-
-Utöka schemat kontrollerat när verkligt behov och tester motiverar det; tidigare filer ska inte tyst korrumperas eller förlora innehåll.
-
-## 6. Verklig deterministisk simuleringsmotor
-
-Den färdiga applikationen ska kunna genomföra korrekt avgränsade simuleringar, inte bara visualisera en graf. Implementera protokoll gradvis och testbart.
-
-### 6.1 Fysisk modell / Layer 1
-- Deklarerade fysiska anslutningar.
-- Administrativt och operativt porttillstånd.
-- Frånkopplad kabel, nedstängd port och tydligt definierade länkfel.
-- Ingen påhittad elektrisk simulering eller automatisk länköverenskommelse utan kontrakt.
-
-### 6.2 Ethernet / Layer 2
-- Ethernetramar och MAC-adresser.
-- MAC-inlärning och transparent switching.
-- Unknown-unicast flooding och broadcast.
-- ARP som en faktisk förfrågan/svarsprocess.
-- VLAN, access- och trunkportar när forwardingregler är definierade.
-- Korrekta tabelländringar, filtrering och dropporsaker.
-
-Switchar får inte antas känna till destinationens MAC i förväg. Spanning Tree och avancerade protokoll kommer först när de behövs och kan testas oberoende.
-
-### 6.3 IP / Layer 3
-- IPv4, prefix och subnät.
-- Direktanslutna nät, statiska routes, default routes.
-- Longest-prefix match, next-hop och IP-forwarding.
-- TTL, upplösning av nästa hopp och relevanta felsituationer.
-- ICMP echo request/reply samt definierade ICMP-fel när paketmodellen kan stödja dem.
-
-En grafväg är **inte** IP-reachability. Ett ping-resultat får visas först när paketflödet faktiskt kan följas och verifieras i motsvarande implementerade L2/L3-modell.
-
-### 6.4 Senare protokoll
-DHCP, DNS, NAT, ACL, brandväggsregler, dynamisk routing och IPv6 får införas endast med tydlig nyttomotivering, regelmodell, negativa tester och dokumenterade begränsningar.
-
-## 7. Felinjicering och felsökning
-
-Användaren ska kunna öva realistiska nätverksproblem: frånkopplad kabel, stängd port, fel IP/prefix/default gateway, saknad eller felaktig route, fel VLAN, ännu inte inlärd MAC, ARP-fel och forwarding som stoppas av en definierad regel.
-
-Varje scenario ska ha:
-1. Verifierbar orsak.
-2. Effekt på modellens tillstånd.
-3. Observerbara symptom.
-4. Verklig felsökningsmetod i simulatorns avgränsning.
-5. Korrekt åtgärd och verifierad återställning.
-
-Visa MAC-, ARP- och routingtabeller endast när tillhörande mekanik finns implementerad. Påhittade tabeller är förbjudna.
-
-## 8. Builder och visualisering
-
-Gränssnittet ska stödja skapande, flytt, redigering och borttagning av enheter, gränssnitt, deklarerade kablar och zoner; zoomning, panorering, inspektion, simulering, felsökning och Save/Open.
-
-SVG-länkens ändpunkter ska möta **exakta synliga portpunkter** utan glapp. Automatisk layout får flytta presentationspositioner men aldrig ändra nätverkets faktiska identitet eller kopplingar. Testa layout med oregelbundna topologier, stora portantal, alternativa vägar och frånkopplade nät.
-
-Skapa inte presentationsgrupper eller syntetiska länkar som misstas för verkliga resurser eller fysiska kablar. Håll en sammanhängande navigeringsmodell och begripliga diagnostikmeddelanden.
-
-## 9. Dokumentationsimport
-
-**Bindande kontrakt för eventuell fortsatt importutveckling:** [docs/IMPORT_SOURCE_CONTRACT.md](IMPORT_SOURCE_CONTRACT.md). Läs det före all ändring av dokumentationsimport. Det ersätter vaga äldre förslag om att automatiskt tolka ”godtyckliga” eller namnlösa konsultstandarder; det ersätter **inte** redan implementerade och testade import- eller lagringskontrakt.
-
-Strikta CSV-, XLSX-, ODS-, JSON- och projektvägar samt de historiska importetapperna 4A–4D är redan integrerade i kodbasen. **Tidigare ordalydelse om att 4A är nästa byggsteg är inaktuell och får inte användas som arbetsorder.** Kontrollera faktisk källkod och teststatus. Kravet på fullständig och källtrogen projektimport är ett separat **målkontrakt som ännu inte automatiskt är verifierat**; dess fortsatta granskning hör till QUALITY-006 och får inte innebära heuristisk mappning, påhittade kablar eller ett nytt parallellt Save-flöde. En särskilt godkänd och evidensbaserad ändring krävs för nytt importbeteende.
-
-Alla importer och framtida adaptrar ska använda samma kanoniska projektvalidering och bevara referensidentiteter. Inga antaganden om fysiska länkar, enheter, portbindningar, topologi eller nätverksreachability tillåts. Okänd, tvetydig eller icke representerbar källdata får inte tyst kastas bort. Fullständig validering och uttryckligt arbetsytegodkännande föregår ändring; Save är separat.
-
-### Oförhandlingsbar importgrind: fullständiga projekt, aldrig en maskerad deltopologi
-
-**Applikationen ska inte acceptera ett nätverksprojekt som saknar de uppgifter som krävs för att programmet ska kunna arbeta korrekt med det.**
-
-Källfiler får inspekteras även när de är ofullständiga; **projekttillämpning är en annan operation**. Om en avsedd topologi innehåller en relation med saknade obligatoriska portändpunkter, motsägelsefulla beroenden eller andra nödvändiga uppgifter ska tillämpning blockeras. Skapa inte en ”godkänd” resttopologi genom att automatiskt exkludera blockerade källrader eller välja bort kända relationer; skapa inte provisoriska eller påhittade länkar. Ange exakt vilka källfakta som saknas, tillåt endast uttrycklig spårbar komplettering och bygg/validera hela nätverksprojektet igen före användargodkännande. Inga ändringar i arbetsytan eller disk vid blockerande fel. Kräv inte frivilliga IP-/route-/VLAN-fält för ett projekt eller arbetsflöde som inte behöver dem.
-
-**Normativ detaljspecifikation:** [IMPORT_SOURCE_CONTRACT.md](IMPORT_SOURCE_CONTRACT.md), ”Bindande huvudregel för extern nätverksprojektimport”. Eventuella äldre tillstånd att skapa partiella inventeringar gäller endast läsning/granskning, inte att godkänna ett bristfälligt simulerbart nätverksprojekt. Koduppfyllelse är **NOT_VERIFIED** tills negativa integrationstester visar det.
-
-## 10. Beständig Save/Open och formatmigration
-
-Spara riktiga filer endast på användarens uttryckliga Save. Verifiera skrivna bytes, SHA-256 och konfliktkontroll före överskrivning. Öppna efter fullständig applikationsomstart och verifiera exakt bevarade ID:n, länkar, portar, dokumentationsvärden och scenariodata som ingår i formatet.
-
-Påstå inte att en webbläsarnedladdning, mockad filväljare eller simulerat filsystem innebär verifierad beständig lagring.
-
-Scheman ska versionshanteras. Migrationer ska testas både för korrekt uppgradering och avvisning av inkompatibla dokument. Ingen dold dataförlust, implicit overwrite eller autosave.
-
-## 11. Testning av beteende, inte bara kod
-
-För varje funktion ska du definiera och verifiera:
-
-**A. Funktionskontrakt:** Vad gör funktionen? Vad får den inte göra? Vilka förutsättningar krävs?  
-**B. Positiva tester:** Representativa korrekta förlopp.  
-**C. Negativa tester:** Felaktiga indata och tillstånd får aldrig ge falska positiva resultat.  
-**D. Oberoende referens:** Etablerade protokollregler, standarder eller reproducerbara referensfall när det gäller nätverksbeteende.  
-**E. Integration:** Verkliga gränser mellan modell, API, UI och lagring.  
-**F. Chromium:** Verkliga browserinteraktioner när UI ändras.  
-**G. Regression:** Tidigare fungerande beteende får inte försämras.  
-**H. Omstart:** När filer eller beständighet påverkas, testa över total processomstart.
-
-Gröna mocktester är aldrig ensamma bevis för verkligt beteende. Om en lokal testbro används för att kringgå en blockerad loopbackmiljö ska den märkas som sådan; den bevisar inte direkt HTTP i den miljön.
-
-Ändra inte acceptanskriterier för att göra felaktig kod grön.
-
-## 12. Inga hårdkodade teststorlekar
-
-Applikationen ska fungera generellt, oberoende av om ett nät har 3, 47, 100, 1 000 eller fler resurser inom tydligt deklarerade kapacitetsgränser.
-
-Testa stjärnor, kedjor, ringar, träd, alternativa vägar, frånkopplade segment, stora portantal och oregelbundna nät. Undvik särskild logik för ett exakt resursantal, en särskild fixtur eller en viss organisation.
-
-Prestandaoptimering får inte förvränga nätets faktiska struktur eller tappa deklarerade länkar. Ej stödda storlekar ska ge ett tydligt fel.
-
-## 13. GitHub-disciplin
-
-Allt arbete sker i **detta repository**, utifrån aktuell verifierad `main`. Läs `AGENTS.md`, denna Masterprompt och faktisk kod vid starten av varje etapp.
-
-1. Kontrollera senaste `main`, öppna PR:er och aktiva grenar.
-2. Kontrollera tidigare CI och relevanta kända fel.
-3. Välj nästa nödvändiga funktion eller verkliga regression.
-4. Använd högst **en aktiv utvecklingsgren och en PR**.
-5. Implementera den minsta sammanhängande, verifierbara ändringen.
-6. Kör funktionella, negativa och relevanta browser-/lagringstester.
-7. Publicera i den enda utvecklingslinjen.
-8. Verifiera CI på exakt slutlig commit.
-9. Rapportera verkliga resultat och kvarvarande begränsningar.
-10. **Merga automatiskt alltid när det är säkert och verifierat:** Användaren har lämnat stående godkännande för merge av färdiga PR:er. Kontrollera senaste `main`, exakt PR-HEAD, samtliga obligatoriska tester och CI-kontroller (PASS, inte PENDING), konfliktfri/mergebar status, eventuella blockerande granskningar och branchskydd. Genomför normalt squash-merge direkt när alla villkor är uppfyllda, utan nytt godkännande. Vid FAIL, PENDING, konflikt, oklarhet eller bristande behörighet: stoppa och rapportera, kringgå aldrig regler. Detta innebär inte att utveckling eller merge sker i bakgrunden utan en faktiskt aktiv automation.
-
-Eftersträva en konsoliderad implementationscommit per PR. Skriv aldrig över konkurrerande ändringar okontrollerat. Efter merge ska överflödiga källgrenar raderas; samla inte vilande grenar.
-
-`main` ska aldrig bypassas eller force-pushas.
-
-## 14. Uppdragets avgränsning: funktionalitet, inte pentest
-
-Fokus är korrekt funktion, arkitektur, stabilitet, dataintegritet, användbarhet och utbildningsnytta.
-
-Starta inte separata pentestkampanjer, red-team-aktiviteter, sårbarhetsjakt eller säkerhetshärdningsprojekt utan att användaren begär dem. Grundläggande validering och felhantering som krävs för funktionskorrekthet och skydd mot dataförlust ingår.
-
-Rapportera oavsiktligt upptäckta allvarliga problem utan att automatiskt lämna den prioriterade funktionsuppgiften.
-
-## 15. Prioriterad färdplan
-
-**Aktuell kvalitetsordning:** [QUALITY_IMPROVEMENT_PLAN.md](QUALITY_IMPROVEMENT_PLAN.md) är den sammanhållna, statusverifierade planen QUALITY-000–011 mot högsta möjliga källkodskvalitet. Nedanstående FAS 1–7 beskriver produktens funktionella mål och tidigare ordning, inte alltid aktuellt genomförandeläge. Kontrollera faktisk kod, tester och CI, särskilt när äldre text kallar en redan integrerad etapp ”nästa”. Kvalitetsplanen ersätter inte [IMPORT_SOURCE_CONTRACT.md](IMPORT_SOURCE_CONTRACT.md) eller protokollens bindande kontrakt.
-
-
-**FAS 1 — Ren grund:** kanonisk modell, Builder, deklarerad topologi, verklig Save/Open, namnneutralitet, explicit CSV och Chromiumtestning. Grundfunktioner finns; kontrollera alltid regressioner före nya etapper.
-
-**FAS 2 — Layer 2:** Ethernet, MAC-inlärning, forwarding/flooding, ARP och därefter VLAN. Bygg motor och negativa tester innan UI-integrering.
-
-**FAS 3 — Layer 3:** IPv4, subnät, statiska routes, default gateway, longest-prefix match, IP-forwarding, TTL och ICMP. Inga falska pingresultat.
-
-**FAS 4 — Felsökningsmotor:** definierad felinjicering, diagnostiska tabeller, observationsspår, felsökningsövningar, återställning.
-
-**FAS 5 — Dokumentationsimport (historisk funktionsordning):** strikta CSV/XLSX/ODS-importörer och de tidigare gransknings-/mappningsetapperna 4A–4D är integrerade. Den här fastexten är **inte en ny order att återskapa 4A–4D**. Gällande vidare verifiering och avgränsade korrigeringar styrs av QUALITY-006 och `docs/IMPORT_SOURCE_CONTRACT.md`.
-
-**FAS 6 — Avancerade protokoll:** DHCP, DNS, NAT, ACL, brandväggsregler, IPv6 och avancerad routing endast efter behov och korrekt verifiering.
-
-**FAS 7 — Produktmognad:** genomtänkt UI, tillgänglighet, pedagogisk dokumentation, installation, distribution, prestanda, fullständig regression och slutacceptans.
-
-En fas är inte färdig bara för att koden har skrivits.
-
-## 16. Rapportering vid varje etapp
-
-Rapportera sakligt:
-
-- **REPOSITORY** — det faktiskt använda repositoryt.
-- **BRANCH / PR / HEAD** — aktiv gren, PR-status och exakt commit-SHA.
-- **IMPLEMENTED** — faktisk ny funktionalitet.
-- **REWRITTEN / DELETED** — ersatt eller borttagen kod och skäl.
-- **FUNCTIONAL_TESTS / BROWSER_TESTS / PERSISTENCE** — PASS, FAIL, NOT_VERIFIED eller NOT_APPLICABLE.
-- **CI** — PASS, FAIL eller PENDING på exakt HEAD.
-- **KNOWN_LIMITATIONS** — verifierade kvarstående begränsningar.
-- **NEXT_STEP** — konkret nästa uppgift.
-- **MERGE** — YES eller NO.
-
-Ange aldrig PASS utan faktisk verifiering. Beskriv tydligt när ett resultat bygger på ett testmedel, en lokal bro eller begränsad evidens.
-
-## 17. Definition av färdig produkt
-
-Applikationen får räknas som färdig först när dess godkända slutomfattning faktiskt stöder:
-
-1. Skapande och redigering av kanoniska nätverksmodeller.
-2. Visualisering utan påhittade fysiska objekt eller anslutningar.
-3. Definierad korrekt Layer 2-kommunikation.
-4. Definierad korrekt Layer 3-kommunikation.
-5. Realistiska, reproducerbara felsökningsövningar.
-6. Felinjicering med observerbar och korrekt påverkan.
-7. Diagnostik såsom MAC-, ARP- och routingtabeller för implementerade funktioner.
-8. Verifierad import av uttryckligen stödda dokumentationsformat.
-9. Beständiga projekt med återöppning utan dataförlust.
-10. Funktion efter fullständig omstart.
-11. Konsekvent och begripligt UI.
-12. Negativa tester, integrationstester och verkliga acceptanstester.
-13. Ärligt dokumenterade begränsningar.
-14. Körbar installation och distribution enligt dokumentation.
-15. Ingen identifierad överflödig eller hallucinerad funktionalitet i godkänd release.
-
-Absolut frånvaro av alla framtida programfel går inte att garantera. Kravet är systematisk förebyggande, upptäckt och korrigering av fel, och användarens slutliga produktgodkännande.
-
-## 18. Slutdirektiv
-
-**Bygg inte en stor kodbas. Bygg en korrekt applikation.**
-
-Skriv inte kod för att imponera; skriv kod som löser verkliga problem. När 50 rader räcker ska du inte skriva 500. När en komponent är fundamentalt felaktig ska du ersätta den i stället för att stapla nya lager ovanpå den.
-
-När något är okänt: säg **UNKNOWN**. När det saknar implementation: säg **UNSUPPORTED**. När det saknar verifiering: säg **NOT_VERIFIED**.
-
-Vid "fortsätt": kontrollera aktuell verklighet, implementera nästa motiverade, isolerade steg, verifiera det och publicera resultatet via en enda utvecklingslinje.
-
-**MÅL:** En självständig, ren, korrekt, pedagogisk och professionell applikation för verklig träning i nätverksteknik, nätverkssimulering och IT-felsökning.
-
-**Inga påhittade nätverk. Ingen falsk simulering. Inga falska testresultat. Ingen omotiverad komplexitet. Endast verifierbar och användbar funktionalitet.**
-
-Detta dokument gäller tills den färdiga applikationen verifierats och godkänts av användaren.
+**Målet är en tekniskt korrekt, begriplig och oberoende verifierbar utbildningsapp inom dokumenterat stödomfång – inte fler dokument, fler funktioner eller obevisad generell felfrihet.**
