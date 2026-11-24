@@ -74,6 +74,12 @@ Ytterligare explicit specialadressvalidering enligt RFC 1122, RFC 3927 och IANA 
 
 **Status:** PROPOSED / **NOT_VERIFIED tills båda obligatoriska CI-körningarna på exakt slutlig PR HEAD är SUCCESS**. Inget nytt nätverksimportschema, inga externa verktygsintegrationer, ingen ändrad projektmodell och ingen automatisk Save. Se [SOURCE_INTEGRITY_AUDIT_2026-11-24.md](SOURCE_INTEGRITY_AUDIT_2026-11-24.md) och negativa HTTP-/Node-tester.
 
+## 4D. ARP Ethernetadressgräns (föreslagen tills negativ CI har PASS)
+
+**Verifierat kodfynd:** Den separata ARP-modulen accepterade adresser ur 127/8, 0/8 och reserverade 240/4 som vanliga Ethernet-ARP-källor/mål, även efter IPv4-dataplanets PR #114. För att förhindra falskt ARP-`RESOLVED` läggs ett snävt ARP-protokollvillkor och fyra positiva/negativa tester till. Befintligt sparat projekt ska fortsatt kunna dokumentera ogiltig adresskonfiguration; DHCP-bootsrapporter med `0.0.0.0` använder separat definierad codec och ska inte påverkas. Se [ARP.md](ARP.md), [PROTOCOL_REFERENCE_MATRIX.md](PROTOCOL_REFERENCE_MATRIX.md) och [issue #120](https://github.com/Northsw-spec/YadiLab/issues/120).
+
+**Status:** PROPOSED för denna nya ARP-del tills exakt PR-HEAD och båda obligatoriska CI-kontroller är SUCCESS; gör inte generella ARP-/RFC-påståenden.
+
 ## 5. Slutlig gräns för försäkran
 
 **Riskbaserad källkodsrevision, 2026-11-24:** [SOURCE_INTEGRITY_AUDIT_2026-11-24.md](SOURCE_INTEGRITY_AUDIT_2026-11-24.md) redovisar den avgränsade kontrollen av HTTP, JSON, import, lagring, protokollsteg och CI samt öppna fynd. JSON-avvikelserna åtgärdades i PR #111 med båda obligatoriska `unit-tests` **SUCCESS** på final PR-HEAD `9a5b9b0b456185d8ebdb9271dcbfaf1bcaaebeee`, squash-mergad till `main@2c79bb75ec10e80441f6ccff8a349422d23537ac`. Det är ett begränsat verifierat ingångskontrakt; senare `main`-CI och alternativa parseranrop kräver separata kontroller. Lär ut dess uttryckliga ICMP-reply-TTL-begränsning som en modellförenkling, inte som verkligt nätverksfaktum. Rapportens kvarstående lokala API-/interoperabilitetsrisker är ingen automatisk kodorder.
