@@ -157,10 +157,31 @@ class ArpSessionTests(unittest.TestCase):
                 session.resolve('a', 'eth0', address)
         self.assertEqual(session.arp_table('a', 'eth0'), {})
 
-    def test_duplicate_declared_ipv4_is_rejected(self):
+    def test_duplicate_ipv4_in_same_reached_broadcast_domain_is_ambiguous(self):
         p=network();p['nodes'][3]['ports'][0]['ipv4']='192.0.2.20/24'
-        with self.assertRaisesRegex(ProjectValidationError, 'duplicate declared'):
-            ArpSession(p,interface_macs=bindings())
+        s = ArpSession(p, interface_macs=bindings())
+        with self.assertRaisesRegex(ProjectValidationError, 'ambiguous duplicate IPv4 responders'):
+            s.resolve('a', 'eth0', '192.0.2.20')
+        self.assertEqual(s.arp_table('a', 'eth0'), {})
+
+    def test_duplicate_in_same_domain_not_concealed_by_missing_mac(self):
+        p=network();p['nodes'][3]['ports'][0]['ipv4']='192.0.2.20/24'
+        explicit = bindings()
+        del explicit[('c', 'eth0')]
+        s = ArpSession(p, interface_macs=explicit)
+        with self.assertRaisesRegex(ProjectValidationError, 'ambiguous duplicate IPv4 responders'):
+            s.resolve('a', 'eth0', '192.0.2.20')
+        self.assertEqual(s.arp_table('a', 'eth0'), {})
+
+    def test_disconnected_duplicate_ipv4_is_not_fake_ambiguity(self):
+        p=network();p['nodes'][3]['ports'][0]['ipv4']='192.0.2.20/24'
+        p['links'][2]['enabled'] = False
+        s = ArpSession(p, interface_macs=bindings())
+        result = s.resolve('a', 'eth0', '192.0.2.20')
+        self.assertEqual(result['status'], 'RESOLVED')
+        self.assertEqual(result['resolvedMac'], B)
+        self.assertEqual([x['linkId'] for x in result['requestTransmissions']], ['la', 'lb'])
+        self.assertEqual(s.arp_table('a', 'eth0'), {'192.0.2.20': B})
 
     def test_reject_undeclared_source(self):
         session=ArpSession(network(), interface_macs=bindings())

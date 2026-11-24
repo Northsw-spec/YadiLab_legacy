@@ -63,6 +63,40 @@ class VlanArpTests(unittest.TestCase):
         self.assertEqual(session.arp_table("c", "eth0"), {})
         self.assertEqual(session.fabric.mac_table("sw", 20), {C: "p3"})
 
+    def test_duplicate_ipv4_in_disjoint_vlans_reaches_only_its_own_responder(self):
+        # Both endpoints explicitly declare .20; only observed VLAN-10 b
+        # may answer a, even though VLAN-20 c has the same address.
+        p = network()
+        p['nodes'][3]['ports'][0]['ipv4'] = '192.0.2.20/24'
+        prior = copy.deepcopy(p)
+        s = ArpSession(p, interface_macs=bindings(), vlan_ports=star_vlans())
+        answer = s.resolve('a', 'eth0', '192.0.2.20')
+        self.assertEqual(answer['status'], 'RESOLVED')
+        self.assertEqual(answer['resolvedMac'], B)
+        self.assertEqual([x['linkId'] for x in answer['requestTransmissions']],
+                         ['la', 'lb'])
+        self.assertEqual(s.arp_table('a', 'eth0'), {'192.0.2.20': B})
+        self.assertEqual(s.resolve('c', 'eth0', '192.0.2.10')['status'],
+                         'NO_REPLY')
+        self.assertEqual(s.arp_table('c', 'eth0'), {})
+        self.assertEqual(p, prior)
+
+    def test_two_switch_trunk_duplicate_ip_is_l2_isolated(self):
+        p, port_config, macs = two_switch_arp()
+        nodes = {node['id']: node for node in p['nodes']}
+        nodes['d']['ports'][0]['ipv4'] = '192.0.2.20/24'
+        s = ArpSession(p, interface_macs=macs, vlan_ports=port_config)
+        a_to_b = s.resolve('a', 'eth0', '192.0.2.20')
+        c_to_d = s.resolve('c', 'eth0', '192.0.2.20')
+        self.assertEqual((a_to_b['status'], a_to_b['resolvedMac']),
+                         ('RESOLVED', B))
+        self.assertEqual((c_to_d['status'], c_to_d['resolvedMac']),
+                         ('RESOLVED', D))
+        self.assertEqual(s.arp_table('a', 'eth0'), {'192.0.2.20': B})
+        self.assertEqual(s.arp_table('c', 'eth0'), {'192.0.2.20': D})
+        self.assertEqual(s.fabric.mac_table('s1', 10)[A], 'h')
+        self.assertEqual(s.fabric.mac_table('s1', 20)[C], 'x')
+
     def test_mac_missing_in_other_vlan_is_no_reply_not_unknown(self):
         macs = bindings()
         del macs[("c", "eth0")]

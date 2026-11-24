@@ -35,7 +35,7 @@ Oberoende positiva/negativa regressioner: `tests/test_arp_special_addresses.py`,
 - En switchloop avvisas av befintlig `EthernetFabric` tills korrekt loopkontroll finns. En router vidarebefordrar inte ARP-broadcast mellan sina gränssnitt.
 - ARP-cachen, inlärda MAC-tabeller och sessionsspecifika VLAN-/MAC-bindningar sparas **inte**. Däremot kan användaren spara explicit VLAN-konfiguration på switchportar i schema 1.2. Endast explicit dokumenterad port-MAC i schema 1.1 sparas efter användarens uttryckliga Save.
 - Om VLAN-trunkens ingress förbjuder en VLAN-tagg rapporteras `NO_REPLY` (om inget giltigt svar nås), med `requestVlanDrops`/`replyVlanDrops` som faktiskt observerade Ethernet-droporsaker. MAC-cache uppdateras endast när ARP-svaret når tillbaka till deklarerad källport. En separat session behövs efter topologi-/konfigurationsändring.
-- Dubblerade deklarerade IPv4-adresser avvisas fortfarande globalt även om adresserna skulle ligga i skilda VLAN. Dubblerade IP per VLAN är ännu inte definierat i denna begränsade modell.
+- Dubblerade deklarerade IPv4-adresser i **bevisligen åtskilda L2-domäner** (separata fysiska segment eller explicit isolerade VLAN) kan förekomma utan falsk global konflikt. ARP-Request skickas över faktisk deklarerad L2-väg; endast slutgränssnitt som faktiskt nås kan svara. Om **flera nådda gränssnitt** har samma efterfrågade IPv4 avvisas svarstolkningen som `ambiguous duplicate IPv4 responders` – även om något av dem saknar MAC. Ingen unik svarare gissas, ingen ARP-cachepost skapas. Detta är inte VRF, proxy-ARP eller en generell IP-adressplaneringsmodell.
 
 ### Exempel (Python-API)
 

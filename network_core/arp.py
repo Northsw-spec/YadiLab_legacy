@@ -115,14 +115,17 @@ class ArpSession:
     def __init__(self, project: dict, *,
                  interface_macs: Mapping[tuple[str, str], str] | None = None,
                  vlan_ports: Mapping[tuple[str, str], dict] | None = None):
-        # A VLAN session must be explicit; None retains legacy unsegmented ARP.
-        # There is no second implementation of switching or VLAN traversal.
+        # No second implementation of switching or VLAN traversal: the fabric
+        # reads explicit VLANs from saved switch ports or session overrides.
+        # Only a project with no VLAN declarations/overrides is unsegmented.
         self.fabric = EthernetFabric(project, interface_macs=interface_macs, vlan_ports=vlan_ports)
         # The fabric can also enable VLANs from persisted schema 1.2 ports.
         self._vlan_aware = self.fabric._vlan_enabled
         self._macs = self.fabric.bound_macs()
         self._ips: dict[tuple[str, str], ipaddress.IPv4Interface] = {}
-        known_ips: dict[str, tuple[str, str]] = {}
+        # Duplicate IPv4s in distinct physical/VLAN broadcast domains are
+        # possible. Never impose global uniqueness across the full document:
+        # ambiguous *actually reached* responders are checked per ARP probe.
         for node in self.fabric.project["nodes"]:
             if node["kind"] == "switch":
                 continue
@@ -131,10 +134,6 @@ class ArpSession:
                     continue
                 endpoint = (node["id"], port["id"])
                 iface = ipaddress.IPv4Interface(port["ipv4"])
-                address = str(iface.ip)
-                if address in known_ips:
-                    raise ProjectValidationError("arp: duplicate declared endpoint IPv4 address")
-                known_ips[address] = endpoint
                 self._ips[endpoint] = iface
         self._cache: dict[tuple[str, str], dict[str, str]] = {}
 
@@ -187,16 +186,21 @@ class ArpSession:
 
         responders = []
         pending_unbound = False
+        matching_peers: set[tuple[str, str]] = set()
         for arrival in dispatched["endpointArrivals"]:
             peer = (arrival["node"], arrival["port"])
             if peer == endpoint or peer not in self._ips or str(self._ips[peer].ip) != target:
                 continue
+            matching_peers.add(peer)
             if peer not in self._macs:
                 pending_unbound = True
                 continue
             responders.append(peer)
-        if len(responders) > 1:
-            raise ProjectValidationError("arp: ambiguous duplicate responses")
+        if len(matching_peers) > 1:
+            # Reject even when one duplicate has no MAC: a successful reply
+            # from the other cannot prove a unique responder in this domain.
+            raise ProjectValidationError(
+                "arp: ambiguous duplicate IPv4 responders in reached broadcast domain")
         if not responders:
             return {"status": "UNKNOWN" if pending_unbound else "NO_REPLY",
                     "resolvedMac": None, "requestTransmissions": dispatched["transmissions"],
