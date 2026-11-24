@@ -76,6 +76,18 @@ class DocumentationPolicyTests(unittest.TestCase):
                 with self.subTest(path=str(path.relative_to(ROOT)), old=filename):
                     self.assertNotIn("docs/" + filename, body)
 
+    def test_module_docs_do_not_deny_present_simulation_capabilities(self):
+        from network_core.model import EVIDENCE_SCHEMA_VERSION
+        from network_core.simulation import SimulationSession
+        from network_core.icmp_ping import EchoExchange
+
+        self.assertEqual(EVIDENCE_SCHEMA_VERSION, "1.4")
+        self.assertTrue(callable(SimulationSession.run))
+        self.assertTrue(callable(EchoExchange.ping))
+        ethernet = (ROOT / "docs" / "ETHERNET_FORWARDING.md").read_text("utf-8")
+        self.assertIn("[SIMULATION_SESSION.md](SIMULATION_SESSION.md)", ethernet)
+        self.assertIn("[IPV4_FORWARDING.md](IPV4_FORWARDING.md)", ethernet)
+
     def test_relative_markdown_links_point_to_real_files(self):
         # This is a deliberately narrow repository-file check, not a general
         # Markdown, HTTP, GitHub anchor or external-link validator.

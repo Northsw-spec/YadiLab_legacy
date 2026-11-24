@@ -40,13 +40,13 @@ print(fabric.mac_table("switch-a"))  # inlärda MAC-adresser i denna session
 
 Exemplet är kodfragment med **platshållar-ID:n**, inte ett bevis att dessa nätverksobjekt finns i användarens projekt.
 
-## Icke-implementerat
+## Begränsningar och separat implementerade funktioner
 
 - L2-ramar kan nu serialiseras/parsas **utan FCS** som Ethernet II i `ethernet_frame.py`. Däremot saknas FCS, preamble, tidsfördröjning, länkförhandling och protokollavkodning av payload.
 - Dynamisk MAC-aging, STP/RSTP, multicastgrupper, native VLAN och QinQ. En begränsad VLAN access-/trunkmodell finns via Python-API; se [VLAN.md](VLAN.md).
 - ARP-protokollet finns **inte i forwardingmotorn** `ethernet.py`; en separat begränsad ARP-session finns i [ARP.md](ARP.md). IP, ICMP, ping, DHCP, DNS, routing och brandväggslogik ingår inte i **just denna Ethernet-modul**; avgränsade IPv4/ICMP/DHCP-funktioner finns i separata applikationsmoduler enligt deras egna kontrakt.
 - MAC-filtrering eller paketacceptans i mottagande host/NIC. `endpointArrivals` betyder **enbart att ramen nådde ett deklarerat gränssnitt**.
-- Fullständig interaktiv Ethernet-simuleringssession eller beständig lagring av inlärda tabeller. En avgränsad ARP-diagnostik finns via HTTP/UI, där en ny Python-session skapas per anrop. Konfigurerade switch-VLAN kan sparas i schema 1.2.
+- En **fullständig** Ethernet- eller fysisk nätverksemulator finns inte. Däremot har applikationen en **begränsad, processlokal och interaktiv Layer 2-session** med Start, Send ARP, Send Ethernet, Reset och Stop via befintligt HTTP/UI; se [SIMULATION_SESSION.md](SIMULATION_SESSION.md). Inlärda MAC-/ARP-tabeller förblir flyktiga och sparas inte. Explicita switch-VLAN kan däremot sparas från schema 1.2.
 
 Den befintliga `topology_trace` är fortfarande en **dokumentationsgraf**, inte denna forwardingmodell. Blanda inte ihop deras resultat och ersätt inte den ena med falska antaganden om den andra.
 
@@ -58,7 +58,7 @@ python3 -m unittest discover -s tests -p 'test_*.py' -v
 
 Beteendet provas i `tests/test_ethernet.py`: kända/okända destinationer, broadcast, flyttad MAC, nedstängd port eller länk, två switchar, loopar och ogiltiga MAC-adresser samt oförändrat källdokument. Dessa tester är **funktionella modelltester**, inte test av verklig fysisk nätverkskommunikation.
 
-Persistens för explicita port-MAC-adresser finns nu i schema 1.1 och [MAC_CONFIG.md](MAC_CONFIG.md); sessionens inlärda MAC-tabeller sparas inte. Den separata ARP-sessionen är verifierad i `tests/test_arp.py` och VLAN-fallen i `tests/test_vlan_arp.py`, dokumenterade i [ARP.md](ARP.md). Ingen UI-integrering får antyda IP-reachability innan IP-forwarding finns.
+Persistens för explicita port-MAC-adresser finns nu i schema 1.1 och [MAC_CONFIG.md](MAC_CONFIG.md); sessionens inlärda MAC-tabeller sparas inte. Den separata ARP-sessionen är verifierad i `tests/test_arp.py` och VLAN-fallen i `tests/test_vlan_arp.py`, dokumenterade i [ARP.md](ARP.md). Den här Ethernet-/ARP-modulens resultat får aldrig ensamt visas som bevisad IP-reachability. Den separat implementerade IPv4-/ICMP-motorn måste köras och bedömas inom sitt verifierade stödomfång; se [IPV4_FORWARDING.md](IPV4_FORWARDING.md) och [ICMP_ECHO.md](ICMP_ECHO.md).
 
 ## Utökning: uttryckliga NIC-MAC-bindningar och Ethernet II
 

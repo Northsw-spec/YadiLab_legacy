@@ -1,11 +1,13 @@
 """Explicit, durable project files (.yadilab) with optimistic concurrency."""
 from __future__ import annotations
 
+import errno
 import fcntl
 import hashlib
 import json
 import os
 import re
+import stat
 import tempfile
 from pathlib import Path
 
@@ -35,12 +37,42 @@ class ProjectStore:
     def _hash(data: bytes) -> str:
         return hashlib.sha256(data).hexdigest()
 
+    @staticmethod
+    def _regular_file_bytes(path: Path) -> bytes | None:
+        """Read a regular project inode without following the final symlink.
+
+        O_NONBLOCK prevents a maliciously substituted FIFO from blocking the
+        loopback HTTP server before we can reject the non-regular inode.
+        The returned bytes come from the opened fd, not a second path lookup.
+        """
+        flags = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC
+        try:
+            fd = os.open(path, flags)
+        except FileNotFoundError:
+            return None
+        except OSError as error:
+            if error.errno in (errno.ELOOP, errno.EISDIR, errno.ENXIO, errno.ENODEV):
+                raise ProjectValidationError(
+                    "project file: symbolic links and special files are forbidden"
+                ) from None
+            raise
+        try:
+            if not stat.S_ISREG(os.fstat(fd).st_mode):
+                raise ProjectValidationError(
+                    "project file: expected a regular file, not a link or special file"
+                )
+            with os.fdopen(fd, "rb") as stream:
+                fd = -1  # fdopen owns it; context manager always closes it.
+                return stream.read()
+        finally:
+            if fd >= 0:
+                os.close(fd)
+
     def read(self, slug: str) -> dict:
         path = self.path(slug)
-        try:
-            raw = path.read_bytes()
-        except FileNotFoundError:
-            raise FileNotFoundError("project does not exist") from None
+        raw = self._regular_file_bytes(path)
+        if raw is None:
+            raise FileNotFoundError("project does not exist")
         document = decode_json_document(raw, context="saved project")
         try:
             project = validate_project(document)
@@ -55,11 +87,22 @@ class ProjectStore:
 
     def list(self) -> list[dict]:
         items = []
-        for file in self.root.glob("*.yadilab"):
-            if not file.is_file() or not FILENAME_RE.fullmatch(file.stem):
-                continue
-            stat = file.stat()
-            items.append({"filename": file.stem, "bytes": stat.st_size, "modifiedAt": stat.st_mtime})
+        with os.scandir(self.root) as directory:
+            for entry in directory:
+                if not entry.name.endswith(".yadilab"):
+                    continue
+                slug = entry.name[:-len(".yadilab")]
+                if not FILENAME_RE.fullmatch(slug):
+                    continue
+                try:
+                    metadata = entry.stat(follow_symlinks=False)
+                except FileNotFoundError:
+                    # A concurrent rename/delete is not a durable project.
+                    continue
+                if not stat.S_ISREG(metadata.st_mode):
+                    continue
+                items.append({"filename": slug, "bytes": metadata.st_size,
+                              "modifiedAt": metadata.st_mtime})
         return sorted(items, key=lambda item: item["filename"])
 
     def save(self, slug: str, document: object, expected_sha256: str | None = None) -> dict:
@@ -74,7 +117,7 @@ class ProjectStore:
         try:
             fcntl.flock(lock_fd, fcntl.LOCK_EX)
             try:
-                existing = path.read_bytes() if path.exists() else None
+                existing = self._regular_file_bytes(path)
                 actual = self._hash(existing) if existing is not None else ""
                 # No expected hash means create-only; an explicit matching
                 # hash means intentional overwrite of the loaded version.
