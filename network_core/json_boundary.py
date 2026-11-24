@@ -11,6 +11,8 @@ import math
 
 from .model import ProjectValidationError
 
+MAX_JSON_DEPTH = 64  # Canonical projects and import evidence require far less nesting.
+
 
 def decode_json_document(data: bytes, *, context: str) -> object:
     """Decode one bounded UTF-8 document; reject duplicate keys and invalid text."""
@@ -41,9 +43,12 @@ def decode_json_document(data: bytes, *, context: str) -> object:
 
     # json.loads can decode lone surrogate escapes and overflowed exponents.
     # An iterative traversal avoids a second recursion-depth failure.
-    pending = [document]
+    pending = [(document, 0)]
     while pending:
-        current = pending.pop()
+        current, depth = pending.pop()
+        if depth > MAX_JSON_DEPTH:
+            raise ProjectValidationError(
+                f"{context}: JSON nesting exceeds {MAX_JSON_DEPTH} levels")
         if type(current) is str:
             try:
                 current.encode("utf-8")
@@ -51,10 +56,10 @@ def decode_json_document(data: bytes, *, context: str) -> object:
                 raise ProjectValidationError(
                     f"{context}: invalid Unicode surrogate in JSON text") from None
         elif type(current) is dict:
-            pending.extend(current.keys())
-            pending.extend(current.values())
+            pending.extend((item, depth + 1) for item in current.keys())
+            pending.extend((item, depth + 1) for item in current.values())
         elif type(current) is list:
-            pending.extend(current)
+            pending.extend((item, depth + 1) for item in current)
         elif type(current) is float and not math.isfinite(current):
             raise ProjectValidationError(f"{context}: non-finite JSON number")
     return document
