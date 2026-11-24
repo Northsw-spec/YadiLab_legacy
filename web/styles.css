@@ -144,3 +144,15 @@
 .from-address[aria-invalid="true"]{border-color:#ca7c76;box-shadow:0 0 0 1px #ca7c7628}
 .from-address{font-variant-numeric:tabular-nums}
 @media(max-width:650px){.send-address-pair{grid-template-columns:minmax(0,1fr)}}
+
+.icmp-lesson{border:1px solid var(--line);border-radius:8px;padding:12px;font-size:12px;line-height:1.5}
+.icmp-lesson h4{margin:12px 0 4px;font-size:12px}
+.icmp-lesson h4:first-child{margin-top:0}
+.icmp-lesson p,.icmp-lesson ul{margin:0 0 10px}
+.icmp-lesson ul{padding-left:18px}
+.icmp-lesson fieldset{border:0;margin:0 0 10px;padding:0;min-width:0}
+.icmp-lesson legend{margin-bottom:4px}
+.icmp-lesson fieldset label{display:flex;align-items:baseline;gap:6px;cursor:pointer}
+.icmp-lesson input[type=radio]{accent-color:var(--accent)}
+.icmp-lesson textarea{width:100%;margin:4px 0 8px;resize:vertical;font:inherit}
+.icmp-lesson button{white-space:normal}

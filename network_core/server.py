@@ -33,7 +33,7 @@ from .arp import ArpSession
 from .dhcp import discover_offer, simulate_dora
 from .dhcp_registry import DhcpSessionRegistry
 from .dhcp_investigation import InvestigationRegistry
-from .icmp_investigation import IcmpInvestigationRegistry
+from .icmp_investigation import IcmpInvestigationRegistry, REVERSE_ROUTE_LESSON
 from .simulation import SimulationRegistry
 from .session_idle import CLEANUP_INTERVAL_SECONDS, CLEANUP_JOIN_SECONDS
 from .routing import ConnectedRoutingTable
@@ -215,7 +215,7 @@ class Handler(BaseHTTPRequestHandler):
                           "/features/sessions/icmp-investigation.js",
                           "/features/sessions/dora-session.js",
                           "/features/sessions/simulation-session.js",
-                          "/styles.css"):
+                          "/fixtures/icmp-echo-lesson.json", "/styles.css"):
                 filename = "index.html" if path == "/" else path[1:]
                 data = (WEB / filename).read_bytes()
                 if filename == "index.html":
@@ -354,12 +354,14 @@ class Handler(BaseHTTPRequestHandler):
                            .lookup(body["destinationIpv4"]))
             elif path == "/api/icmp/investigation/start":
                 required = {"project", "sourceNode", "sourcePort", "destinationIpv4", "ttl"}
-                if not isinstance(body, dict) or set(body) != required:
+                if (not isinstance(body, dict) or set(body) not in (required, required | {"lesson"})
+                        or ("lesson" in body and body["lesson"] != REVERSE_ROUTE_LESSON)):
                     raise ProjectValidationError(
-                        "icmp investigation start: expected project, sourceNode, sourcePort, destinationIpv4, ttl")
+                        "icmp investigation start: expected project, sourceNode, sourcePort, "
+                        "destinationIpv4, ttl and optional supported lesson")
                 self._json(200, self.server.icmp_investigations.start(
                     body["project"], body["sourceNode"], body["sourcePort"],
-                    body["destinationIpv4"], body["ttl"]))
+                    body["destinationIpv4"], body["ttl"], lesson=body.get("lesson")))
             elif path == "/api/icmp/investigation/probe":
                 required = {"sessionId", "project", "probe", "target"}
                 if not isinstance(body, dict) or set(body) != required:

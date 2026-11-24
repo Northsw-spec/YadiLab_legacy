@@ -77,7 +77,8 @@ export async function api(path, payload = undefined, {rawJson = false} = {}) {
   // Protocol requests carry only the network projection. The full project
   // remains authoritative for editing, revisions, Save/Open and history.
   const protocol = /^\/api\/(?:trace|troubleshoot\/|routing\/|ipv4\/|icmp\/|dhcp\/|simulation\/|diagnostics\/)/.test(path);
-  if (protocol && payload?.project?.schemaVersion === '1.4') {
+  const exactLesson = path === '/api/icmp/investigation/start' && payload?.lesson !== undefined;
+  if (protocol && !exactLesson && payload?.project?.schemaVersion === '1.4') {
     const {name, zones, nodes, links} = payload.project;
     payload = {...payload, project: {schemaVersion: '1.3', name, zones, nodes, links}};
   }

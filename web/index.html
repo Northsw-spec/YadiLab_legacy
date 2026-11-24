@@ -458,6 +458,52 @@
           <div class="eyebrow">FELSÖKNINGSLABB · ROUTING ELLER LAYER 2?</div>
           <h3>Varför fungerar inte ping mellan två hosts?</h3>
           <p class="muted tiny">Välj en källa och en destination som redan har bevisats nå varandra via verkligt simulerade ICMP Echo Request/Reply. Labbet injicerar ett dolt, separat verifierat fel i dokumenterad kabel, avstängd switchport, VLAN, IPv4-adress eller nätmask; i routade nät även statisk route eller next-hop. Undersök först IP-uppgifter, routingtabeller och faktiska paket. DHCP-adressens ursprung är inte lagrat i projektet och markeras därför som EJ VERIFIERAT – aldrig automatiskt friskförklarat. Allt sker i minnet.</p>
+          <div class="session-actions">
+            <button id="icmp-lesson-load" type="button" class="btn btn-outline">Läs in övningsprojektet</button>
+            <button id="icmp-lesson-start" type="button" class="btn btn-soft" disabled>Starta guidad Om–Då-övning</button>
+          </div>
+          <section id="icmp-lesson" class="icmp-lesson" aria-label="Guidad Om–Då-övning" hidden>
+            <h4>Om [observerat]:</h4>
+            <p id="icmp-lesson-symptom"></p>
+            <h4>Då [vad det faktiskt betyder]:</h4>
+            <p>Framvägen fungerade för det simulerade paketet. Pingutbytet saknar verifierad returleverans.</p>
+            <h4>Möjliga orsaker [inte fastställda/hypoteser]:</h4>
+            <fieldset>
+              <legend>Välj en hypotes att pröva</legend>
+              <label><input type="radio" name="icmp-lesson-hypothesis" value="route"> Ingen aktiv returroute matchar källans IPv4-adress.</label>
+              <label><input type="radio" name="icmp-lesson-hypothesis" value="arp"> En route matchar, men nästa hopp svarar inte på ARP.</label>
+              <label><input type="radio" name="icmp-lesson-hypothesis" value="ipv4"> En IPv4-adress eller dess nätmask är felkonfigurerad.</label>
+            </fieldset>
+            <label for="icmp-lesson-reason">Vilken observation skulle tala emot din hypotes?</label>
+            <textarea id="icmp-lesson-reason" class="control" rows="2" placeholder="Frivillig anteckning för den här övningen"></textarea>
+            <button id="icmp-lesson-review" type="button" class="btn btn-outline full">Gå vidare till mätningar</button>
+            <div id="icmp-lesson-measurements" hidden>
+              <h4 id="icmp-lesson-limits" tabindex="-1">Vad detta inte bevisar:</h4>
+              <p>En utebliven svarspaketleverans räcker inte för att avgöra vilken konfiguration som orsakar felet.</p>
+              <h4>Nästa diagnostiska steg:</h4>
+              <p>Kör ICMP Echo. Slå upp källans IPv4 (192.0.2.10) i routingtabellen på b. Jämför sedan portstatus och IPv4/CIDR på b/eth0 med dokumentationen.</p>
+            </div>
+            <div id="icmp-lesson-interpretation" hidden>
+              <h4>Förväntat resultat och tolkning:</h4>
+              <p>Jämför den valda hypotesen med returuppslaget och portmätningen. En fungerande framväg och oförändrad portkonfiguration räcker inte för att identifiera vilken route som används på returen.</p>
+              <ul>
+                <li><code>NO_ROUTE</code> betyder att ingen aktiv route matchar måladressen i uppslaget.</li>
+                <li><code>MATCH</code> tillsammans med <code>ARP_FAILED</code> i paketspåret betyder att uppslaget lyckades och adressupplösningen misslyckades.</li>
+                <li><code>TTL_EXPIRED</code> visar att paketets TTL tog slut innan vidarebefordran.</li>
+                <li>Ett fel på Echo Request stoppar framvägen. Ett returfel efter <code>DELIVERED</code> uppstår efter att Request nått målet.</li>
+              </ul>
+            </div>
+            <div id="icmp-lesson-action" hidden>
+              <h4>Åtgärd [först efter fastställd orsak]:</h4>
+              <p id="icmp-lesson-action-text"></p>
+            </div>
+            <div id="icmp-lesson-verification" hidden>
+              <h4>Verifiering [fungerar det nu?]:</h4>
+              <p id="icmp-lesson-verification-text" role="status"></p>
+              <h4>Beviskälla och begränsningar:</h4>
+              <p>Paketspåret är <code>SIMULATED</code>. Routing och portstatus är <code>SIMULATED_CONFIG</code> och jämförs med projektets dokumenterade konfiguration. Reply TTL 64 är simulatorns antagande. DHCP-ursprung är <code>UNKNOWN</code> och DHCP-kontrollen är <code>NOT_VERIFIED</code>. Motorresultaten avser övningsprojektet. RTT och verklig nätverkskontakt mäts inte.</p>
+            </div>
+          </section>
           <label for="icmp-investigation-source">Källa med dokumenterad IPv4</label>
           <select id="icmp-investigation-source" class="control"></select>
           <label for="icmp-investigation-from-ip">From · IPv4 (klistra in dokumenterad källadress)</label>

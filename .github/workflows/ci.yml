@@ -28,6 +28,8 @@ jobs:
           python3 -m playwright install --with-deps chromium
       - name: Real Chromium interaction and durable Save/Open
         run: python3 tests/browser_smoke.py
+      - name: Real Chromium guided Echo lesson and durable Save/Open
+        run: python3 tests/browser_icmp_lesson.py
       - name: Real Chromium protected local API capability and Save/Open
         run: python3 tests/browser_api_capability.py
       # X11 PRIMARY is distinct from the normal clipboard and cannot be

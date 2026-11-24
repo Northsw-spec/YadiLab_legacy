@@ -1,0 +1,191 @@
+{
+  "schemaVersion": "1.3",
+  "name": "Övningsprojekt · Ett uteblivet Echo Reply",
+  "zones": [],
+  "nodes": [
+    {
+      "id": "a",
+      "label": "a",
+      "kind": "host",
+      "x": 0,
+      "y": 0,
+      "zoneId": null,
+      "ports": [
+        {
+          "id": "eth0",
+          "name": "eth0",
+          "enabled": true,
+          "ipv4": "192.0.2.10/24",
+          "mac": "02:00:00:00:00:0A"
+        }
+      ],
+      "staticRoutes": [
+        {
+          "id": "via-router",
+          "destination": "203.0.113.0/24",
+          "nextHop": "192.0.2.1",
+          "outPort": "eth0"
+        }
+      ]
+    },
+    {
+      "id": "sw-left",
+      "label": "sw-left",
+      "kind": "switch",
+      "x": 0,
+      "y": 0,
+      "zoneId": null,
+      "ports": [
+        {
+          "id": "a",
+          "name": "a",
+          "enabled": true,
+          "ipv4": null,
+          "vlan": {
+            "mode": "access",
+            "vlan": 10
+          }
+        },
+        {
+          "id": "r",
+          "name": "r",
+          "enabled": true,
+          "ipv4": null,
+          "vlan": {
+            "mode": "access",
+            "vlan": 10
+          }
+        }
+      ]
+    },
+    {
+      "id": "r",
+      "label": "r",
+      "kind": "router",
+      "x": 0,
+      "y": 0,
+      "zoneId": null,
+      "ports": [
+        {
+          "id": "wan",
+          "name": "wan",
+          "enabled": true,
+          "ipv4": "192.0.2.1/24",
+          "mac": "02:00:00:00:00:01"
+        },
+        {
+          "id": "lan",
+          "name": "lan",
+          "enabled": true,
+          "ipv4": "203.0.113.1/24",
+          "mac": "02:00:00:00:00:02"
+        }
+      ]
+    },
+    {
+      "id": "sw-right",
+      "label": "sw-right",
+      "kind": "switch",
+      "x": 0,
+      "y": 0,
+      "zoneId": null,
+      "ports": [
+        {
+          "id": "r",
+          "name": "r",
+          "enabled": true,
+          "ipv4": null,
+          "vlan": {
+            "mode": "access",
+            "vlan": 20
+          }
+        },
+        {
+          "id": "b",
+          "name": "b",
+          "enabled": true,
+          "ipv4": null,
+          "vlan": {
+            "mode": "access",
+            "vlan": 20
+          }
+        }
+      ]
+    },
+    {
+      "id": "b",
+      "label": "b",
+      "kind": "host",
+      "x": 0,
+      "y": 0,
+      "zoneId": null,
+      "ports": [
+        {
+          "id": "eth0",
+          "name": "eth0",
+          "enabled": true,
+          "ipv4": "203.0.113.20/24",
+          "mac": "02:00:00:00:00:0B"
+        }
+      ],
+      "staticRoutes": [
+        {
+          "id": "return-to-a",
+          "destination": "192.0.2.0/24",
+          "nextHop": "203.0.113.1",
+          "outPort": "eth0"
+        }
+      ]
+    }
+  ],
+  "links": [
+    {
+      "id": "la",
+      "a": {
+        "node": "a",
+        "port": "eth0"
+      },
+      "b": {
+        "node": "sw-left",
+        "port": "a"
+      },
+      "enabled": true
+    },
+    {
+      "id": "lr1",
+      "a": {
+        "node": "sw-left",
+        "port": "r"
+      },
+      "b": {
+        "node": "r",
+        "port": "wan"
+      },
+      "enabled": true
+    },
+    {
+      "id": "lr2",
+      "a": {
+        "node": "r",
+        "port": "lan"
+      },
+      "b": {
+        "node": "sw-right",
+        "port": "r"
+      },
+      "enabled": true
+    },
+    {
+      "id": "lb",
+      "a": {
+        "node": "sw-right",
+        "port": "b"
+      },
+      "b": {
+        "node": "b",
+        "port": "eth0"
+      },
+      "enabled": true
+    }
+  ]
+}

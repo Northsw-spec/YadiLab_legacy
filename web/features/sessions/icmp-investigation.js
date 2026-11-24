@@ -98,7 +98,12 @@ export function createIcmpInvestigationController({getContext, onChange}) {
       });
       if (current()) {
         if (!readInputs || readInputs() === signature) apply(data);
-        else {
+        else if (state?.lesson) {
+          // The server may have counted a measurement for an input the student
+          // no longer sees. A fresh lesson must start with an empty evidence gate.
+          invalidate();
+          setInputError('Mätningens mål ändrades. Starta om den guidade övningen.');
+        } else {
           state = data; // The server processed the old input, but it is not current evidence.
           error = path === 'diagnose'
             ? 'En tidigare hypotes behandlades. Avsluta och starta om för tydlig diagnos.'
