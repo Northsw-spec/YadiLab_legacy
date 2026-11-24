@@ -1,6 +1,6 @@
 # Ethernet II: explicita MAC-identiteter och bytebaserade ramar
 
-**Status:** Implementerat och testat som isolerat Python-API. En begränsad 802.1Q C-tagg stöds; VLAN-forwarding kräver en separat explicit Python-session. Inget stöd för IP-paketforwarding.
+**Statuskorrigering 2026-11-24, endast denna modul:** Ethernet II-/802.1Q-codec är implementerad och testad som en avgränsad Pythonkomponent; **denna codec** utför inte IPv4-forwarding. Separata delar av applikationen stödjer dock begränsade IPv4-/ICMP-spår. Se [IPV4_FORWARDING.md](IPV4_FORWARDING.md) och [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).
 
 ## Kontrakt
 
