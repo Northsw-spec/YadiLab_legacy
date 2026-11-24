@@ -1,4 +1,4 @@
-# Pedagogisk felsökningsarkitektur – evidens, orsak och lärande
+# YadiLab – pedagogisk felsökningsarkitektur: evidens, orsak och lärande
 
 **Datum:** 2026-11-24 (ISO)  
 **Beslut:** Bindande produkt- och undervisningskontrakt för framtida *uttryckligen beställd* pedagogik.  
