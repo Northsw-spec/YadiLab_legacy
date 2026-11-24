@@ -2,6 +2,8 @@
 
 ## Verifierad status och dokumentationsföreträde
 
+**Licensgräns:** Repositoryt är publikt men har **ännu ingen vald licens för förstapartskoden**; README och [GitHub-issue #115](https://github.com/Northsw-spec/YadiLab/issues/115) beskriver detta. Kalla inte hela appen juridiskt open-source-licensierad och lägg inte till en root-LICENSE utan rättighetsinnehavarens godkännande. Vendorlicensen för `elkjs` är separat.
+
 **Läs [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md)** före ny planering, felsökning eller protokollimplementering. Dokumentet förklarar tidsstämplad kod-/PR-status och vilka äldre anteckningar som är historik. Det ersätter **inte** aktuell källkod, tekniska kontrakt, användarbeslut eller CI-HEAD. Vid konflikt mellan gammal text och verklig kod: stoppa den riskabla ändringen, verifiera, rätta dokumentationen – gissa inte. Pedagogikplanen beskriver en beslutad framtida funktion, inte en befintlig komplett Incidentverkstad.
 
 ## Samlad kvalitetsfärdplan mot 10/10

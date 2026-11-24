@@ -10,8 +10,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6 (tag resolved 2026-11-24)
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7 (tag resolved 2026-11-24)
         with:
           python-version: '3.13'
       - name: Install real X11 and Chromium
