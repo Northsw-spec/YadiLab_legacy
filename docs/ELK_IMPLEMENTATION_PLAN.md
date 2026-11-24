@@ -1,6 +1,8 @@
-# ELK-arkitekturen – kodstyrd genomförandeplan
+# ELK-arkitekturen – historisk kodplan och giltiga layoutinvariants
 
-**Status:** bindande genomförandebilaga för ELK och SVG i detta repository.  
+> **AKTUELL STATUSKORRIGERING 2026-11-24 (LÄS FÖRE ALLA ARBETSKORT):** ELK-06A, ELK-06B och ELK-06C är redan **squash-mergade** genom PR #94–#96 den 2026-11-22. Den tidigare baslinjens påståenden om att strikt CSV/XLSX/ODS fortfarande kräver X/Y, att automatisk första ELK saknas och att export fortfarande skriver X/Y är **historiska och felaktiga som nutidsbeskrivningar**. Äldre ”nästa PR”-instruktioner och prioritetstabeller i denna fil är **arkiverade arbetskort, inte nya exekverbara order**. Kontrollera aktuell kod, [SPREADSHEET_V13.md](SPREADSHEET_V13.md), [AGENTS.md](../AGENTS.md) och tester vid framtida korrigeringar. Bevara bakåtkompatibilitet, kanonisk projektgeometri, importkvitton, ELK-worker, SVG och separat Save. Nya koduppdrag följer fortfarande QUALITY-roadmap och separat användarbeslut. Pedagogikbeslutet [PEDAGOGICAL_TROUBLESHOOTING_PLAN.md](PEDAGOGICAL_TROUBLESHOOTING_PLAN.md) **ändrar inte** ELK-motorn.
+
+**Status:** Historisk ELK-arbetskö från 2026-11-22; tekniska dataintegritets- och layoutinvariants gäller fortsatt, men genomförda 06A–C är INTE framtida arbetsorder.  
 **Version:** 2.0, 2026-11-22.  
 **Nulägesankare:** `main@eac31c4b8e47b021f1b67dc66aab22165cc83afc`; kontrollera ny HEAD inför varje PR.  
 **Prioritering:** **fungerande produktionskod snabbt**, inte fristående forskning, rapporter eller teoretiska prototyper.  
@@ -358,7 +360,7 @@ Samtliga **A, B och C måste vara MERGED med PASS** innan ELK-06 som helhet kan 
 
 **Arbetsordning är obligatorisk:** börja med 06A, sedan 06B, sedan 06C. Varje kod-PR ska innehålla funktion och relevanta tester, inte enbart dokumentation. Om en etapp redan är bevisat implementerad ska den hoppas över och nästa kodetapp väljas. Ingen parallell forskningsgren, inte 14 PR:er för 14 rubriker.
 
-## 8. Codex-direktiv – första verkliga kodleveransen
+## 8. ARKIVERAT Codex-direktiv – ELK-06A har redan mergats, FÅR INTE startas om
 
 > **Uppgift (ELK-06A):** Detta är ett **implementationsuppdrag**, inte forskning. Läs `AGENTS.md`, `docs/MASTERPROMPT.md` och ELK-06A/B/C i `docs/ELK_IMPLEMENTATION_PLAN.md`. Kontrollera aktuell `main`, befintliga öppna PR:er och exakt CI en gång. **Ändra produktionskod nu** så att den äldre strikta CSV-/XLSX-/ODS-importen (både schema 1.0 och 1.3) fungerar med helt giltiga nätverksdokument vars `Devices`-tabell endast innehåller `id,label,kind,zoneId` (och alltså **inga X/Y-kolumner**). Gör ett strikt val mellan exakt den nya headern och den tidigare kompletta 6-kolumners-varianten för bakåtkompatibilitet; avvisa en ensam X/Y, okända och dubblerade fält. Härled temporär intern geometri deterministiskt före `validate_project()`, utan att skapa en andra layoutmotor, något nätverksfaktum, någon fysisk kabel eller en ny schemaVersion. Bevara verklig XLSX-/ODS-typvalidering, ZIP/XML-skydd, explicit VLAN/MAC/IP/routes, kanoniska ID:n och alla negativa fel. **Ändra inte `import_plan.node_layout()`, `import_evidence.py` eller historiska importkvitton.** Skriv och kör riktiga positiva/negativa CSV-, OOXML- och ODF-tester (schema 1.0 och 1.3), samt relevant HTTP/Chromium-import/Save/Open. En enda liten PR för verklig kod och dess tester, ingen research- eller test-only-PR. Merge endast när samtliga obligatoriska kontroller PASS på exakt HEAD, annars lämna PR öppen med konkret blockerare. **Fortsätt därefter med ELK-06B**, inte med en rapport.
 
