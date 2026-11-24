@@ -12,7 +12,9 @@ import unittest
 
 ROOT = Path(__file__).resolve().parent.parent
 ACTION_REF = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+@[a-f0-9]{40}$")
-USES = re.compile(r"(?m)^\s*-\s*uses:\s*(\S+)")
+# GitHub supports both "- uses: action@sha" and "- name: ...\n  uses:"
+# style. Missing the latter previously let unpinned upload-artifact@v4 pass.
+USES = re.compile(r"(?m)^\s*(?:-\s*)?uses:\s*(\S+)")
 
 
 class WorkflowSupplyChainTests(unittest.TestCase):
@@ -39,6 +41,24 @@ class WorkflowSupplyChainTests(unittest.TestCase):
             checkout = re.compile(r"(?m)^\s*- uses: actions/checkout@[a-f0-9]{40}[^\n]*\n"
                                   r"\s+with:\n\s+persist-credentials: false(?:\n|$)")
             self.assertRegex(content, checkout, f"{path.name}: checkout credentials persisted")
+
+    def test_named_step_uses_is_not_skipped(self):
+        sample = ("steps:\n"
+                  "  - name: Upload\n"
+                  "    uses: actions/upload-artifact@v4\n"
+                  "  - uses: actions/checkout@" + "1" * 40 + "\n")
+        found = USES.findall(sample)
+        self.assertEqual(len(found), 2)
+        self.assertEqual(found[0], "actions/upload-artifact@v4")
+        self.assertFalse(ACTION_REF.fullmatch(found[0]))
+        self.assertTrue(ACTION_REF.fullmatch(found[1]))
+
+    def test_benchmark_workflows_do_not_depend_on_retired_push_branches(self):
+        for name in ("camera-performance.yml", "svg-performance.yml"):
+            body = (ROOT / ".github" / "workflows" / name).read_text("utf-8")
+            self.assertIn("  workflow_dispatch:", body)
+            self.assertNotIn("perf/svg-camera-raf-2026-11-22", body)
+            self.assertNotIn("perf/svg-indexed-render-2026-11-22", body)
 
     def test_reject_unpinned_action_examples(self):
         self.assertFalse(ACTION_REF.fullmatch("actions/checkout@v4"))
