@@ -1,0 +1,10 @@
+CONTROLLED BRANCH PROTECTION NEGATIVE TEST — 2026-11-24
+
+This one-off test-only artifact exists only on the temporary PR head.
+It must NEVER be merged into main.
+The branch is deliberately based on the previous main commit
+630c6d96a1b32783ad6c6bc7eac513249166cdc1,
+while main is at b055f724806562209a6cc456dc98973309ef4172.
+Expected GitHub-hosted ruleset outcome: strict up-to-date required checks
+preclude merging a stale PR even if unit-tests pass.
+After recording evidence: CLOSE WITHOUT MERGE and delete this temp branch.
