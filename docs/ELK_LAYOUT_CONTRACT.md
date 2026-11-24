@@ -1,5 +1,7 @@
 # Local automatic diagram layout – presentation contract
 
+> **Status 2026-11-24:** Automatic first layout and coordinate-free strict CSV/XLSX/ODS import/export were delivered in ELK-06A–C (merged PR #94–#96). Earlier future-tense requirements below describe enforced behavior, not missing implementation. The Worker/ELK/SVG presentation layer must not change topology. Teaching architecture is documented separately in [PEDAGOGICAL_TROUBLESHOOTING_PLAN.md](PEDAGOGICAL_TROUBLESHOOTING_PLAN.md); no new motor is authorized.
+
 ## Purpose and boundaries
 
 ELK calculates presentation geometry only; it never creates or changes network
@@ -32,7 +34,7 @@ main-thread fallback.
 
 The following steps describe **already implemented** voluntary
 Preview/Apply/Cancel. They are **not** the target flow after accepting a new
-network-document import. ELK-06 must automatically perform the first layout
+network-document import. ELK-06B already performs the first automatic layout
 and display the result without an extra Preview/Apply click; it must still
 require separate Save.
 
