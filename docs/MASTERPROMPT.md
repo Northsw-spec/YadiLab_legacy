@@ -20,7 +20,7 @@ Detta direktiv gäller all framtida kodning i detta repository. Läs även `AGEN
 
 ## Pedagogisk målarkitektur – bindande produktbeslut 2026-11-24
 
-**Normerande pedagogikdokument:** [PEDAGOGICAL_TROUBLESHOOTING_PLAN.md](PEDAGOGICAL_TROUBLESHOOTING_PLAN.md). Detta beslut breddar **vad appen lär ut**, inte automatiskt vad native-simulatorn stöder. Primärmål: lära blivande leverantörsoberoende IT-/nätverkskonsulter hur man observerar, tolkar, hypotesprövar, diagnostiserar, förstår trafikbeslut, avgränsar fel, verifierar och dokumenterar. YadiLab ska göra det osynliga nätverksbeteendet begripligt, utan att låtsas modellera mer än kod och oberoende tester styrker.
+**Normerande pedagogikdokument:** [PEDAGOGICAL_TROUBLESHOOTING_PLAN.md](PEDAGOGICAL_TROUBLESHOOTING_PLAN.md). Detta beslut breddar **vad appen lär ut**, inte automatiskt vad native-simulatorn stöder. Primärmål: lära blivande leverantörsoberoende IT-/nätverkskonsulter hur man observerar, tolkar, hypotesprövar, diagnostiserar, förstår trafikbeslut, avgränsar fel, verifierar och dokumenterar. Applikationen ska göra det osynliga nätverksbeteendet begripligt, utan att låtsas modellera mer än kod och oberoende tester styrker.
 
 **EXAKT mallen för genomarbetade felsökningsfall:**
 
@@ -36,7 +36,7 @@ Detta direktiv gäller all framtida kodning i detta repository. Läs även `AGEN
 
 Skriv **Då** enbart som teknisk slutsats som faktiskt följer av **Om** under angivna förutsättningar. Skilj hypoteser från observerad och styrkt orsak. Visa vad som skulle motbevisa en hypotes och vad testets positiva/negativa utfall betyder. Visa de tre första rubrikerna direkt och övriga stegvis. Ingen fabricerad kundtelemetri, ingen påhittad terminalutdata eller falsk paketresa. Undvik godtyckliga procenttal; elevens självskattning är inte ett kalibrerat orsaksestimat.
 
-**Uttrycklig gräns:** Batfish, SuzieQ, Netshot, NetXMS, Wireshark, FRRouting, containerlab och liknande är *externa fristående undervisnings- och labbverktyg*. YadiLab får visa manuella kommandon, granskade statiska exempel och när verktyget är lämpligt, men **ska inte** integrera, paketera, anropa, köra eller läsa live-utdata från verktygen. Inga nya tredjepartsbibliotek, SDK-/API-adaptrar, sniffers, SSH/SNMP-scanners, shell-exekvering, containers, forks eller nya simulatormotorer beslutas här. OSPF/BGP/STP/SNMP/ACL/NAT kan vara **kursinnehåll** men får inte presenteras som native-simulering utan separat godkänt, testat protokollkontrakt.
+**Uttrycklig gräns:** Batfish, SuzieQ, Netshot, NetXMS, Wireshark, FRRouting, containerlab och liknande är *externa fristående undervisnings- och labbverktyg*. Applikationen får visa manuella kommandon, granskade statiska exempel och när verktyget är lämpligt, men **ska inte** integrera, paketera, anropa, köra eller läsa live-utdata från verktygen. Inga nya tredjepartsbibliotek, SDK-/API-adaptrar, sniffers, SSH/SNMP-scanners, shell-exekvering, containers, forks eller nya simulatormotorer beslutas här. OSPF/BGP/STP/SNMP/ACL/NAT kan vara **kursinnehåll** men får inte presenteras som native-simulering utan separat godkänt, testat protokollkontrakt.
 
 **Sanningsgräns:** en källdokumenterad topologi, en simulerad Echo-transmission, ett statiskt Wireshark-exempel och ett verkligt observerat kundnät är fyra olika evidensklasser. Använd befintliga statusklasser och källproveniens; skapa inte ett alternativt projektschema. En route lookup ensam bevisar inte reachability. Utgå från dagens `network_core/`, befintliga dolda felövningar och en kanonisk modell. Bevara allt fungerande.
 
