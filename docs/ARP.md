@@ -16,6 +16,14 @@ Builder visar status (`RESOLVED`, `NO_REPLY`, `UNKNOWN`, `NO_ACTIVE_LINK`), fakt
 
 Den tidigare `/api/diagnostics/arp` fortsätter avsiktligt att skapa en ny, isolerad session per anrop. För **stegvis felsökning** tillhandahåller `/api/simulation/start`, `/api/simulation/run`, `/api/simulation/reset` och `/api/simulation/stop` en uttryckligen startad, tillfällig session som delar exakt samma `ArpSession` och `EthernetFabric` under flera ARP-/Ethernetoperationer. Detta möjliggör observerbara cacheträffar och switch-MAC-inlärning utan dubbla forwardingmotorer. HTTP-servern avvisar ändrat projekt, okända sessioner och ogiltiga operationer; klienten avslutar sessionen när dokumentationen redigeras. Se [SIMULATION_SESSION.md](SIMULATION_SESSION.md) för kontrakt, begränsningar och felutfall.
 
+### ARP och specialadressrymder – negativt protokollkontrakt (2026-11-24)
+
+Den snäva Ethernet-/IPv4-ARP-modellen får **inte** rapportera ett simulerat ARP-svar med fysisk trådleverans för 127.0.0.0/8 (loopback), 0.0.0.0/8 ("this network") eller adresser markerade reserverade av IPv4-adressklassen (t.ex. 240/4). [RFC 1122 §3.2.1.3](https://www.rfc-editor.org/rfc/rfc1122.html) anger att loopback inte ska förekomma utanför en värd; [IANA:s specialadressregister](https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml) anger särskilda regler för övriga prefix. Däremot ska **ursprunglig felaktig konfiguration fortfarande vara möjlig att dokumentera** i ett projekt; det är paket-/ARP-motorn som avvisar det falska påståendet om trådleverans.
+
+**Kvarvarande begränsning:** Enligt RFC 5227 kan ARP-probing i verkliga nätverk använda `0.0.0.0` som avsändar-IP. Detta beteende ingår **inte** i denna smala ARP-simulator; ett avvisat `0.0.0.0` här betyder inte att användningen är förbjuden i all verklig ARP-trafik. DHCP:s separata BOOTP/UDP-modell med `0.0.0.0` vid DISCOVER ändras inte.
+
+Oberoende positiva/negativa regressioner: `tests/test_arp_special_addresses.py`, inklusive att direkt 169.254/16 på samma VLAN, RFC1918 och TEST-NET fortsatt fungerar. **Acceptans kräver full obligatorisk CI på exakt PR-HEAD; inget allmänt ARP-/IPv4-compliancepåstående.**
+
 ### Sanningsgränser och negativa beteenden
 
 - `RESOLVED` betyder att denna **begränsade simulerade ARP-utväxling** fick ett svar över deklarerade Ethernetlänkar, inte att IP-paket eller ping kan nå destinationen.
