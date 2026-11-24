@@ -37,6 +37,7 @@ from .routing import ConnectedRoutingTable
 from .ipv4 import IPv4Trace
 from .icmp_ping import EchoExchange
 from .troubleshooting import compare_link_fault, compare_fault
+from .json_boundary import decode_json_document
 from .storage import ProjectConflictError, ProjectStore
 
 WEB = Path(__file__).resolve().parent.parent / "web"
@@ -131,10 +132,7 @@ class Handler(BaseHTTPRequestHandler):
             raise ProjectValidationError("request: invalid Content-Length") from None
         if not 0 <= size <= MAX_BODY:
             raise ProjectValidationError("request: PAYLOAD_LIMIT: body missing or larger than 8 MiB")
-        try:
-            return json.loads(self.rfile.read(size))
-        except (UnicodeDecodeError, json.JSONDecodeError):
-            raise ProjectValidationError("request: invalid JSON") from None
+        return decode_json_document(self.rfile.read(size), context="request")
 
     def _respond_error(self, error: Exception) -> None:
         if isinstance(error, ProjectConflictError):
