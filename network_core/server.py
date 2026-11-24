@@ -4,9 +4,12 @@ from __future__ import annotations
 import argparse
 import base64
 import errno
+import hmac
 from html import escape
 import json
 import mimetypes
+import re
+import secrets
 import sys
 import webbrowser
 from threading import Event, Thread
@@ -54,11 +57,19 @@ class LabHTTPServer(ThreadingHTTPServer):
     daemon_threads = True
 
     def __init__(self, address: tuple[str, int], store: ProjectStore,
-                 *, clock=monotonic, cleanup_interval: float = CLEANUP_INTERVAL_SECONDS):
+                 *, clock=monotonic, cleanup_interval: float = CLEANUP_INTERVAL_SECONDS,
+                 auth_token: str | None = None):
         if address[0] != "127.0.0.1":
             raise ValueError("local HTTP server must bind to 127.0.0.1")
         if cleanup_interval <= 0:
             raise ValueError("cleanup interval must be positive")
+        if auth_token is not None and (
+                type(auth_token) is not str or
+                re.fullmatch(r"[A-Za-z0-9_-]{40,128}", auth_token) is None):
+            raise ValueError("auth_token must be a sufficiently long URL-safe capability")
+        # Low-level test harnesses may explicitly construct an unprotected
+        # server. The supported normal CLI always supplies a random token.
+        self.auth_token = auth_token
         self.store = store
         self.simulations = SimulationRegistry(clock=clock)
         self.dhcp_sessions = DhcpSessionRegistry(clock=clock)
@@ -114,7 +125,26 @@ class Handler(BaseHTTPRequestHandler):
         if not allowed:
             self._json(HTTPStatus.FORBIDDEN, {
                 "error": "FORBIDDEN", "message": "Local HTTP origin is not allowed"})
-        return allowed
+            return False
+
+        # URL decoding for GET occurs after this guard. Apply the capability
+        # check to the decoded API path too, so encoded spellings cannot
+        # bypass it. The health check and PUBLIC demo templates contain no
+        # user projects. All other API reads and writes require the key.
+        api_path = unquote(urlsplit(self.path).path)
+        public = {"/api/health", "/api/templates/xlsx", "/api/templates/ods"}
+        if (self.server.auth_token is not None and
+                (api_path == "/api" or api_path.startswith("/api/")) and
+                api_path not in public):
+            values = self.headers.get_all("Authorization", [])
+            authorized = (len(values) == 1 and hmac.compare_digest(
+                values[0], "Bearer " + self.server.auth_token))
+            if not authorized:
+                self._json(HTTPStatus.UNAUTHORIZED, {
+                    "error": "AUTH_REQUIRED",
+                    "message": "A local process access key is required"})
+                return False
+        return True
 
     def _json(self, code: int, data: dict | list) -> None:
         body = json.dumps(data, ensure_ascii=False, allow_nan=False).encode("utf-8")
@@ -540,6 +570,8 @@ def main(argv: list[str] | None = None) -> None:
                         help="local TCP port; default 8765 with automatic fallback if busy")
     parser.add_argument("--data-dir", type=Path, default=Path.home() / ".local" / "share" / "network-projects")
     parser.add_argument("--no-browser", action="store_true")
+    parser.add_argument("--unsafe-test-no-auth", action="store_true",
+                        help="INSECURE: bypass API capability for isolated regression tests only")
     args = parser.parse_args(argv)
     if args.port is not None and not 0 <= args.port <= 65535:
         parser.error("port must be between 0 and 65535")
@@ -547,10 +579,14 @@ def main(argv: list[str] | None = None) -> None:
     # default port may fall back to a short, deterministic localhost range.
     candidates = ([args.port] if args.port is not None
                   else range(DEFAULT_PORT, min(65536, DEFAULT_PORT + DEFAULT_PORT_CANDIDATES)))
+    # Per-process high-entropy key. Never embed it in a browser URL, static
+    # HTML, a project document, or a long-lived on-disk file.
+    access_key = None if args.unsafe_test_no_auth else secrets.token_urlsafe(32)
     server = None
     for candidate in candidates:
         try:
-            server = LabHTTPServer(("127.0.0.1", candidate), ProjectStore(args.data_dir))
+            server = LabHTTPServer(("127.0.0.1", candidate), ProjectStore(args.data_dir),
+                                   auth_token=access_key)
             break
         except OSError as error:
             if error.errno != errno.EADDRINUSE:
@@ -566,6 +602,11 @@ def main(argv: list[str] | None = None) -> None:
     url = f"http://127.0.0.1:{server.server_port}/"
     print(f"{config.APP_NAME} {__version__} at {url}", flush=True)
     print(f"Projects stored in {server.store.root}", flush=True)
+    if access_key is not None:
+        print(f"Local API access key (this run only): {access_key}", flush=True)
+        print("Enter this key in the browser dialog; do not share or log it.", flush=True)
+    else:
+        print("WARNING: local API is UNPROTECTED (test-only mode).", file=sys.stderr)
     if not args.no_browser:
         webbrowser.open(url)
     try:
