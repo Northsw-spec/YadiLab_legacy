@@ -217,6 +217,12 @@ class Handler(BaseHTTPRequestHandler):
             body = self._read_json()
             if path == "/api/validate":
                 self._json(200, {"project": validate_project(body)})
+            elif path == "/api/json/strict":
+                # Return read-only JSON that has passed the SAME strict byte
+                # decoder as project Save/Open: no duplicate keys, invalid
+                # UTF-8, non-finite values or malformed surrogate characters.
+                # Used for manually imported mapping profiles/source bundles.
+                self._json(200, {"document": body})
             elif path == "/api/import/csv":
                 self._json(200, {"project": import_csv_tables(body)})
             elif path == "/api/import/inspect":

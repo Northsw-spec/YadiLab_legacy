@@ -39,13 +39,16 @@ export async function prepareImport(files, kind, projectName) {
   }
   if (kind === 'project') {
     if (files[0].size > 8 * 1024 * 1024) throw new Error('Filen är större än 8 MiB.');
-    return {path: '/api/validate', payload: JSON.parse(await decodeUtf8(files[0]))};
+    // Send the original project bytes, including duplicate JSON members, to
+    // the strict server decoder. Browser JSON.parse would discard them first.
+    return {path: '/api/validate',
+      payload: new Uint8Array(await files[0].arrayBuffer()), rawJson: true};
   }
   throw new Error('Okänt importformat.');
 }
 
 export function submitImport(prepared) {
-  return api(prepared.path, prepared.payload);
+  return api(prepared.path, prepared.payload, {rawJson: prepared.rawJson === true});
 }
 
 export async function prepareProjectExport(serializedProject) {

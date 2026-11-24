@@ -106,6 +106,16 @@ Enligt `QUALITY_IMPROVEMENT_PLAN.md` är QUALITY-002 `CONFIGURED / ENFORCEMENT N
 - **R-008, licensval blockerad:** GitHubs repo-API rapporterar `private=false` och `license=null`; ingen root-`LICENSE`. [Issue #115](https://github.com/Northsw-spec/YadiLab/issues/115) kräver rättighetsinnehavarens uttryckliga licensval. Public GitHub-hosting och separat ELK-vendorlicens räcker inte för att kalla förstapartskoden OSI-licensierad.
 - **R-009, operativ gräns:** OSPF, BGP, SNMP, STP, ACL, NAT och Wi-Fi är **UNSUPPORTED som native motorer**. Ingen testvektor kan bevisa korrekthet för icke-implementerade protokoll. Framtida lärandematerial får referera manuella externa verktyg men får inte beskriva dessa som installerade eller integrerade.
 
+## 4B. F-003 – uppladdad JSON kunde normaliseras innan strikt servervalidering
+
+**Om [observerat]:** `prepareImport(kind='project')` i `web/features/projects/transfer.js` använde `JSON.parse` på användarens JSON-/projektfil innan `/api/validate` anropades. `web/features/projects/import-review.js` använde motsvarande mönster för importerade mappningsprofiler och originalkällpaket. `File.text()` kan dessutom ersätta felaktiga UTF-8-sekvenser.
+
+**Då [vad det faktiskt betyder]:** Standard-`JSON.parse` behåller det sista värdet för en duplicerad medlemsnyckel. Serverns nya strikta parser från PR #111 ser därför *inte* originalets två olika värden om browsern redan har ersatt dem – ett faktiskt källtrogenhetsglapp. Ett grönt serversidetest av rå JSON är inte bevis för att användaren får samma avvisning vid import via UI.
+
+**Möjliga orsaker [inte fastställda/hypoteser]:** Ett externt verktyg som skapat tvetydig JSON, exporterarfel eller avsiktlig manipulation. Ingen specifik användares källa eller nätverk pekas ut.
+
+**Avgränsad korrigering:** Läs hela ursprungsfilen som `Uint8Array` och skicka bytesen direkt till samma strikta serverdecoder i `/api/validate`. För mappningsprofiler och källpaket finns ett read-only `/api/json/strict` som returnerar validerat JSON utan att skapa projekt eller persistera. Centrala `web/services/api.js` ska endast acceptera lokala relativa `/api/...`-adresser, inte HTTP(S)/protocol-relative, dot-segment eller query-URL:er. Nio nya Python-/Node-tester provar originalbytes, 422 för duplicerade nycklar/ogiltig UTF-8, positiv giltig JSON och lokala API-gränser. **Status: NOT_VERIFIED tills exakt slutlig PR HEAD och båda required CI-checks PASS.**
+
 ## 5. Beslutsgrind och gräns för uttrycket ”verifierat rent”
 
 För **exakt den testade committen** kan följande hävdas först efter relevanta gröna tester: källkodens definierade JSON-ingångar avvisar ovanstående fall; specificerade tidigare Python/Node/Chromium/X11/ELK-regressioner rapporterar PASS; inga andra filtyper i PR #111 ändras förutom avgränsad kod, nytt test och denna rapport.

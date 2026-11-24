@@ -5,6 +5,8 @@
 **Kodbas:** `detta repository`, referens-`main` `17acb51c8c64c3b4b7a1026514cb8b0a2177a127`.  
 **Omfattning:** Hela den beslutade funktionen för tabellinspektion, explicit fältmappning, ofullständig nätverksdokumentation, proveniens, import, profilåteranvändning och slutacceptans. Funktionerna är målkrav, inte statuspåståenden.
 
+> **Uppladdade JSON-källor, nytt fail-closed-skydd 2026-11-24:** Projektdokument, mappningsprofiler och historiska originalkällpaket är *separata befintliga användarimportflöden* från CSV/XLSX/ODS-mappningsplanen nedan. Dessa uppladdningar måste behålla originalbytes fram till strikta serveravkodningen, eftersom webbläsarens `JSON.parse` annars kan ersätta duplicerade objektmedlemmar innan servern granskar dem. Ett läsande `/api/json/strict` är en valideringsgräns för redan stödd JSON-import och **ger inte** mandat att lägga till en ny datamodell, nätverksskanner eller generell CSV-/källimporterare. Framtida status beror på exakt PR/CI-acceptans, inte denna plantext.
+
 ## 1. Prioritet och ansvar
 
 1. `AGENTS.md` och `docs/MASTERPROMPT.md` gäller övergripande. För **etapp 4** anger detta dokument det detaljerade, versionshanterade funktionskontraktet.
