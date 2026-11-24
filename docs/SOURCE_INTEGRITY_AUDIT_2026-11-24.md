@@ -99,6 +99,13 @@ Enligt `QUALITY_IMPROVEMENT_PLAN.md` är QUALITY-002 `CONFIGURED / ENFORCEMENT N
 
 **Förbjudet:** sänka tester, tysta undantag, automatiskt reparera brutna JSON-fakta, utöka schema eller ändra sparad projektfil för att testet ska bli grönt.
 
+## 4A. Utökad granskning av protokolladressrymd och leverantörskedja, 2026-11-24
+
+- **R-006, korrigerad delmängd:** Den särskilda IPv4-dataplanmodellen saknade explicit avvisning av wire-unicast i 127/8 respektive 0/8 och blockerade inte RFC 3927-trafik via gateway. PR #114 tillför sex oberoende positiva/negativa tester och en minimal fail-closed-korrigering. Båda obligatoriska PR-HEAD-kontrollerna SUCCESS på `7e7179a868a9ca97ae03e941fee4917a65dd99e8`, merge `50772ef42f5284c88ee65aca1d6d128829d8b5d7`. Direkt same-link 169.254/16 fortsätter fungera. Ingen generell IPv4-certifiering följer.
+- **R-007, supply-chain-risk:** Fem workflows använde rörliga `actions/*@vN`-refs. En separat CI-säkerhetsändring SHA-låser dessa till specifika commitobjekt hämtade från GitHub; kräver fullständig testkedja på final HEAD innan ACCEPTED. Dessutom införs explicit minimal `GITHUB_TOKEN`-behörighet och oförändrade leverantörsbytes verifieras mot en redan dokumenterad SHA-256. Detta är inte en komplett säkerhetsrevision av actions eller av Pythonpaket.
+- **R-008, licensval blockerad:** GitHubs repo-API rapporterar `private=false` och `license=null`; ingen root-`LICENSE`. [Issue #115](https://github.com/Northsw-spec/YadiLab/issues/115) kräver rättighetsinnehavarens uttryckliga licensval. Public GitHub-hosting och separat ELK-vendorlicens räcker inte för att kalla förstapartskoden OSI-licensierad.
+- **R-009, operativ gräns:** OSPF, BGP, SNMP, STP, ACL, NAT och Wi-Fi är **UNSUPPORTED som native motorer**. Ingen testvektor kan bevisa korrekthet för icke-implementerade protokoll. Framtida lärandematerial får referera manuella externa verktyg men får inte beskriva dessa som installerade eller integrerade.
+
 ## 5. Beslutsgrind och gräns för uttrycket ”verifierat rent”
 
 För **exakt den testade committen** kan följande hävdas först efter relevanta gröna tester: källkodens definierade JSON-ingångar avvisar ovanstående fall; specificerade tidigare Python/Node/Chromium/X11/ELK-regressioner rapporterar PASS; inga andra filtyper i PR #111 ändras förutom avgränsad kod, nytt test och denna rapport.
