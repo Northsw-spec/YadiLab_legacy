@@ -100,6 +100,10 @@ class IPv4Trace:
             device_id, ingress_or_source_port = endpoint
             received_packet = packet
             device = self.nodes[device_id]
+            if hop and (ipaddress.IPv4Address(packet.source).is_link_local or
+                        ipaddress.IPv4Address(packet.destination).is_link_local):
+                return finish("LINK_LOCAL_ROUTING_FORBIDDEN",
+                              "RFC 3927 forbids routers from forwarding IPv4 link-local source or destination packets.")
             if hop and device["kind"] != "router":
                 return finish("NON_ROUTER", "A non-router endpoint does not forward transit IPv4 packets.")
             if hop:
@@ -120,6 +124,11 @@ class IPv4Trace:
             if route["status"] == "AMBIGUOUS":
                 return finish("AMBIGUOUS_ROUTE", "Equally specific routes exist; no route preference is invented.")
             chosen = route["selectedRoute"]
+            if (hop == 0 and chosen["type"] == "STATIC" and
+                    (ipaddress.IPv4Address(packet.source).is_link_local or
+                     ipaddress.IPv4Address(packet.destination).is_link_local)):
+                return finish("LINK_LOCAL_ROUTING_FORBIDDEN",
+                              "IPv4 link-local packets must not be sent to a router for forwarding (RFC 3927).")
             out_port = chosen["outInterface"]["port"]
             if hop == 0 and out_port != source_port:
                 return finish("SOURCE_INTERFACE_MISMATCH", "Chosen route exits another port; the supplied source interface cannot be silently replaced.")
