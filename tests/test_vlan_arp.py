@@ -240,11 +240,17 @@ class VlanArpTests(unittest.TestCase):
             self.assertEqual(fresh.resolve("a", "eth0", "192.0.2.30")["status"],
                              "NO_REPLY")
 
-    def test_duplicate_ip_is_still_fail_closed_even_across_vlans(self):
+    def test_duplicate_ip_is_still_fail_closed_when_same_vlan_is_reached(self):
+        # With c moved into VLAN 10, both b and c are observable ARP
+        # responders for .20; the resolver must not invent a unique owner.
         project = network()
         project["nodes"][3]["ports"][0]["ipv4"] = "192.0.2.20/24"
-        with self.assertRaisesRegex(ProjectValidationError, "duplicate declared"):
-            ArpSession(project, interface_macs=bindings(), vlan_ports=star_vlans())
+        ports = star_vlans()
+        ports[("sw", "p3")] = {"mode": "access", "vlan": 10}
+        session = ArpSession(project, interface_macs=bindings(), vlan_ports=ports)
+        with self.assertRaisesRegex(ProjectValidationError, "ambiguous duplicate IPv4 responders"):
+            session.resolve("a", "eth0", "192.0.2.20")
+        self.assertEqual(session.arp_table("a", "eth0"), {})
 
     def test_legacy_unsegmented_behavior_and_output_still_intact(self):
         session = ArpSession(network(), interface_macs=bindings())
