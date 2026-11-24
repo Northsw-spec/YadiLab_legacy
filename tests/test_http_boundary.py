@@ -161,3 +161,89 @@ class LocalHTTPBoundaryTests(unittest.TestCase):
         status, response_headers, _ = self.request("OPTIONS", "/api/save", headers)
         self.assertEqual(status, 403)
         self.assertNotIn("Access-Control-Allow-Origin", response_headers)
+
+
+class ProtectedLocalAPITests(unittest.TestCase):
+    """Private loopback project APIs require a per-process capability."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.store = ProjectStore(Path(self.temp.name))
+        self.key = "Z" * 43  # Only a fake test key; CLI uses a CSPRNG.
+        self.server = LabHTTPServer(("127.0.0.1", 0), self.store, auth_token=self.key)
+        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.thread.start()
+        self.host = f"127.0.0.1:{self.server.server_port}"
+
+    def tearDown(self):
+        self.server.shutdown()
+        self.server.server_close()
+        self.thread.join(timeout=4)
+        self.temp.cleanup()
+
+    def request(self, method, path, extra=(), data=None):
+        payload = None if data is None else json.dumps(data).encode()
+        conn = http.client.HTTPConnection("127.0.0.1", self.server.server_port, timeout=5)
+        conn.putrequest(method, path, skip_host=True)
+        conn.putheader("Host", self.host)
+        for key, value in extra:
+            conn.putheader(key, value)
+        if payload is not None:
+            conn.putheader("Content-Type", "application/json")
+            conn.putheader("Content-Length", str(len(payload)))
+        conn.endheaders(payload)
+        response = conn.getresponse()
+        result = response.status, dict(response.getheaders()), response.read()
+        conn.close()
+        return result
+
+    def test_another_local_process_cannot_read_write_or_infer_project(self):
+        original = self.store.save("private", example())
+        for path in ("/api/projects", "/api/projects/private",
+                     "/api/diagnostics/arp", "/api/save", "/api/%70rojects/private"):
+            with self.subTest(path=path):
+                status, _, raw = self.request("GET", path)
+                self.assertEqual(status, 401)
+                self.assertEqual(json.loads(raw)["error"], "AUTH_REQUIRED")
+                self.assertNotIn(b"PC A", raw)
+                self.assertNotIn(self.key.encode(), raw)
+        payload = {"filename": "intruder", "project": example(), "expectedSha256": None}
+        self.assertEqual(self.request("POST", "/api/save", data=payload)[0], 401)
+        self.assertFalse(self.store.path("intruder").exists())
+        self.assertEqual(self.store.read("private")["sha256"], original["sha256"])
+
+    def test_bad_duplicate_or_wrong_scheme_authorization_is_denied(self):
+        for extra in ((("Authorization", "Bearer " + "A" * 43),),
+                      (("Authorization", "Basic abc"),),
+                      (("Authorization", "Bearer " + self.key),
+                       ("Authorization", "Bearer " + self.key))):
+            with self.subTest(extra=extra):
+                self.assertEqual(self.request("GET", "/api/projects", extra)[0], 401)
+
+    def test_owner_can_save_and_reopen_with_key_but_not_bypass_origin(self):
+        header = (("Authorization", "Bearer " + self.key),)
+        self.assertEqual(self.request("GET", "/api/projects", header)[0], 200)
+        payload = {"filename": "explicit", "project": example(), "expectedSha256": None}
+        status, _, response = self.request("POST", "/api/save", header, payload)
+        self.assertEqual(status, 200)
+        saved = json.loads(response)
+        status, _, response = self.request("GET", "/api/projects/explicit", header)
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(response)["project"], example())
+        self.assertEqual(self.store.read("explicit")["sha256"], saved["sha256"])
+        bad_origin = header + (("Origin", "http://other.example"),)
+        self.assertEqual(self.request("GET", "/api/projects", bad_origin)[0], 403)
+
+    def test_health_static_shell_and_only_synthetic_templates_are_public(self):
+        for path in ("/api/health", "/", "/index.html", "/app.js",
+                     "/services/api.js", "/api/templates/xlsx", "/api/templates/ods"):
+            with self.subTest(path=path):
+                status, _, raw = self.request("GET", path)
+                self.assertEqual(status, 200)
+                self.assertNotIn(self.key.encode(), raw)
+        self.assertEqual(self.request("POST", "/api/validate", data=example())[0], 401)
+
+    def test_short_invalid_or_nonstring_capabilities_rejected_before_bind(self):
+        for value in ("", "weak", True, 3, " " * 43, "a" * 43 + "\n"):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                LabHTTPServer(("127.0.0.1", 0), self.store, auth_token=value)
