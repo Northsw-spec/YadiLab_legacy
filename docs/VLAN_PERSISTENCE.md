@@ -2,7 +2,7 @@
 
 ## Source format and migration
 
-The canonical project schema supports versions **1.0, 1.1, 1.2 and 1.3**; this document describes the VLAN extension introduced in 1.2. Reading, validating, saving and exporting existing 1.0 or 1.1 documents **never upgrades them implicitly**. Version 1.0 excludes MAC and VLAN keys; version 1.1 permits the existing optional non-switch `mac` key. Version 1.2 permits both existing `mac` semantics and an additional optional `vlan` on **switch ports only**.
+The canonical project validator supports versions **1.0, 1.1, 1.2, 1.3 and 1.4**; this document describes the VLAN extension introduced in 1.2. Schema 1.4 has a separate import-evidence extension and does not remove these VLAN semantics. Reading, validating, saving and exporting existing 1.0 or 1.1 documents **never upgrades them implicitly**. Version 1.0 excludes MAC and VLAN keys; version 1.1 permits the existing optional non-switch `mac` key. Version 1.2 permits both existing `mac` semantics and an additional optional `vlan` on **switch ports only**.
 
 Supported switch-port configurations:
 
@@ -25,7 +25,7 @@ Existing `ProjectStore` storage, optimistic SHA-256 concurrency, atomic writes, 
 
 `EthernetFabric(project)` detects explicit 1.2 switch-port VLAN configuration and uses it for access/trunk forwarding. `ArpSession(project)` uses the same mechanism for request/reply. The `vlan_ports` session argument can **supply missing port configurations**, but cannot contradict persisted switch-port configurations. When VLAN-aware, all active and connected switch ports must be configured, and incompatible switch-switch or endpoint-trunk links are rejected as before.
 
-Only config is persistent. Inferred/learned MAC tables, ARP cache, transmitted frames, session overrides and simulation diagnostics remain transient. **No IP-routing or ICMP/ping is claimed.** The Builder now supports one-shot ARP diagnostics using the same Python Ethernet/ARP implementation and returns observed wire traces, VLAN drops, and ephemeral learned tables. It does not expose a persistent forwarding session or an arbitrary Ethernet frame-injection interface.
+Only configuration is persistent. Learned MAC tables, ARP cache, transmitted frames, session overrides and diagnostics remain transient. **This VLAN persistence feature alone** implements neither IPv4 routing nor ICMP/ping; the application has separately implemented bounded Layer 3 and ICMP components. The Builder supports one-shot ARP diagnostics and **process-local, explicitly started** Layer 2 sessions, but no **durably persisted forwarding session** or arbitrary raw Ethernet payload injector. See [SIMULATION_SESSION.md](SIMULATION_SESSION.md).
 
 The strict four-table CSV importer still emits schema 1.0, without guessing VLANs or changing existing CSV columns.
 

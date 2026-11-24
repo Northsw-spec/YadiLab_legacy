@@ -1,9 +1,9 @@
-"""QUALITY-003: fixed external protocol vectors, specified before engine results.
+"""Independent external protocol byte vectors, specified before engine results.
 
 The expected bytes/decisions below are independent constants taken from
 published wire-format rules, not computed by the implementation under test.
 References: RFC 894, RFC 826, RFC 791, RFC 792, RFC 1071, RFC 1812,
-RFC 2131, RFC 3021 and IEEE 802.1Q (see docs/PROTOCOL_REFERENCE_MATRIX.md).
+RFC 2131, RFC 3021 and IEEE 802.1Q. Historical review notes remain in Git history.
 
 These tests cover only the explicitly implemented subset, never imply
 complete protocol compliance or real network reachability.

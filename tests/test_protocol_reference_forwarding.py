@@ -1,7 +1,7 @@
-"""QUALITY-003 independent pre-registered L2, VLAN and ARP behavior oracles.
+"""Independent L2, VLAN and ARP behavior regression oracles.
 
 Expected link traces, endpoint identities, learning decisions and ARP cache
-contents are fixed in docs/PROTOCOL_REFERENCE_MATRIX.md before the tests run.
+contents are fixed in the assertions rather than copied from the engine.
 Sources: RFC 826 and IEEE 802.1Q, within the explicitly limited
 Ethernet forwarding model. No physical network access or disk writes.
 """

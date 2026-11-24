@@ -2,7 +2,7 @@
 
 ## What is implemented
 
-The model has supported an explicit `ipv4` address/prefix on each declared port since schema 1.0. PR #15 added **read-only connected IPv4 routing tables**; PR #16 extended the same lookup engine with explicitly persisted static routes in **schema 1.3**. Schemas 1.0, 1.1 and 1.2 remain compatible without silent migration. The sole authority is the same validated canonical project. See [STATIC_ROUTES.md](STATIC_ROUTES.md).
+The model has supported an explicit `ipv4` address/prefix on each declared port since schema 1.0. PR #15 added **read-only connected IPv4 routing tables**; PR #16 extended the same lookup engine with explicitly persisted static routes in **schema 1.3**. Schemas 1.0, 1.1, 1.2 and 1.4 also remain readable within their own expressly validated contracts, without silent migration; schema 1.4 additionally carries historical import-evidence metadata. The sole authority is the same validated canonical project. See [STATIC_ROUTES.md](STATIC_ROUTES.md).
 
 `ConnectedRoutingTable(project, node_id)` selects one declared host, router or firewall. For each **administratively enabled** port with an explicit IPv4/CIDR, it computes a connected network with Python `ipaddress.IPv4Interface`. Unconfigured or disabled ports contribute no route. The resulting table includes the declared source IPv4, output node/port ID, computed prefix and `nextHop: null` (on-link). No default route, gateway or metric is added by guessing. Static routes and default routes appear only when the user declares them explicitly in schema 1.3.
 
@@ -18,7 +18,7 @@ The lookup query `lookup(destination_ipv4)` accepts **one IPv4 address**, not CI
 
 Connected-route table creation models **configured local IPv4 interfaces**, not successful Layer-1 or Layer-2 network communication. An interface may have a connected network in its route table despite having **no cable** or a disabled cable. Conversely, disabling the interface itself removes that route. An address match **never** claims that a host, network, router, or next-hop is reachable. No ARP, Ethernet frame, IP packet, ping or physical path traversal occurs on lookup.
 
-The current implementation supports explicit static next-hop **configuration** but not route metrics, next-hop resolution, local/remote packet delivery, IPv4 forwarding, TTL or ICMP. A deliberately configured interface with a `/0` prefix is treated as a mathematical on-link route, not as an inferred default gateway. The application cannot claim functional IP connectivity from this model alone.
+The **routing-table lookup endpoint** supports explicit static next-hop configuration but does **not itself** resolve ARP, send packets or verify delivery; a declared `/0` interface prefix is a mathematical on-link route, not an inferred gateway. **Other existing modules** (`network_core/ipv4.py`, `icmp_ping.py` and `icmp_errors.py`) separately provide bounded ARP-resolved IPv4 forwarding, TTL, ICMP Echo and selected router-generated ICMP errors. Neither a route lookup nor these simulated traces prove reachability in a real customer network. Route metrics and dynamic routing remain unsupported.
 
 ## HTTP and Builder contract
 

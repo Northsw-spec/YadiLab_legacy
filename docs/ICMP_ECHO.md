@@ -32,7 +32,7 @@ Invalid shape, IP, ID, sequence, TTL or any undeclared source produces HTTP 422,
 
 ## What is not modeled
 
-External/live ping traffic, real RTT, packet loss timing, ICMP errors, IPv4 options or fragmentation, dynamic routing, NAT, firewall ACL, QoS or transport/application handling. An ICMP Echo responder is modeled only on configured host/router interfaces. A reply to a router IP on a **different** interface remains conservatively unsupported under the existing strict IPv4 source-port model; no weak-host acceptance is assumed. No automatic forwarding by firewalls.
+External/live ping traffic, real RTT, packet loss timing, **ICMP message types beyond the separately supported bounded router-generated Type 11/Code 0 and Type 3/Code 0 errors**, IPv4 options or fragmentation, dynamic routing, NAT, firewall ACL, QoS or transport/application handling. An ICMP Echo responder is modeled only on configured host/router interfaces. A reply to a router IP on a **different** interface remains conservatively unsupported under the existing strict IPv4 source-port model; no weak-host acceptance is assumed. No automatic forwarding by firewalls.
 
 ## Verification
 

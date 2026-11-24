@@ -1,7 +1,7 @@
-"""QUALITY-005/5D: deterministic real concurrent HTTP session boundary tests.
+"""Deterministic concurrent HTTP session-boundary regression tests.
 
-Four reference outcomes were registered in
-docs/QUALITY_005_HTTP_SESSION_RACE_ORACLES.md before execution.
+Four explicit reference outcomes are asserted below. Earlier review history
+is available from Git; no retired Markdown report is required to run tests.
 All saved project bytes and the server live exclusively in TemporaryDirectory.
 Only in-test wrappers pause operations; original registry methods still run.
 """
