@@ -64,6 +64,14 @@
 
 **Nästa steg:** Nya, separat beställda oberoende referensvektorer och negativa tester för exakt stödd motor; externa labb körs separat från YadiLab, inte integrerat.
 
+### R-005 – Echo Request och Reply delar TTL i modellen (verifierad modellbegränsning)
+
+**Om [observerat]:** I `network_core/icmp_ping.py` skickas Echo Request och Reply genom `IPv4Trace.send` med **samma** användarangivna `ttl`. Det beskrivs också uttryckligen i `docs/ICMP_ECHO.md` och prövas av befintliga tester.
+
+**Då [vad det faktiskt betyder]:** Detta är en definierad förenkling, men **inte en generell sanning om verkligt ICMP**. Ett verkligt Echo Reply är ett självständigt IPv4-paket vars avsändare väljer initial TTL oberoende av inkommande Echo Request. På asymmetriska vägar med låg vald request-TTL kan modellen rapportera `REPLY_FAILED` därför att den tvingade reply-TTL:n också är låg; det är då inte bevis för att en riktig server inte skulle kunna svara med en annan TTL.
+
+**Status:** `CONFIRMED_MODEL_LIMITATION`, **inte** en allmän test-/RFC-acceptans eller en obevisad påstådd bugfix. Kräv explicit pedagogisk märkning (infört i `docs/ICMP_ECHO.md` i denna revision). Framtida oberoende responder-TTL kräver separat godkänt protokollkontrakt, negativ regression och gränssnittsbedömning; ingen dold default får introduceras bara för att göra ping grönt.
+
 ### R-003 – Testernas täckning och leverantörskedjan är inte fullständigt certifierade
 
 **Om [observerat]:** CI innehåller reella Chromium/X11-/Python-/Node-gates och lokalt licensierad ELK. Det finns däremot ingen påvisad fullständig SAST-/dependencyscan eller oberoende pentest i den granskade obligatoriska `ci.yml`-kedjan. Alla andra `.github/workflows` ingår inte automatiskt i den enda obligatoriska `unit-tests`-grinden.
