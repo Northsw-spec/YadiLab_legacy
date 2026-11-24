@@ -10,7 +10,7 @@ Modulen `network_core/ethernet.py` implementerar en *deterministisk MAC-forwardi
 2. Endast länkar med `enabled: true` och aktiverade portar i **båda ändarna** kan transportera ramen.
 3. `inject(node_id, port_id, source_mac, destination_mac)` är det ursprungliga MAC-only-anropet. Den striktare `inject_frame(node_id, port_id, frame)` kräver en faktisk `EthernetFrame` och en explicit MAC i projektets 1.1-portfält eller `interface_macs` vid sessionens start. Ingen MAC tilldelas automatiskt.
 4. Endast sex oktetter hex, separerade med kolon, stöds. Källadressen måste vara icke-noll unicast. Destinationen måste vara unicast eller `FF:FF:FF:FF:FF:FF` (broadcast). Multicast avvisas uttryckligen som ej implementerat.
-5. Utan `vlan_ports` används den historiska, otaggade forwardingmodellen. När `vlan_ports` anges explicit, används samma forwardingkö med separat MAC-inlärning per VLAN, access-/trunk-tagging och strikt VLAN-filtrering. Se [VLAN.md](VLAN.md).
+5. VLAN-funktion aktiveras av **sparad explicit VLAN-konfiguration på switchportar (från schema 1.2)** eller genom det uttryckliga sessionsargumentet `vlan_ports`. **Bara när båda saknas** används den äldre otaggade modellen. I VLAN-läge används samma forwardingkö med separat MAC-inlärning per VLAN, access-/trunk-tagging och strikt VLAN-filtrering; ofullständiga aktiva portinställningar avvisas. Se [VLAN.md](VLAN.md).
 
 ## Regler för forwarding
 
