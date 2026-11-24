@@ -48,6 +48,12 @@ This first slice is PASS **only when** these exact tests and the regular require
 **No changes authorized:** production protocol code, canonical schema, implicit network facts, real network commands, Windows/macOS support, or required CI gates. On a confirmed discrepancy, propose a separate minimal correction instead of changing expected values to match an implementation.
 
 
+## QUALITY-003 supplementary 2026-11-24: ARP-specific non-wire IP boundaries
+
+The original `ArpSession._ipv4` accepted 127/8, nonzero 0/8 and class-E reserved source/target addresses, which could lead to a false `RESOLVED` in the **separate Ethernet ARP teaching panel**, despite the independently corrected `IPv4Datagram` rules in PR #114. The ARP wire codec now rejects these **in its explicitly bounded supported subset**, with independent positive/negative oracles in `tests/test_arp_special_addresses.py`. Original project configuration remains readable for diagnosis. Same-link 169.254/16 and RFC1918/TEST-NET ARP are intentionally retained; RFC 5227 source-zero ARP address-conflict probes remain **UNSUPPORTED**, not universally invalid.
+
+**Status:** Proposed until this dedicated ARP-PR passes both exact-head mandatory checks. Do not silently relabel earlier QUALITY-003 evidence as covering this new subset.
+
 ## QUALITY-003 supplementary 2026-11-24: special-purpose IPv4 address semantics
 
 New independent negative oracles are declared in `tests/test_ipv4_special_addresses.py` using published [RFC 1122 §3.2.1.3](https://www.rfc-editor.org/rfc/rfc1122.html), [RFC 3927](https://www.rfc-editor.org/rfc/rfc3927.html) and the [IANA special-purpose IPv4 registry](https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml). The wire simulator must reject both source and destination in 127/8 and 0/8, never report routed delivery for a source or destination in 169.254/16, and retain direct same-link 169.254/16 ICMP/ARP delivery. TEST-NET and RFC 1918 address examples must **not** be rejected simply because they are non-global: they are deliberately used for offline labs.
