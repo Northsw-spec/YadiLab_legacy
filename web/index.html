@@ -474,9 +474,16 @@
               <label><input type="radio" name="icmp-lesson-hypothesis" value="arp"> En route matchar, men nästa hopp svarar inte på ARP.</label>
               <label><input type="radio" name="icmp-lesson-hypothesis" value="ipv4"> En IPv4-adress eller dess nätmask är felkonfigurerad.</label>
             </fieldset>
+            <fieldset>
+              <legend>Välj det minsta första test som du vill använda för att pröva hypotesen</legend>
+              <label><input type="radio" name="icmp-lesson-test" value="route"> Slå upp returvägen från b till källan 192.0.2.10.</label>
+              <label><input type="radio" name="icmp-lesson-test" value="ping"> Upprepa ping för att kontrollera om symptomet kvarstår.</label>
+              <label><input type="radio" name="icmp-lesson-test" value="port"> Jämför status och IPv4 på b/eth0 med dokumentationen.</label>
+            </fieldset>
             <label for="icmp-lesson-reason">Vilken observation skulle tala emot din hypotes?</label>
-            <textarea id="icmp-lesson-reason" class="control" rows="2" placeholder="Frivillig anteckning för den här övningen"></textarea>
-            <button id="icmp-lesson-review" type="button" class="btn btn-outline full">Gå vidare till mätningar</button>
+            <textarea id="icmp-lesson-reason" class="control" rows="2" maxlength="500" placeholder="Frivillig anteckning för den här övningen"></textarea>
+            <p id="icmp-lesson-plan" class="small-muted" role="status"></p>
+            <button id="icmp-lesson-review" type="button" class="btn btn-outline full" disabled>Registrera hypotes och test – gå vidare</button>
             <div id="icmp-lesson-measurements" hidden>
               <h4 id="icmp-lesson-limits" tabindex="-1">Vad detta inte bevisar:</h4>
               <p>En utebliven svarspaketleverans räcker inte för att avgöra vilken konfiguration som orsakar felet.</p>

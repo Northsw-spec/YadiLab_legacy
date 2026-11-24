@@ -10,12 +10,13 @@ export function createIcmpInvestigationController({getContext, onChange}) {
   let verdict = null;
   let recovery = null;
   let error = null;
+  let lessonPlan = null;
   const pendingStops = new Set();
   const stopping = new Map();
   const missingSession = problem => problem.code === 'INVALID_PROJECT'
     && problem.message === 'icmp investigation: unknown or expired session';
   const view = () => structuredClone({id, state, generation, busy, log,
-    verdict, recovery, error, pendingStopCount: pendingStops.size});
+    verdict, recovery, error, lessonPlan, pendingStopCount: pendingStops.size});
   const changed = () => onChange();
   const sameProject = context => {
     const now = getContext();
@@ -46,7 +47,7 @@ export function createIcmpInvestigationController({getContext, onChange}) {
   };
   const clear = () => {
     id = null; state = null; busy = false; log = [];
-    verdict = null; recovery = null; error = null;
+    verdict = null; recovery = null; error = null; lessonPlan = null;
   };
   const invalidate = (serverGone = false) => {
     generation += 1;
@@ -140,6 +141,18 @@ export function createIcmpInvestigationController({getContext, onChange}) {
       state = data; recovery = data;
     }, problem => { recovery = {error: problem.message}; });
   };
+  // The student's tentative theory is teaching-only state, never project or API data.
+  const setLessonPlan = (hypothesis, diagnosticTest, counterEvidence) => {
+    if (!id || busy || state?.lesson !== 'echo-reply' || lessonPlan) return false;
+    if (!['route', 'arp', 'ipv4'].includes(hypothesis)
+        || !['route', 'ping', 'port'].includes(diagnosticTest)
+        || typeof counterEvidence !== 'string' || counterEvidence.length > 500) {
+      return false;
+    }
+    lessonPlan = {hypothesis, diagnosticTest, counterEvidence: counterEvidence.trim()};
+    changed();
+    return true;
+  };
   const stop = async () => {
     if (!id) return;
     const sessionId = id;
@@ -156,5 +169,5 @@ export function createIcmpInvestigationController({getContext, onChange}) {
       if (token === generation) { busy = false; changed(); }
     }
   };
-  return {getState: view, setInputError, start, probe, diagnose, repair, stop, invalidate};
+  return {getState: view, setInputError, setLessonPlan, start, probe, diagnose, repair, stop, invalidate};
 }

@@ -68,11 +68,12 @@ function renderLesson(session) {
     panel.dataset.sessionId = lessonId;
     delete panel.dataset.reviewed;
     $('icmp-lesson-reason').value = '';
-    for (const hypothesis of panel.querySelectorAll('input[type="radio"]')) {
-      hypothesis.checked = false;
+    for (const choice of panel.querySelectorAll('input[type="radio"]')) {
+      choice.checked = false;
     }
     if (opening) $('icmp-investigation-diagnosis').selectedIndex = -1;
   }
+  const plan = session.lessonPlan;
   const reviewed = panel.dataset.reviewed === 'true';
   const measured = reviewed && session.state?.canDiagnose;
   const diagnosed = measured && session.verdict?.correct;
@@ -86,7 +87,44 @@ function renderLesson(session) {
       + endpoint(opening.requestReceiver) + ' (' + opening.requestStatus + '). '
       + 'Källan fick inget giltigt Echo Reply.'
     : '';
+  const selectedHypothesis = panel.querySelector('input[name="icmp-lesson-hypothesis"]:checked');
+  const selectedTest = panel.querySelector('input[name="icmp-lesson-test"]:checked');
+  $('icmp-lesson-review').disabled = !opening || Boolean(plan)
+    || !selectedHypothesis || !selectedTest;
   $('icmp-lesson-review').hidden = reviewed;
+  for (const input of panel.querySelectorAll('input[name="icmp-lesson-hypothesis"], input[name="icmp-lesson-test"]')) {
+    input.disabled = Boolean(plan);
+  }
+  $('icmp-lesson-reason').readOnly = Boolean(plan);
+  const hypothesisText = {
+    route: 'Saknad aktiv returroute',
+    arp: 'Returroute finns men ARP-svar saknas',
+    ipv4: 'Fel på IPv4-adress eller nätmask',
+  };
+  const testText = {
+    route: 'Returrouteuppslag från b till källan',
+    ping: 'Upprepat ICMP Echo',
+    port: 'Kontroll av b/eth0',
+  };
+  const measuredTest = plan && session.log.some(item => {
+    if (item.error || item.probe !== plan.diagnosticTest) return false;
+    if (plan.diagnosticTest === 'route') {
+      return item.observation?.sourceNode === 'b'
+        && item.observation?.destinationIpv4 === session.state?.sourceIpv4;
+    }
+    if (plan.diagnosticTest === 'port') {
+      return item.observation?.nodeId === 'b' && item.observation?.portId === 'eth0';
+    }
+    return true;
+  });
+  $('icmp-lesson-plan').textContent = plan
+    ? 'Elevens hypotes (inte fastställd): ' + hypothesisText[plan.hypothesis]
+      + '. Vald första mätning: ' + testText[plan.diagnosticTest]
+      + '. Motbevisande observation (elevanteckning): '
+      + (plan.counterEvidence || 'inte angiven')
+      + '. Mätstatus: ' + (measuredTest ? 'utförd i simuleringen' : 'inte utförd')
+      + '. Valet är ingen automatisk diagnos.'
+    : '';
   $('icmp-lesson-measurements').hidden = !reviewed;
   $('icmp-lesson-interpretation').hidden = !measured;
   $('icmp-lesson-action').hidden = !diagnosed;
