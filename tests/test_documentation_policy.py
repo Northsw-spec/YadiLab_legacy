@@ -88,6 +88,13 @@ class DocumentationPolicyTests(unittest.TestCase):
         self.assertIn("[SIMULATION_SESSION.md](SIMULATION_SESSION.md)", ethernet)
         self.assertIn("[IPV4_FORWARDING.md](IPV4_FORWARDING.md)", ethernet)
 
+    def test_independent_icmp_reply_ttl_is_not_labeled_shared(self):
+        html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+        self.assertNotIn("TTL per riktning", html)
+        for token in ("ping-reply-ttl", "probe-reply-ttl",
+                      "Echo Request TTL", "simulerat 64"):
+            self.assertIn(token, html)
+
     def test_relative_markdown_links_point_to_real_files(self):
         # This is a deliberately narrow repository-file check, not a general
         # Markdown, HTTP, GitHub anchor or external-link validator.

@@ -84,7 +84,7 @@ oåtkomliga via publika start-/probe-/diagnose-svar.
 Projektobjektet måste valideras mot den kanoniska modellen.
 `sourceNode` och `sourcePort` måste identifiera ett verkligt
 dokumenterat, aktivt och MAC/IP-konfigurerat gränssnitt.
-`ttl` måste vara ett *äkta* heltal 2..255, inte bool/string.
+`ttl` måste vara ett *äkta* heltal 2..255, inte bool/string. Det är **Echo Request TTL**. De oberoende Echo Reply-paketen använder simulatorns öppet deklarerade **syntetiska responder-TTL 64** i detta övningsflöde; det är inte ett verkligt OS-/leverantörsvärde och det beror inte på Request TTL.
 Måladressen måste vara en giltig och av motorn faktiskt nåbar
 IPv4-destination innan felinjektion. En lyckad start ger ett opakt
 `sessionId`, käll-/mål-ID:n, mätantal, hypotesstatus, DHCP-bevisläge,

@@ -131,8 +131,11 @@
           <span id="probe-from-ip-status" class="small-muted" role="status" aria-live="polite">Från-gränssnittet bestäms av adressen eller valet ovan.</span>
           <label for="probe-destination">To · IPv4 (klistra in måladress)</label>
             <input id="probe-destination" class="control" type="text" autocomplete="off" placeholder="192.0.2.20">
-            <label for="probe-ttl">TTL (1–255)</label>
+            <label for="probe-ttl">Echo Request TTL (1–255)</label>
             <input id="probe-ttl" class="control" type="number" min="1" max="255" step="1" value="8">
+            <label for="probe-reply-ttl">Echo Reply TTL (simulerat, 1–255)</label>
+            <input id="probe-reply-ttl" class="control" type="number" min="1" max="255" step="1" value="64">
+            <p class="muted tiny">64 är en labbinställning, inte uppmätt TTL eller en tillverkares standard.</p>
             <div class="probe-actions">
               <button id="probe-send" class="btn btn-soft" type="button" disabled>Skicka ICMP-probe</button>
               <button id="probe-replay" class="btn btn-outline" type="button" disabled>Spela upp igen</button>
@@ -373,8 +376,11 @@
           <span id="ping-from-ip-status" class="small-muted" role="status" aria-live="polite">Från-gränssnittet bestäms av adressen eller valet ovan.</span>
           <label for="ping-destination">To · IPv4 (klistra in måladress)</label>
           <input id="ping-destination" class="control" type="text" autocomplete="off" placeholder="192.0.2.20">
-          <label for="ping-ttl">TTL per riktning (1–255)</label>
+          <label for="ping-ttl">Echo Request TTL (1–255)</label>
           <input id="ping-ttl" class="control" type="number" min="1" max="255" step="1" value="4">
+          <label for="ping-reply-ttl">Echo Reply TTL (simulerat, 1–255)</label>
+          <input id="ping-reply-ttl" class="control" type="number" min="1" max="255" step="1" value="64">
+          <p class="muted tiny">64 är en explicit labbinställning, inte verifierad mot en verklig värds operativsystem.</p>
           <label for="ping-identifier">ICMP-identifierare (0–65535)</label>
           <input id="ping-identifier" class="control" type="number" min="0" max="65535" step="1" value="1">
           <label for="ping-sequence">ICMP-sekvens (0–65535)</label>
@@ -431,7 +437,7 @@
               <input id="trouble-next-hop" class="control" type="text" autocomplete="off" placeholder="192.0.2.254">
             </div>
           </div>
-          <label for="trouble-ttl">TTL per riktning (1–255)</label>
+          <label for="trouble-ttl">Echo Request TTL (1–255; Reply: simulerat 64)</label>
           <input id="trouble-ttl" class="control" type="number" min="1" max="255" step="1" value="5">
           <button id="run-troubleshoot" class="btn btn-soft full" type="button">Verifiera fel och återställning</button>
           <div id="trouble-result" class="trace-result" aria-live="polite">Ingen kontrollerad felsökningsjämförelse utförd.</div>
@@ -447,7 +453,7 @@
           <span id="icmp-investigation-from-ip-status" class="small-muted" role="status" aria-live="polite">Från-gränssnittet bestäms av adressen eller valet ovan.</span>
           <label for="icmp-investigation-destination">To · IPv4 (klistra in måladress)</label>
           <input id="icmp-investigation-destination" class="control" autocomplete="off" placeholder="203.0.113.20">
-          <label for="icmp-investigation-ttl">TTL per riktning (2–255)</label>
+          <label for="icmp-investigation-ttl">Echo Request TTL (2–255; Reply: simulerat 64)</label>
           <input id="icmp-investigation-ttl" class="control" type="number" min="2" max="255" step="1" value="5">
           <div class="session-actions">
             <button id="icmp-investigation-start" type="button" class="btn btn-soft">Starta dolt ICMP-fall</button>

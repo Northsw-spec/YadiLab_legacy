@@ -90,6 +90,7 @@ export function presentPing(pingDiagnostic) {
     data.meaning,
     `Echo id=${data.identifier} seq=${data.sequence}`,
     `Echo Reply matchad: ${data.replyMatched ? 'JA' : 'NEJ'}`,
+    `Echo Reply initial TTL: ${data.replyInitialTtl} (${data.replyTtlBasis === 'EXPLICIT' ? 'explicit labbvärde' : 'simulerat standardvärde – inte verifierat mot verklig värd'})`,
   ];
   if (!data.icmpError) {
     lines.push('ICMP-routerfel: inget paket genererat eller mottaget.');

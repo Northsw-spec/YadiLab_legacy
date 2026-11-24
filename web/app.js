@@ -45,7 +45,7 @@ const diagnosticFields = {
   arp: ['arp-source', 'arp-target-ip'],
   route: ['route-source', 'route-destination-ip'],
   ipv4: ['ipv4-source', 'ipv4-destination', 'ipv4-ttl'],
-  ping: ['ping-source', 'ping-destination', 'ping-ttl', 'ping-identifier', 'ping-sequence'],
+  ping: ['ping-source', 'ping-destination', 'ping-ttl', 'ping-reply-ttl', 'ping-identifier', 'ping-sequence'],
 };
 let toastTimer;
 const investigation = createDhcpInvestigationController({
@@ -2578,9 +2578,10 @@ async function runPing({quick = false} = {}) {
   if (!requireBoundAddresses([quick ? 'probe-from-ip' : 'ping-from-ip'])) return;
   const readInputs = quick
     ? () => [$('probe-source').value, $('probe-destination').value.trim(),
-        $('probe-ttl').value.trim(), '1', '1', $('probe-from-ip').value.trim()]
+        $('probe-ttl').value.trim(), $('probe-reply-ttl').value.trim(),
+        '1', '1', $('probe-from-ip').value.trim()]
     : () => diagnosticInputs('ping');
-  const [selected, destinationIpv4, rawTtl, rawIdentifier, rawSequence] = readInputs();
+  const [selected, destinationIpv4, rawTtl, rawReplyTtl, rawIdentifier, rawSequence] = readInputs();
   if (!selected) return;
   const context = beginDiagnostic('ping', readInputs);
   canvas.stopJourney({quiet: true});
@@ -2589,18 +2590,20 @@ async function runPing({quick = false} = {}) {
   $('probe-status').textContent = 'ICMP-probe körs i den faktiska simuleringsmotorn…';
   const [sourceNode, sourcePort] = JSON.parse(selected);
   const number = value => /^[0-9]+$/.test(value) ? Number(value) : NaN;
-  const ttl = number(rawTtl), identifier = number(rawIdentifier), sequence = number(rawSequence);
+  const ttl = number(rawTtl), replyTtl = number(rawReplyTtl);
+  const identifier = number(rawIdentifier), sequence = number(rawSequence);
   if (!destinationIpv4 || !Number.isInteger(ttl) || ttl < 1 || ttl > 255 ||
+      !Number.isInteger(replyTtl) || replyTtl < 1 || replyTtl > 255 ||
       !Number.isInteger(identifier) || identifier < 0 || identifier > 65535 ||
       !Number.isInteger(sequence) || sequence < 0 || sequence > 65535) {
-    pingDiagnostic = {error:'Ange mål-IP, TTL 1–255, identifierare och sekvens 0–65535.'};
+    pingDiagnostic = {error:'Ange mål-IP, Request TTL och Reply TTL 1–255, identifierare och sekvens 0–65535.'};
     renderPing();
     presentJourney(pingDiagnostic, context.snapshot);
     return;
   }
   try {
     const result = await queryPing(context.snapshot, sourceNode, sourcePort,
-      destinationIpv4, ttl, identifier, sequence);
+      destinationIpv4, ttl, identifier, sequence, replyTtl);
     if (!diagnosticCurrent(context)) return;
     pingDiagnostic = result;
   } catch (error) {
@@ -2802,7 +2805,8 @@ for (const id of ['trouble-source','trouble-link','trouble-type','trouble-port',
     troubleDiagnostic = null; renderTroubleshooting();
   });
 }
-for (const id of ['ping-source','ping-destination','ping-ttl','ping-identifier','ping-sequence']) {
+for (const id of ['ping-source','ping-destination','ping-ttl','ping-reply-ttl',
+                  'ping-identifier','ping-sequence','probe-reply-ttl']) {
   $(id).addEventListener(id === 'ping-source' ? 'change' : 'input', () => {
     pingDiagnostic = null; renderPing();
   });
