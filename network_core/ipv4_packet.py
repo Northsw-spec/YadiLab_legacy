@@ -13,6 +13,10 @@ from dataclasses import dataclass
 from .model import ProjectValidationError
 
 _HEADER = struct.Struct("!BBHHHBBH4s4s")
+# RFC 1122 §3.2.1.3 and IANA special-purpose IPv4 address registry.
+# These are not ordinary source/destination IPs on an Ethernet wire.
+_LOCAL_ONLY = (ipaddress.IPv4Network("127.0.0.0/8"),
+               ipaddress.IPv4Network("0.0.0.0/8"))
 EXPERIMENTAL_PROTOCOL = 253
 ICMP_PROTOCOL = 1
 
@@ -34,7 +38,8 @@ def _ip(value: str, label: str) -> str:
     except ipaddress.AddressValueError:
         raise ProjectValidationError(f"ipv4: {label} must be a canonical IPv4 address") from None
     if (str(address) != value or address.is_unspecified or address.is_multicast or
-            address.is_reserved or int(address) == 0xFFFFFFFF):
+            address.is_reserved or int(address) == 0xFFFFFFFF or
+            any(address in network for network in _LOCAL_ONLY)):
         raise ProjectValidationError(f"ipv4: {label} must be a usable canonical unicast IPv4")
     return value
 
