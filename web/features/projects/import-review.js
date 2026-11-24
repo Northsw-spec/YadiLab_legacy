@@ -792,11 +792,11 @@ export function createImportReview({context, current, getProject, replaceProject
         throw new Error('Välj en JSON-profil på högst 256 KiB.');
       const raw=await file.arrayBuffer();
       if (!valid(token)) return stale();
-      let decoded, parsed;
-      try { decoded=new TextDecoder('utf-8',{fatal:true}).decode(raw); }
-      catch { throw new Error('Profilen är inte giltig UTF-8.'); }
-      try { parsed=JSON.parse(decoded); }
-      catch { throw new Error('Profilen innehåller ogiltig JSON.'); }
+      // No browser JSON.parse here: it would silently discard duplicate keys.
+      // Submit untouched bytes to the server's strict UTF-8 JSON decoder.
+      const {document:parsed}=await api('/api/json/strict',
+        new Uint8Array(raw), {rawJson:true});
+      if (!valid(token)) return stale();
       const profile=validateMappingProfile(parsed);
       if (!valid(token)) return stale();
       pendingProfile=profile; pendingToken=token;
@@ -839,9 +839,19 @@ export function createImportReview({context, current, getProject, replaceProject
   $('external-bundle-file').addEventListener('change',async event=>{
     const file=event.target.files[0]; if(!file)return;
     const ctx=context(), generation=++sourceGeneration;
-    try { const bundle=JSON.parse(await file.text()); const decoded=await readSourceBundle(bundle);
+    try {
+      if (!file || file.size > 8*1024*1024) {
+        throw new Error('Välj ett JSON-källpaket på högst 8 MiB.');
+      }
+      // File.text() can replace invalid UTF-8, and JSON.parse loses duplicate
+      // object members. Keep the exact uploaded bytes until strict validation.
+      const {document:bundle}=await api('/api/json/strict',
+        new Uint8Array(await file.arrayBuffer()), {rawJson:true});
       if (!current(ctx) || generation!==sourceGeneration) return stale();
-      await verify(decoded); }
+      const decoded=await readSourceBundle(bundle);
+      if (!current(ctx) || generation!==sourceGeneration) return stale();
+      await verify(decoded);
+    }
     catch(error) {
       if (!current(ctx) || generation!==sourceGeneration) return stale();
       attached=false;refreshStatus();showError(error);
