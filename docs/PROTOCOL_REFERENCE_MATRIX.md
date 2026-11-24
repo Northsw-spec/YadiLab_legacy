@@ -120,7 +120,7 @@ Explicit synthetic client MAC/IP allocation and server on a two-link Ethernet se
 - At **39**, renewal attempt is **rejected** and the lease remains unchanged. At **40**, a successful T1 **unicast** REQUEST to server IP/MAC and actual returned ACK moves lease start to 40, expiry to **120**, new T1 **80**, T2 **110**; client project IP is not written.
 - Separate negative experiment: after initial ACK, intentionally disable the **existing** server cable in the *simulation session*, not the project. At **40**, T1 unicast cannot reach server; at **70**, T2 **broadcast** cannot reach server; neither can renew the lease. At **80**, lease must expire (no BOUND lease remains), despite the previous simulated address. No real time or real network change is involved.
 
-**Status:** tests from this third slice must be executed at exact PR HEAD and mandatory Linux CI must pass; until then **NOT_VERIFIED**. The entire QUALITY-003 stage still requires broader independent protocol coverage, including a richer DHCP state-machine oracle and unsupported scenarios. A green CI does not promote all implementation paths to RFC compliance.
+**HISTORICAL pre-CI requirement – superseded by later test evidence:** The third slice was subsequently merged with mandatory green checks. The bounded tested subset was later accepted in [QUALITY_003_VERIFICATION_REPORT.md](QUALITY_003_VERIFICATION_REPORT.md) with documented main CI. **Broader protocol coverage remains NOT_VERIFIED or UNSUPPORTED**; accepted test vectors do not mean universal compliance.
 
 
 ## QUALITY-003 fourth slice — address boundaries and metamorphic integrity (pre-registered)
