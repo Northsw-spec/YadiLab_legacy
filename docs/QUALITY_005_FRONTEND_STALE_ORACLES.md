@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-23 (ISO)  
 **Baseline:** `main@6c8fe916a3c5c0f43a9d73993e9a49520e665d9c`.  
-**Status:** **PRE-REGISTERED, NOT_VERIFIED** until the exact final PR-HEAD checks succeed.  
+**Statuskorrigering 2026-11-24:** Ursprungligen förregistrerat som NOT_VERIFIED före CI. Avgränsade controller-tester för 5C mergades i PR #108 (final PR HEAD `633b17de7e6324cdf2e8516c3c49f20e6a18e5ad`, två `unit-tests` SUCCESS). Det innebär inte att ytterligare Builder/New/Open/Import-races eller all asynkron UI-kod är verifierad. Tidigare framtidstext om att lägga till testfilen är historisk.  
 **Scope:** the existing `createSimulationSessionController` and `createDoraSessionController` in `web/features/sessions`. This slice does not modify the controllers, canonical project, API contracts or schema. Linux-only application; Windows/macOS UNSUPPORTED.
 
 ## Model and evidence boundary
@@ -26,5 +26,5 @@ These outcomes are derived from the **already implemented controller contract**:
 
 - A green result is evidence **only of these eight scheduled HTTP orderings** and their frontend guards; it does not prove arbitrary races, server-side operation ordering, true browser rendering, real network behavior, or physical disk safety.
 - No timers, sleeps or real network requests; each test explicitly controls responses, avoids test flakiness and runs entirely in Node. Restore `globalThis.fetch` after each test.
-- Independent 5C follow-up remains for **Builder/New/Open/Import late 200/422 with actual Chromium DOM and project Save**, and any cross-server-session reordering not covered here. 5D covers registry/server concurrency and shutdown. 5E covers parser and resource boundaries. No production changes, exception swallowing or reduced CI gates authorized.
+- Independent 5C follow-up remains for **Builder/New/Open/Import late 200/422 with actual Chromium DOM and project Save**, and any cross-server-session reordering not covered here. 5D fick separata, avgränsade parallella HTTP-tester i PR #109; full shutdown-/race-täckning är inte därmed bevisad. 5E covers parser and resource boundaries. No production changes, exception swallowing or reduced CI gates authorized.
 - The new test file **must be added** to the existing `npm run check` `node --test` list alongside (not instead of) every current test. Required `unit-tests` on exact PR HEAD must run Python, JavaScript, Chromium, X11 and ELK. Unchanged `main` base, reviews and branch rules still apply before any squash merge.

@@ -1,7 +1,7 @@
 # Kontrakt för källtrogen dokumentationsläsning och import
 
 **Dokumentversion:** 3.4 – strikt projekttillämpning, komplett vald topologi och källtrogen 4A–4D  
-**Beslutat läge:** Ett enda normerande målkontrakt för 4A–4D, reviderat efter direkt granskning av öppna importimplementationer. 4A byggs först, och därefter genomförs 4B–4D stegvis med en aktiv PR åt gången och verifierade del-PR:er inom varje etapp. Dokumentet anger krav, inte redan uppfyllda funktioner.  
+**Aktuell statuskorrigering 2026-11-24:** Etapperna 4A–4D genomfördes historiskt och integrerades under tidigare PR:er. Ordningen 4A → 4B → 4C → 4D samt kommandon som ”inför” och ”exakt nästa kodleverans” i äldre avsnitt är **historiska arbetskort**, INTE aktuella Codex-order. Detta dokument är fortsatt normerande för fail-closed, källtrogen läsning/import och proveniens, men koduppfyllelse av samtliga målkrav måste fastställas separat genom aktuella tester inom QUALITY-006. Pedagogikens [separata plan](PEDAGOGICAL_TROUBLESHOOTING_PLAN.md) inför ingen ny importerare eller extern verktygsadapter.  
 **Kodbas:** `detta repository`, referens-`main` `17acb51c8c64c3b4b7a1026514cb8b0a2177a127`.  
 **Omfattning:** Hela den beslutade funktionen för tabellinspektion, explicit fältmappning, ofullständig nätverksdokumentation, proveniens, import, profilåteranvändning och slutacceptans. Funktionerna är målkrav, inte statuspåståenden.
 
@@ -9,7 +9,7 @@
 
 1. `AGENTS.md` och `docs/MASTERPROMPT.md` gäller övergripande. För **etapp 4** anger detta dokument det detaljerade, versionshanterade funktionskontraktet.
 2. Verifierad källkod och senaste uttryckliga användarinstruktion har företräde framför gammal statusinformation i dokumentation och chattar.
-3. En etapp får bestå av flera små, sammanhängande PR:er. Genomför 4A → 4B → 4C → 4D i ordning; avsluta och verifiera varje del-PR på main före nästa. En etapp räknas färdig först när dess samlade DoD passerat på main. Endast en aktiv PR åt gången. Detta enda kontrakt styr samtliga steg; en framtida implementerare får inte kräva eller skapa ett nytt planeringsdokument för att fylla i uteblivna funktionskrav. Om den faktiska källan saknar avgörande fakta, redovisa blockerande indata i stället för att gissa.
+3. **Historik, inte nytt uppdrag:** 4A → 4B → 4C → 4D var tidigare implementationsordning och får inte upprepas automatiskt. Endast en aktiv PR åt gången gäller fortfarande. Detta kontrakt styr uttryckligen godkända framtida importkorrigeringar. Om den faktiska källan saknar avgörande fakta, redovisa blockerande indata i stället för att gissa. Kontrollera kod, tester och QUALITY-006 innan några tidigare måletapper får status IMPLEMENTED eller ACCEPTED.
 4. En egenskap som inte finns i kod, test eller kontrakt får inte påstås vara implementerad eller verifierad. Okänd semantik ska ge en explicit olöst uppgift eller avvisning – aldrig nätverksobjekt.
 5. Forskningsessäer, procentbedömningar, exempel på företagsmallar och föreslagna profilnamn är **inte** maskinläsbara scheman, produktstöd eller implementationsinstruktioner.
 
@@ -52,7 +52,7 @@ Läsning och import ska ha fem åtskilda ansvar:
 
 Källfakta, härledda presentationskoordinater och faktisk simulering är olika kategorier. En lyckad **källinspektion** säger inte att ett nätverksprojekt får tillämpas. En godkänd **projekttillämpning** kräver fullständiga obligatoriska fakta för hela det uttryckligen deklarerade projektet och dess avsedda funktioner; den innebär fortfarande inte att verklig nätverksreachability har observerats.
 
-## 4. Etapp 4A – exakt nästa kodleverans
+## 4. Historiskt arbetskort för etapp 4A – redan genomfört, INTE nästa kodleverans
 
 **Leverans:** Skrivskyddad granskning av en enskild CSV-, XLSX- eller ODS-fil med faktiska blad, råa cellvärden, koordinater, typer och tydliga gränsmeddelanden. **Ingen mappning till nätverksobjekt, ingen importkandidat och inget nytt sparformat i 4A.**
 
@@ -463,7 +463,7 @@ Källkoden i `network_core/model.py` validerar ändliga `x/y` inom intervallet `
 
 **Oberoende testvektorer:** `n=1` ger `cols=1` och nod 0 `(110,110)`. `n=4` ger `cols=2` och index 0–3 `(110,110),(370,110),(110,330),(370,330)`. `n=5` ger `cols=3` och nodindex 4 `(370,330)`. `n=2000` ger `cols=45` med `x_max=11550` och `y_max=9790`, båda <100000. `n=2001` ger en valideringsavvisning och ingen projektmutation. Kör negativ testning vid det tidigare felet `n=1821`; ordningsinvarians med omkastad fil-/radordning och case-sensitiva ID:n; två claims om samma node-ID; saknat node-ID; noll godkända noder; Save/Open och historisk replay. Bekräfta att de härledda koordinaterna aldrig skapar en fysisk länk eller ändrar IP-/ARP-/DHCP-/ICMP-beteenden.
 
-## 9. Etapp 4B – importplan, blandade enhetsvyer och kompakta auditmanifest
+## 9. HISTORISKT arbetskort 4B – importplan, blandade enhetsvyer och kompakta auditmanifest
 
 **Start:** 4A mergad och efterföljande main-CI SUCCESS. Inga andra planeringsdokument får krävas.
 
@@ -593,7 +593,7 @@ UI måste särskilja **historisk importproveniens** från användarens senare ma
 - importEvidence återläses exakt efter Save/Open och omstart; råa källceller är inte i .yadilab. Efter omstart visas korrekt "källan ej ansluten". Import av rätt källpaket återställer förmågan att granska celler; fel SHA blockeras. **Redigera därefter en port/IP/route och spara på riktigt:** projektet ska fortfarande vara schema 1.4, proveniensmanifestet oförändrat, `CHANGED_SINCE_IMPORT` synligt och alla simulatoranrop fria från importEvidence. Återställ exakt nätverksinnehåll och verifiera BASELINE_MATCH utan falskt SOURCE_VERIFIED.
 - Bytebevis för ursprungliga filer och v1.0–1.3-filer utan Save; full DIRECT_HTTP Chromium och samtliga befintliga protokolltester.
 
-## 10. Etapp 4C – målmoduler, kablar och sammanslagna dokument
+## 10. HISTORISKT arbetskort 4C – målmoduler, kablar och sammanslagna dokument
 
 **Start:** 4B mergad och efterföljande main-CI SUCCESS. Utöka samma ImportPlan/API, utan andra importmotorer.
 
@@ -605,7 +605,7 @@ U01–U12: verkliga CSV/XLSX/ODS-filer; samma blad har device+port+link-vyer; fl
 
 Ändra inte DHCP-, ARP-, IPv4- eller ICMP-motorer; 4C:s krav gäller endast att validerat indata fungerar som före refaktoreringen.
 
-## 11. Etapp 4D – mappningsprofiler, fullständigt UI och slutacceptans
+## 11. HISTORISKT arbetskort 4D – mappningsprofiler, fullständigt UI och slutacceptans
 
 **Start:** 4C mergad och efterföljande main-CI SUCCESS. Slutför ett enhetligt granskningsflöde utan nya fullständiga parsers.
 

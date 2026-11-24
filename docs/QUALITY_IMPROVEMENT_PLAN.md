@@ -1,13 +1,15 @@
 # Masterplan för källkodskvalitet 10/10
 
-**Dokumentversion:** 1.1 – förstärkta skydds- och etappgrindar  
-**Datum:** 2026-11-21 (ISO)  
+**Dokumentversion:** 1.2 – skyddsgrindar och statuskorrigering efter PR #106–#109  
+**Ursprungligt datum:** 2026-11-21; **statuskomplettering:** 2026-11-24  
 **Repository:** [Repositoryts rot](../)  
 **Historisk, ursprungligen verifierad bascommit (inte aktuell HEAD):** `32bcefdf3eff25bc6a4f7986a7d88c05f704214c`  
 **Mål:** Högsta möjliga verifierbara källkodskvalitet inom appens uttryckligen stödda omfattning.  
-**Status:** QUALITY-001 ACCEPTED; QUALITY-002 CONFIGURED / ENFORCEMENT NOT_VERIFIED (röd PR #99 stängd utan merge); QUALITY-003 **ACCEPTED (VERIFIED SUPPORTED SUBSET)** på `main@ba674047e779750f5c8efa7739cf0f80a26fd5d6` med main-CI SUCCESS; QUALITY-004–011 inte accepterade.
+**Status verifierad t.o.m. 2026-11-24:** QUALITY-001 ACCEPTED; QUALITY-002 CONFIGURED / ENFORCEMENT NOT_VERIFIED; QUALITY-003 **ACCEPTED endast för verifierat stödd subset** (se [rapporten](QUALITY_003_VERIFICATION_REPORT.md)); QUALITY-004 **4A gransknings-PR #106 MERGED** men full etapp ej accepterad; QUALITY-005 **avgränsade test-PR #107–#109 MERGED** men full etapp ej accepterad; QUALITY-006–011 inte accepterade. Senare delstatus: [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). Faktisk HEAD/CI måste kontrolleras igen.
 
 > **Gällande styrning:** `AGENTS.md` och `docs/MASTERPROMPT.md` gäller övergripande. För import gäller dessutom `docs/IMPORT_SOURCE_CONTRACT.md` och tillhörande tekniska kontrakt. Denna fil är den **enda aktuella samlade kvalitetsfärdplanen**, inte en ersättning för dessa kontrakt. Faktisk kod, CI och den senaste uttryckliga användarinstruktionen avgör aktuell implementationsstatus. Äldre etappanteckningar har bevarats oförändrade i [QUALITY_IMPROVEMENT_HISTORY.md](QUALITY_IMPROVEMENT_HISTORY.md); deras historiska framtidsuttalanden är **inte** aktuella order eller verifierade nulägesuppgifter.
+
+> **Pedagogisk arkitektur, beslut 2026-11-24:** [PEDAGOGICAL_TROUBLESHOOTING_PLAN.md](PEDAGOGICAL_TROUBLESHOOTING_PLAN.md) är normerande för framtida Om–Då-undervisningsinnehåll, epistemiska gränser, verktygskort och negativa pedagogiska tester. Den är **inte** en ny roadmap, ger inget nytt kodmandat och ändrar inte QUALITY-000–011:s status eller ordning. Externa NMS-/simuleringsverktyg förblir fristående undervisningsreferenser; ingen extern runtimeintegration är beslutad. Bevara befintliga funktioner och Linux-only.
 
 ## 1. Syfte och kvalitetsprinciper
 
@@ -86,8 +88,8 @@ Redan korrigerade fel: PR #76 (importacceptans), #77 (stale Builder HTTP-svar), 
 | QUALITY-001 | VLAN-kandidatstatistik + full JS-CI | Hög | ACCEPTED |
 | QUALITY-002 | Bevisat obligatoriskt GitHub-mergeskydd | Kritisk | CONFIGURED / ENFORCEMENT NOT_VERIFIED |
 | QUALITY-003 | Oberoende nätverksprotokollverifiering | Kritisk | ACCEPTED – VERIFIED SUPPORTED SUBSET; broader cases NOT_VERIFIED/UNSUPPORTED |
-| QUALITY-004 | Skrivskyddad arkitekturrevision; endast verifierat motiverade små extraktioner (KEEP som standard) | Hög | 4A REVIEWED / REPORT PR PENDING; NO CODE CHANGE |
-| QUALITY-005 | Dataintegritet, samtidighet och robusthet | Kritisk | PLANNED |
+| QUALITY-004 | Skrivskyddad arkitekturrevision; endast verifierat motiverade små extraktioner (KEEP som standard) | Hög | 4A REVIEW PR #106 MERGED, båda PR-checks SUCCESS; full etapp NOT_VERIFIED |
+| QUALITY-005 | Dataintegritet, samtidighet och robusthet | Kritisk | IN PROGRESS: begränsade PR #107–#109 MERGED med båda checks SUCCESS; återstående risker och slutacceptans NOT_VERIFIED |
 | QUALITY-006 | Verklig dokumentationsimport och proveniens | Hög | PLANNED |
 | QUALITY-007 | Prestanda, skalning och resursgränser | Hög | PLANNED |
 | QUALITY-008 | Frontend, pedagogik och tillgänglighet | Medel–hög | PLANNED |
@@ -267,6 +269,8 @@ Kör minst `python3 -m unittest discover -s tests -p 'test_*.py' -v`, `npm run c
 **Acceptans:** uppfyllda reproducerbara budgetar inom uttalade gränser; utanför gräns tydligt fel utan datatapp.
 
 ## 12. QUALITY-008 – Frontend, pedagogik och tillgänglighet
+
+**Särskild pedagogisk sanningsgrind:** Framtida undervisning ska följa [den bindande niorubriks-mallen](PEDAGOGICAL_TROUBLESHOOTING_PLAN.md) med ordagrant ”Om [observerat]”, ”Då [vad det faktiskt betyder]” och ”Möjliga orsaker [inte fastställda/hypoteser]” samt motbevisbara hypoteser, källspårning och explicita negativa tester. Detta är ingen instruktion att ombygga UI automatiskt, införa nya runtimeprotokoll eller integrera externa appar. QUALITY-008 kan bara skapa kod efter ett separat avgränsat användarbeslut och enligt 1A.
 
 **8A Builder:** förståelig port-/kabelgeometri, tydliga valideringsfel, exakta projektmutationer, rätt Save-indikator och skiljelinje mellan dokumenterat fakta och temporär simulering.
 

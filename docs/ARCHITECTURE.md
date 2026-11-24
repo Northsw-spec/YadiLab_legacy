@@ -1,6 +1,6 @@
 # Applikationsarkitektur 0.1 — medvetet liten
 
-> **Historisk arkitekturöversikt:** Beskrivningar av ”nästa steg”, ”inte implementerat” eller tidigare funktionsbegränsningar i denna fil är historiska. Verifiera faktisk kod och CI innan utvecklingsbeslut. Dokumentationsimport ska följa [det aktuella bindande importkontraktet](IMPORT_SOURCE_CONTRACT.md); ingen ny importfunktion är färdig genom att den har dokumenterats.
+> **Historisk arkitekturöversikt (statuskorrigering 2026-11-24):** Beskrivningar av ”nästa steg”, ”inte implementerat” eller tidigare funktionsbegränsningar i denna fil är historiska. De senare avgränsade IPv4/ICMP/DHCP-funktionerna och ELK-06A–C tillkom senare; se kod och respektive protokolldokument. Det [bindande pedagogiska kontraktet](PEDAGOGICAL_TROUBLESHOOTING_PLAN.md) kompletterar arkitekturen **utan** en andra nätverksmodell, extern motor eller runtimeintegration. Verifiera faktisk kod och CI innan utvecklingsbeslut. Dokumentationsimport ska följa [det aktuella bindande importkontraktet](IMPORT_SOURCE_CONTRACT.md) och [verifierad statusöversikt](IMPLEMENTATION_STATUS.md); ingen ny importfunktion är färdig genom att den har dokumenterats.
 
 ## Varför en ny implementation?
 
@@ -18,7 +18,7 @@ network_core/model.py  ← schema och genomskinlig validering
              └── SVG av EXAKT samma nod-/port-/länk-ID:n
 ```
 
-Visningsnamnet deklareras endast i **`network_core/config.py`** som `APP_NAME`. Runtime-paketet `network_core` är avsiktligt generiskt och behåller sitt tekniska namn vid omprofilering. Inga externa runtimemoduler krävs.
+Visningsnamnet deklareras endast i **`network_core/config.py`** som `APP_NAME`. Runtime-paketet `network_core` är avsiktligt generiskt och behåller sitt tekniska namn vid omprofilering. Pythonserverns vanliga lokala start kräver ingen separat nedladdad tredjepartsmodul. Webbläsardelen har däremot den **medpackade tredjepartskomponenten `elkjs`**; se [NOTICE](../web/vendor/NOTICE.md). Det vore fel att påstå att hela runtime saknar tredjepartskod.
 
 ## Modulgränser
 
@@ -53,6 +53,8 @@ Visningsnamnet deklareras endast i **`network_core/config.py`** som `APP_NAME`. 
 - **Chromiumacceptans:** skapa enheter och portar, skapa exakt en deklarerad kabel, verifiera SVG-portändpunkter, inaktivera kabel, spara, stäng programprocess och browser, öppna igen, kontrollera SHA-256 och exakt projektinnehåll. Direkt webbläsarnätverk eller uttryckligt märkt testbro enligt miljön.
 - Tester får inte påstå att simuleringsprotokoll fungerar när den funktionen inte finns.
 
-## Nästa steg (inte implementerade)
+## Historiska utvecklingssteg – ingen aktiv implementationslista
 
-Utöka den avgränsade IPv4-paketmodellen först efter validerad one-way forwarding med explicit routing, ARP, Ethernet och TTL. ICMP Echo Request/Reply har nu ett eget strikt kontrakt med verifierad returväg. Implementera senare ICMP Time Exceeded/Unreachable endast med korrekt felkodning och separata negativa tester. Integrera inte äldre projekts motorkod per automatik. Det definierade fyrtabells-CSV-formatet har en separat strikt importör. XLSX/ODS har nu separata strikta formatkontrakt över samma fyrtabells-CSV; godtyckliga Excel-/ODS-/CSV-scheman stöds inte utan separata kontrakt.
+Den tidigare texten om att först bygga IPv4 forwarding, ICMP Echo och routerfel avsåg en äldre utvecklingsfas och är inte längre en aktuell byggorder. Dessa **avgränsade** mekanismer har senare fått egna kontrakt och kod i `network_core/`. Kontrollera senaste HEAD och tester innan någon ny funktion utlovas. Den äldre beskrivningen av importformat och Layer 2 är också tidsbunden.
+
+**Nuvarande arkitekturprinciper:** En kanonisk modell; explicita portar och kablar; granskade källfakta; en befintlig simuleringskedja; inga gissade uppgifter; separat Save; Linux-exklusiv miljö. För planerad utbildning gäller [PEDAGOGICAL_TROUBLESHOOTING_PLAN.md](PEDAGOGICAL_TROUBLESHOOTING_PLAN.md) och för samlad kvalitetsordning [QUALITY_IMPROVEMENT_PLAN.md](QUALITY_IMPROVEMENT_PLAN.md). Ett framtida ”Incidentverkstaden”-UI är planerat undervisningsinnehåll, **inte** verifierat implementerad produktfunktion.

@@ -1,16 +1,16 @@
 # Ren nätverkslabb-app — kanonisk topologi
 
-**Självständig nyimplementation.** Repositoryts tekniska namn är inte produktens namn. Ändra endast `APP_NAME` i `network_core/config.py` för att byta appens visningsnamn. Alla användarsynliga namn hämtas från den deklarationen. Ingen äldre produktkod har kopierats in.
+**YadiLab är projektnamnet i denna dokumentation, inte ett hårdkodat UI-namn.** Repositoryts tekniska namn och beskrivande Markdown-text kan fortsatt använda `YadiLab`. För att byta **den körbara appens visningsnamn** ändras endast `APP_NAME` i `network_core/config.py`; UI, fönstertitel och andra produktreferenser i runtime ska härledas från den deklarationen. Funktioner, klasser, moduler och källfilnamn förblir generiska och behöver inte döpas om. Detta är en självständig nyimplementation; ingen äldre produktkod har kopierats in.
 
-Version 0.1 är en körbar lokal desktop/webb-hybrid för att dokumentera enheter, portar, zoner och **uttryckligen deklarerade** fysiska länkar. Grafspårningen är avsiktligt begränsad. Projekt lagras på riktigt i `.yadilab`-filer. Programmet fungerar helt lokalt utan npm-installation, moln eller tredjepartsbibliotek i runtime.
+Applikationen är en lokal, Linux-exklusiv nätverkslabb- och dokumentationsmiljö. Den har utvecklats stegvis från en enkel topologimodell till avgränsade Ethernet/ARP/VLAN/IPv4/ICMP/DHCP-simuleringar och felövningar. Följ respektive protokollkontrakt för exakt stöd; programmet återskapar **inte** automatiskt godtyckliga kundnätverk eller alla protokoll. Projekt lagras lokalt i `.yadilab`-filer. Applikationen kör ingen live-discovery genom pedagogikplanen. Normal lokal start kräver ingen npm-installation eller molnanslutning, men webbläsardelen använder det **lokalt medpackade tredjepartsbiblioteket `elkjs 0.13.0`**; se [NOTICE](web/vendor/NOTICE.md). Ingen CDN-hämtning behövs vid start.
 
-> **Dokumentstatus 2026-11-21:** README innehåller historiska etappbeskrivningar och är ännu inte en fullständigt uppdaterad funktionsmatris. För faktiskt nuläge gäller verifierad kod och CI. Den aktuella [kvalitetsfärdplanen QUALITY-000–011](docs/QUALITY_IMPROVEMENT_PLAN.md) är styrande för kommande kvalitetsarbete tillsammans med [AGENTS.md](AGENTS.md) och [MASTERPROMPT.md](docs/MASTERPROMPT.md). Den ersätter inte [importkontraktet](docs/IMPORT_SOURCE_CONTRACT.md) eller protokollens tekniska kontrakt. Tidigare kvalitetsanteckningar finns i [historikarkivet](docs/QUALITY_IMPROVEMENT_HISTORY.md).
+> **Dokumentstatus 2026-11-24:** README innehåller fortfarande **historiska, kronologiska** funktionsbeskrivningar. Äldre begränsningar i en tidigare etapp får inte användas som aktuell helhetsstatus när senare kod har tillkommit. Verifiera aktuell HEAD, implementation, protokollkontrakt och tester. Den nya [pedagogiska arkitekturen](docs/PEDAGOGICAL_TROUBLESHOOTING_PLAN.md) är ett uttryckligt **framtida utbildningskontrakt, inte en redan färdig incidentverkstad**. För faktiskt nuläge gäller verifierad kod och CI. Den [verifierade statusöversikten](docs/IMPLEMENTATION_STATUS.md) och [kvalitetsfärdplanen QUALITY-000–011](docs/QUALITY_IMPROVEMENT_PLAN.md) är styrande för kommande kvalitetsarbete tillsammans med [AGENTS.md](AGENTS.md) och [MASTERPROMPT.md](docs/MASTERPROMPT.md). Den ersätter inte [importkontraktet](docs/IMPORT_SOURCE_CONTRACT.md) eller protokollens tekniska kontrakt. Tidigare kvalitetsanteckningar finns i [historikarkivet](docs/QUALITY_IMPROVEMENT_HISTORY.md).
 
 ## Permanent utvecklingsdirektiv
 
 Utvecklingen styrs av [Masterprompten](docs/MASTERPROMPT.md) och den korta operativa instruktionen i [AGENTS.md](AGENTS.md). Läs båda före varje utvecklingsetapp. Dokumentet beskriver slutmål och kvalitetskrav; alla planerade funktioner är **inte** redan implementerade.
 
-**Nästa ELK-implementation:** [Kodstyrd ELK-genomförandeplan](docs/ELK_IMPLEMENTATION_PLAN.md). Den prioriterar direkt produktionskod och testad användarnytta, utan parallella forskningsgrenar eller rapport-PR:er. Detta är en arbetskö under befintlig QUALITY-färdplan.
+**ELK-status:** ELK-06A–06C är redan mergade som PR #94–#96: koordinatfri dokumentimport, automatisk första layout och koordinatfria dokumentationsexporter/mallar. [ELK-planen](docs/ELK_IMPLEMENTATION_PLAN.md) innehåller nu **historiska kodkort**, inte order att göra 06A–C igen. Den [pedagogiska planen](docs/PEDAGOGICAL_TROUBLESHOOTING_PLAN.md) är ingen andra kodkö.
 
 ## Starta på Linux (Python 3.10+)
 
@@ -41,7 +41,7 @@ python3 -m network_core --data-dir ~/NetworkProjects --no-browser --port 8765
 - Animationen visar bara kabelöverföringar från det faktiska, avgränsade ICMP/IPv4/ARP/Ethernet-resultatet. Varje animerad kabel måste matcha båda deklarerade portändpunkterna; vid avvikelse stoppas animationen. Rörelsen är **inte** simulerad tid, mätt RTT eller verklig nätverkstrafik. Vid motorfel syns status i stället för en påhittad lyckad leverans.
 - Ingen visualisering ändrar nätverksmodellen, sparade projekt eller dokumentationsfakta. Efter byte eller ändring av projektet upphör tidigare uppspelning.
 
-## Fungerar i första versionen
+## Historiska grundfunktioner (senare etapper finns längre ned)
 
 - Skapa, redigera, flytta och ta bort dokumenterade hosts, switchar, routrar och brandväggar.
 - Lägg till namngivna, uttryckligen deklarerade portar, valfri IPv4/CIDR, och zoner.
@@ -52,7 +52,7 @@ python3 -m network_core --data-dir ~/NetworkProjects --no-browser --port 8765
 - Importera/exportera kanoniskt JSON; okända fält avvisas så att de inte försvinner tyst.
 - Offline-baserat gränssnitt med SVG-linjer direkt i respektive ports synliga anslutningspunkt.
 
-## Fristående Layer 2-kärna (under utveckling)
+## Historik: den första fristående Layer 2-kärnan
 
 `network_core/ethernet.py` erbjuder en **endast Python-baserad, deterministisk MAC-forwardingmodell** ovanpå projektets uttryckligen deklarerade länkar. Den lär käll-MAC från faktisk switchingress, floodar broadcast och okänd unicast samt riktar känd unicast. Avstängda portar och länkar används inte; switchloopar avvisas eftersom STP saknas. 23 nya beteendetester ingår.
 
@@ -102,7 +102,7 @@ Ny `network_core/icmp.py` kodar och validerar **ICMPv4 Echo Request (typ 8/kod 0
 
 ## IPv4-datagram: faktisk ARP, Ethernet och TTL (avgränsad simulering)
 
-`network_core/ipv4_packet.py` kodar och verifierar en minimal RFC 791 IPv4-header (20 byte, verklig headerchecksumma, TTL, IPv4-käll-/mål-IP, experimentellt protokoll **253**). `network_core/ipv4.py` använder en och samma `ArpSession`/`EthernetFabric` för varje uttryckligt paketförsök: uppslagning i den befintliga connected-/static-route-tabellen, ARP för deklarerat next-hop, Ethernet II-ram med EtherType `0x0800`, verifierad faktisk ramtransport på deklarerade kablar och VLAN, samt TTL-minskning för varje transitrouter. Endast en matchande konfigurerad mottagar-MAC **och** IPv4-adress på den verkligen nådda gränssnittsporten kan ge `DELIVERED`. Alla övriga fel förblir explicita, exempelvis `NO_ROUTE`, `ARP_FAILED`, `TTL_EXPIRED`, `NON_ROUTER` och `AMBIGUOUS_ROUTE`. Protokoll 253 är en opak experimentell datagramlast, **inte ICMP Echo eller en transporttjänst**. Protokoll 1 kan separat bära ett strikt validerat ICMP Echo-meddelande och få en riktig modellerad returresa via `/api/icmp/echo`. IP-fragmentering och ICMP Time Exceeded simuleras inte.
+`network_core/ipv4_packet.py` kodar och verifierar en minimal RFC 791 IPv4-header (20 byte, verklig headerchecksumma, TTL, IPv4-käll-/mål-IP, experimentellt protokoll **253**). `network_core/ipv4.py` använder en och samma `ArpSession`/`EthernetFabric` för varje uttryckligt paketförsök: uppslagning i den befintliga connected-/static-route-tabellen, ARP för deklarerat next-hop, Ethernet II-ram med EtherType `0x0800`, verifierad faktisk ramtransport på deklarerade kablar och VLAN, samt TTL-minskning för varje transitrouter. Endast en matchande konfigurerad mottagar-MAC **och** IPv4-adress på den verkligen nådda gränssnittsporten kan ge `DELIVERED`. Alla övriga fel förblir explicita, exempelvis `NO_ROUTE`, `ARP_FAILED`, `TTL_EXPIRED`, `NON_ROUTER` och `AMBIGUOUS_ROUTE`. Protokoll 253 är en opak experimentell datagramlast, **inte ICMP Echo eller en transporttjänst**. Protokoll 1 kan separat bära ett strikt validerat ICMP Echo-meddelande och få en riktig modellerad returresa via `/api/icmp/echo`. IP-fragmentering stöds inte. Avgränsade ICMP Time Exceeded-/Network Unreachable-fel finns i den senare ICMP-routerfelmotorn; detta spår ger inget generellt stöd för alla ICMP-felkoder.
 
 Builder kan skicka en **engångsspårning** via `POST /api/ipv4/trace` med explicit källport, destination och TTL. Alla hops ARP-statusar, kabeltransmissioner och ruttbeslut visas. Inga projektfiler eller sessionscache ändras; varje körning börjar med tomma ARP-/MAC-tabeller. Det tidigare UI-läget för fortsatta Layer 2-sessioner påverkas inte. Se [IPv4-forwardingkontraktet](docs/IPV4_FORWARDING.md).
 
@@ -112,15 +112,19 @@ Enheter av typen **host, router eller firewall** kan nu ha valfria `staticRoutes
 
 Longest-prefix match omfattar nu både `CONNECTED` och `STATIC`; lika specifika alternativ ger `AMBIGUOUS` (ingen metric eller administrative distance antas). Statiska default routes anges uttryckligen som `0.0.0.0/0`. Schema **1.0–1.2** kan fortsätta läsas och sparas oförändrade, medan uttrycklig route- eller portredigering uppgraderar arbetsminnet till schema **1.3** utan autosave. Routingtabellerna är read-only resultat från dokumentationen; faktisk avgränsad forwarding, next-hop-ARP, TTL och ICMP Echo anropar **separata** protokollmotorer och kan inte härledas från en route-tabellmatchning. Se [kontraktet för statiska routes](docs/STATIC_ROUTES.md).
 
-## Explicit VLAN-forwarding (endast Python-API)
+## Explicit VLAN-forwarding (Pythonmotor och sparad Builder-konfiguration)
 
 `EthernetFabric(project, vlan_ports=...)` kan nu forwarda mellan uttryckligen konfigurerade access- och trunkportar med **isolerade MAC-tabeller per VLAN**, begränsade allowlists och korrekt 802.1Q-tagging på trunkar. `EthernetFrame` kan serialisera och tolka en C-tagg. Explicit VLAN-portkonfiguration kan nu lagras i `.yadilab` schema **1.2**, redigeras i Builder och läsas direkt av `EthernetFabric` och `ArpSession`. Inlärda MAC-tabeller och ARP-cache är fortfarande endast sessionsdata. Den separata ARP-sessionen kan återanvända samma VLAN-forwarding för request och reply. Endast explicit sparad 1.2-konfiguration eller tillagd sessionskonfiguration får användas; inget VLAN antas. Se [VLAN-kontraktet](docs/VLAN.md).
 
-## Avsiktligt INTE implementerat
+## Bevisgränser och avsiktligt ej stödda områden
 
-**Topologisk grafväg är inte ping, IP-routing, VLAN-medveten reachability, brandväggslogik eller ett bevis på nätverksanslutning.** Första versionens grafspårning traverserar dokumentationsgrafen, inte verkliga protokoll.
+**Topologisk grafväg är inte paketleverans, routing eller ping.** applikationens senare IPv4/ARP/Ethernet/ICMP-motor har egna uttryckligt avgränsade leverans- och returkriterier. För verkliga kundnätverk är dessa resultat fortfarande modellberäknade, inte uppmätta.
 
-Ännu inte implementerat: godtycklig kalkylbladsimport, beständig DHCP-leasedatabas och permanent klient-IPv4-konfiguration, DNS, brandväggsregler, ACL, fysisk kabeltyp, extern nätverksemulering, automatisk första ELK-layout efter godkänd dokumentationsimport, portöverlappskontroll, multi-user, produktionsinstallatör och omfattande tillgänglighetsverifiering. Ingen funktion visar påhittade enheter eller kablar. Inga gamla simuleringsmotorer har förts över utan bevis.
+Denna arkitektur har **inte** generell inbyggd OSPF-, BGP-, STP-, ACL-, NAT-, DNS-, IPv6- eller Wi-Fi-simulering och ingen automatisk discovery av verkliga nätverk. Godtycklig heuristisk kalkylbladsimport eller skanningsverktygsadapter ska inte antas. Avgränsade DHCP- och felinjektionsfunktioner beskrivs **i senare avsnitt** och får inte döljas av äldre text. Andra funktionsgränser måste kontrolleras mot aktuell kod och protokollkontrakt, inte gissas.
+
+applikationens [pedagogiska undervisningsplan](docs/PEDAGOGICAL_TROUBLESHOOTING_PLAN.md) lär ut verktygsval och verktygsutdata med statiska granskade exempel, men installerar, integrerar eller anropar **inte** Batfish, SuzieQ, Netshot, Wireshark, FRRouting, containerlab eller andra externa verktyg. De är referenser, inte runtimefunktioner.
+
+
 
 ## Avgränsad DHCPv4 DISCOVER/OFFER via HTTP (PR #29)
 

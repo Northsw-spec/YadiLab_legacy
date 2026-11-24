@@ -1,7 +1,8 @@
 # MASTERPROMPT — REN NÄTVERKSAPPLIKATION
-## Permanent utvecklingsdirektiv: bygg en komplett nätverkssimulator från grunden utan hallucinerad funktionalitet
+## Permanent utvecklingsdirektiv: bygg en verifierbar, avgränsad nätverkssimulator med tydlig felsökningspedagogik
 
-**Repository:** Detta GitHub-repository (det tekniska repositorynamnet är inte produktnamnet).  
+**Repository:** Detta GitHub-repository (det tekniska repositorynamnet är inte produktnamnet).
+**Verifierad nulägesöversikt:** [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) – historikgrind, inte automatisk bekräftelse på senare HEAD.  
 **Huvudgren:** `main`.  
 **Utvecklingsmodell:** Högst en aktiv utvecklingsgren och en PR åt gången.  
 **Produktnamn:** Hämtas endast från `APP_NAME` i `network_core/config.py`.  
@@ -12,15 +13,35 @@ Detta direktiv gäller all framtida kodning i detta repository. Läs även `AGEN
 
 ---
 
-## ELK: aktiv kodleverans, inte forskningsprogram
+## ELK: statuskorrigering och bevarad layoutarkitektur
 
-Vid fortsatt ELK-/SVG-/import-UI-arbete ska Codex följa [ELK:s kodstyrda genomförandeplan](ELK_IMPLEMENTATION_PLAN.md). Detta är en konkret implementationsordning under befintlig QUALITY-färdplan, inte en konkurrerande roadmap. **Det förväntade resultatet från varje aktiv ELK-etapp är fungerande, testad produktionskod med verklig användarnytta.** Gör ingen separat forsknings-, revisions-, ADR-, dokumentations- eller test-PR i stället för implementation. Skippa redan implementerade steg (KEEP); en kort teknisk kontroll får endast användas för en specifik blockerare i den PR som faktiskt ändrar koden.
+**Verifierat historiskt genomförande:** ELK-06A–06C har mergats genom PR #94, #95 och #96 (2026-11-22). Den strikta importen accepterar koordinatfria CSV/XLSX/ODS-dokument; efter godkänd dokumentationsimport används automatisk initial ELK-layout; nya nätverksdokument/exportmallar ska inte kräva X/Y. Äldre kompletta X/Y-dokument kan fortfarande accepteras. Projektets egna presentations-X/Y finns kvar i den kanoniska projektfilen. Verifiera aktuell kod och tester före nya löften.
 
-**Obligatoriskt källdokumentkontrakt:** Nätverksdokument i CSV/XLSX/ODS och flexibel källmappning får **aldrig kräva nodernas X/Y som indata**. Sådana tal tillhör enbart intern presentationsgeometri. Källans rad-/kolumn-/celladresser är proveniens, inte nodpositioner. Den gamla strikta importkedjan kräver i nuläget faktiskt koordinatkolumner och måste få koordinatfritt inputstöd i ELK-06; hävda inte att den delen redan är implementerad. Importmodellens interna X/Y, historiska sparade projekt och källkvitton bevaras.
+[ELK_IMPLEMENTATION_PLAN.md](ELK_IMPLEMENTATION_PLAN.md) behålls för teknik, historisk spårbarhet och kvarstående *särskilt beställda* förbättringar. Alla gamla ”ELK-06A är nästa PR”, ”implementera 06B nu” och ”export skriver ännu X/Y” är **inaktuella historiska statusuppgifter**, inte koduppdrag. KEEP är standard. Ingen ändring av ursprungliga dokumentbytes, kvitton, kanonisk topologi eller Save-kontrakt för en layoutförbättring. Inga nya motorer.
 
-**Exakt etappordning för Codex:** ELK-06A uppdaterar den äldre **strikta CSV/XLSX/ODS-inläsningen** för koordinatfria dokument, schema 1.0 och 1.3, med riktig kod/tester. ELK-06B gör första ELK-layouten **automatisk efter accepterad dokumentimport** i båda befintliga UI-flödena. ELK-06C gör **nya CSV-exempel, XLSX-/ODS-mallar och nätverksdokumentexporter koordinatfria**; dokumentexporten bevarar nätverksfakta men kan inte samtidigt lova att bevara projektets X/Y. Enbart kanonisk projektfil/Save behåller den exakta diagramplaceringen. Alla tre är nödvändiga, sekventiella kodleveranser; ingen parallell forskning eller test-only-PR.
+## Pedagogisk målarkitektur – bindande produktbeslut 2026-11-24
 
-**Prioritera närmast:** **automatisk första ELK-layout efter uttryckligen godkänd och giltig dokumentationsimport**, eftersom källdokumenten inte ska behöva innehålla X/Y. Codex får **inte** kräva ett extra ELK-klick eller manuellt layout-Apply för att diagrammet ska få sin första placering. Använd befintlig Worker och atomärt stale-skydd; ingen autosave eller förändring av historiska importkvitton. **Valfri manuell ELK Preview/Apply/Cancel gäller endast senare omplacering** och öppnade projekt med sparade X/Y får inte automatiskt få ny layout. En aktiv PR åt gången, inga parallella forskningsgrenar, ingen ny motor. Bevara nätverksfakta, Save/Open och de vanliga verifieringsgrindarna.
+**Normerande pedagogikdokument:** [PEDAGOGICAL_TROUBLESHOOTING_PLAN.md](PEDAGOGICAL_TROUBLESHOOTING_PLAN.md). Detta beslut breddar **vad appen lär ut**, inte automatiskt vad native-simulatorn stöder. Primärmål: lära blivande leverantörsoberoende IT-/nätverkskonsulter hur man observerar, tolkar, hypotesprövar, diagnostiserar, förstår trafikbeslut, avgränsar fel, verifierar och dokumenterar. Applikationen ska göra det osynliga nätverksbeteendet begripligt, utan att låtsas modellera mer än kod och oberoende tester styrker.
+
+**EXAKT mallen för genomarbetade felsökningsfall:**
+
+1. **Om [observerat]:**
+2. **Då [vad det faktiskt betyder]:**
+3. **Möjliga orsaker [inte fastställda/hypoteser]:**
+4. **Vad detta inte bevisar:**
+5. **Nästa diagnostiska steg:**
+6. **Förväntat resultat och tolkning:**
+7. **Åtgärd [först efter fastställd orsak]:**
+8. **Verifiering [fungerar det nu?]:**
+9. **Beviskälla och begränsningar:**
+
+Skriv **Då** enbart som teknisk slutsats som faktiskt följer av **Om** under angivna förutsättningar. Skilj hypoteser från observerad och styrkt orsak. Visa vad som skulle motbevisa en hypotes och vad testets positiva/negativa utfall betyder. Visa de tre första rubrikerna direkt och övriga stegvis. Ingen fabricerad kundtelemetri, ingen påhittad terminalutdata eller falsk paketresa. Undvik godtyckliga procenttal; elevens självskattning är inte ett kalibrerat orsaksestimat.
+
+**Uttrycklig gräns:** Batfish, SuzieQ, Netshot, NetXMS, Wireshark, FRRouting, containerlab och liknande är *externa fristående undervisnings- och labbverktyg*. Applikationen får visa manuella kommandon, granskade statiska exempel och när verktyget är lämpligt, men **ska inte** integrera, paketera, anropa, köra eller läsa live-utdata från verktygen. Inga nya tredjepartsbibliotek, SDK-/API-adaptrar, sniffers, SSH/SNMP-scanners, shell-exekvering, containers, forks eller nya simulatormotorer beslutas här. OSPF/BGP/STP/SNMP/ACL/NAT kan vara **kursinnehåll** men får inte presenteras som native-simulering utan separat godkänt, testat protokollkontrakt.
+
+**Sanningsgräns:** en källdokumenterad topologi, en simulerad Echo-transmission, ett statiskt Wireshark-exempel och ett verkligt observerat kundnät är fyra olika evidensklasser. Använd befintliga statusklasser och källproveniens; skapa inte ett alternativt projektschema. En route lookup ensam bevisar inte reachability. Utgå från dagens `network_core/`, befintliga dolda felövningar och en kanonisk modell. Bevara allt fungerande.
+
+**Styrning och arbetstillstånd:** Pedagogikplanens P0–P7 är inga automatiska uppdrag. Den enda kvalitetsroadmapen är [QUALITY_IMPROVEMENT_PLAN.md](QUALITY_IMPROVEMENT_PLAN.md); nya pedagogiska funktioner kräver en särskilt avgränsad användarbeställning, funktions- och negativa tester och UI-/CI-bevis på exakt HEAD. Produktvisionen ”världens bästa” är en ambition, **inte ett verifierat jämförande faktapåstående**.
 
 ## 1. Uppdraget
 
@@ -71,11 +92,11 @@ Detta repositorys namn är en teknisk adress, **inte** applikationens produktnam
 
 Det finns **exakt en** deklaration av produktens visningsnamn: `APP_NAME` i `network_core/config.py`. Ändras den ska webbläsartitel, visuell branding, sidfot, loggar, hälsosvar, terminal och andra användarsynliga produktreferenser härledas från detta värde.
 
-Hårdkoda inte produktnamn i HTML, JavaScript, Python, CSS, tester, dokumentation eller installationstexter. Interna paket, klasser, funktioner, symboler och filnamn ska vara **generiska och beskrivande**, till exempel `NetworkModel`, `PacketEngine`, `RoutingTable`, `ProjectStore` och `TopologyRenderer`.
+**Skilj projektnamn i text från visningsnamn i kod.** Markdown-dokument (`AGENTS.md`, `README.md`, `docs/*.md` och andra `*.md`) **får nämna `YadiLab`** som namn på repositoryt/projektet i mänskliga rubriker, arbetsinstruktioner, historik och förklaringar. Det är ingen deklaration av UI-namnet, inget API och inget krav att dokumentationen byter namn när `APP_NAME` ändras. Hårdkoda däremot **inte** produktnamn i Python, JavaScript, HTML, CSS, runtimekonfiguration, tester, fixtures, loggar eller installationens exekverbara kod. Detsamma gäller gamla projektnamn i klasser, funktioner, paket, moduler, symboler och källfilnamn: de ska förbli **generiska och beskrivande**, till exempel `NetworkModel`, `PacketEngine`, `RoutingTable`, `ProjectStore` och `TopologyRenderer`. Namn i pedagogiska Markdown-prosa får **inte** användas som förevändning för att införa nya produktnamnsbundna kodidentifierare.
 
 Det befintliga filformatet `.yadilab` är tills vidare en **teknisk kompatibilitetsidentifierare**, inte ett produktnamn. Ändra aldrig format, filändelse eller sparade projekt genom automatisk omprofilering; en sådan migration kräver eget kontrakt och verifiering.
 
-Den automatiska namnkontraktskontrollen i `tests/test_naming_contract.py` ska fortsatt passera. Återinför inte gamla varumärkesidentifierare.
+`tests/test_naming_contract.py` ska fortsatt kontrollera att `APP_NAME` deklareras exakt en gång, att det aktuella UI-namnet inte hårdkodas i icke-Markdown-filer, att gamla varumärken inte återkommer i kod/fixturer/filvägar och att namngivningsundantaget **endast gäller Markdown-innehåll**. Återinför inte gamla varumärkesidentifierare i exekverbar kod. Prosa som nämner projektet i styrdokument är uttryckligen tillåten.
 
 ## 5. Kanonisk nätverksmodell
 

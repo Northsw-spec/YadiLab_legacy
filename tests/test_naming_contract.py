@@ -22,6 +22,10 @@ class NamingContractTests(unittest.TestCase):
         for file in ROOT.rglob("*"):
             if not self._source(file) or file == CONFIG_PATH:
                 continue
+            # A code example in Markdown is not a second runtime declaration.
+            # Check actual source and fixtures, not narrative documentation.
+            if self._narrative_documentation(file):
+                continue
             content = file.read_text(encoding="utf-8")
             self.assertNotRegex(content, declaration,
                                 f"Unexpected product name declaration: {file.relative_to(ROOT)}")
@@ -40,9 +44,26 @@ class NamingContractTests(unittest.TestCase):
             relative = file.relative_to(ROOT)
             self.assertIsNone(name.search(extension.sub("", str(relative))),
                               f"Retired brand in path: {relative}")
-            content = extension.sub("", file.read_text(encoding="utf-8"))
-            self.assertIsNone(name.search(content),
-                              f"Retired brand in file: {relative}")
+            # Narrative Markdown may name the project for human readers.
+            # Non-Markdown source remains brand-neutral, even in comments and fixtures.
+            if not self._narrative_documentation(file):
+                content = extension.sub("", file.read_text(encoding="utf-8"))
+                self.assertIsNone(name.search(content),
+                                  f"Retired brand in file: {relative}")
+
+    def test_documentation_exemption_does_not_include_executable_sources(self):
+        self.assertTrue(self._narrative_documentation(ROOT / "AGENTS.md"))
+        self.assertTrue(self._narrative_documentation(ROOT / "README.md"))
+        self.assertTrue(self._narrative_documentation(ROOT / "docs" / "MASTERPROMPT.md"))
+        for suffix in (".py", ".js", ".html", ".css", ".json", ".yml", ".yaml", ".csv"):
+            self.assertFalse(self._narrative_documentation(ROOT / ("source" + suffix)))
+
+    @staticmethod
+    def _narrative_documentation(file: Path) -> bool:
+        # Documentation can discuss historical/project branding. Only text is
+        # exempt: filenames, code, data fixtures, declarations and runtime UI
+        # still pass through their original naming checks.
+        return file.suffix == ".md"
 
     @staticmethod
     def _source(file: Path) -> bool:

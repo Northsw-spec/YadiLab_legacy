@@ -3,7 +3,7 @@
 **Date:** 2026-11-23 (ISO).  
 **Source baseline:** `main@11bdcbc8819c27df5b74172139615d699e08e1a8`.  
 **Scope:** Linux-only network simulation. No Windows or macOS target.  
-**Status:** **EVIDENCE IN PROGRESS**; this small reference-vector slice is not the full QUALITY-003 acceptance or an assertion of standards compliance.
+**Status correction 2026-11-24:** The original **first slice** was historically EVIDENCE IN PROGRESS. Four reference slices (#100–#103) were later merged and QUALITY-003 was accepted **only for the explicitly VERIFIED SUPPORTED SUBSET**; consult [QUALITY_003_VERIFICATION_REPORT.md](QUALITY_003_VERIFICATION_REPORT.md) and [QUALITY_IMPROVEMENT_PLAN.md](QUALITY_IMPROVEMENT_PLAN.md) for final evidence. This document is not evidence of universal RFC compliance, OSPF/BGP/STP/ACL implementations or real-network reachability. Pedagogical explanations must also follow [PEDAGOGICAL_TROUBLESHOOTING_PLAN.md](PEDAGOGICAL_TROUBLESHOOTING_PLAN.md).
 
 ## Method and provenance
 
@@ -43,7 +43,7 @@ python3 -m unittest discover -s tests -p 'test_protocol_reference_vectors.py' -v
 
 This first slice is PASS **only when** these exact tests and the regular required `unit-tests` workflow succeed on the **same final PR HEAD**. Record HEAD/run in the PR. No success is claimed from this document alone. Code not covered here remains `NOT_VERIFIED` by this particular external matrix, even if older code-based tests pass.
 
-**Still outside the demonstrated slice (QUALITY-003 remains open):** 3A learned/unlearned MAC forwarding, unknown-unicast and loop/STP boundaries; 3B VLAN end-to-end isolation and trunk/drop paths; 3C ARP cache and silent-peer paths; 3D multi-hop IPv4 with independent return-route and /31 boundary references; 3E router-generated ICMP errors and full Echo roundtrip; 3F DORA/leases/T1/T2/rebinding with an external state-machine oracle. Each requires independent expected traces and their own positive/negative tests; existing tests cannot be relabeled as independent simply because they are green.
+**Historically outside the FIRST demonstrated slice (subsequent slices #101–#103 later added coverage):** 3A learned/unlearned MAC forwarding, unknown-unicast and loop/STP boundaries; 3B VLAN end-to-end isolation and trunk/drop paths; 3C ARP cache and silent-peer paths; 3D multi-hop IPv4 with independent return-route and /31 boundary references; 3E router-generated ICMP errors and full Echo roundtrip; 3F DORA/leases/T1/T2/rebinding with an external state-machine oracle. Each requires independent expected traces and their own positive/negative tests; existing tests cannot be relabeled as independent simply because they are green.
 
 **No changes authorized:** production protocol code, canonical schema, implicit network facts, real network commands, Windows/macOS support, or required CI gates. On a confirmed discrepancy, propose a separate minimal correction instead of changing expected values to match an implementation.
 
@@ -120,7 +120,7 @@ Explicit synthetic client MAC/IP allocation and server on a two-link Ethernet se
 - At **39**, renewal attempt is **rejected** and the lease remains unchanged. At **40**, a successful T1 **unicast** REQUEST to server IP/MAC and actual returned ACK moves lease start to 40, expiry to **120**, new T1 **80**, T2 **110**; client project IP is not written.
 - Separate negative experiment: after initial ACK, intentionally disable the **existing** server cable in the *simulation session*, not the project. At **40**, T1 unicast cannot reach server; at **70**, T2 **broadcast** cannot reach server; neither can renew the lease. At **80**, lease must expire (no BOUND lease remains), despite the previous simulated address. No real time or real network change is involved.
 
-**Status:** tests from this third slice must be executed at exact PR HEAD and mandatory Linux CI must pass; until then **NOT_VERIFIED**. The entire QUALITY-003 stage still requires broader independent protocol coverage, including a richer DHCP state-machine oracle and unsupported scenarios. A green CI does not promote all implementation paths to RFC compliance.
+**HISTORICAL pre-CI requirement – superseded by later test evidence:** The third slice was subsequently merged with mandatory green checks. The bounded tested subset was later accepted in [QUALITY_003_VERIFICATION_REPORT.md](QUALITY_003_VERIFICATION_REPORT.md) with documented main CI. **Broader protocol coverage remains NOT_VERIFIED or UNSUPPORTED**; accepted test vectors do not mean universal compliance.
 
 
 ## QUALITY-003 fourth slice — address boundaries and metamorphic integrity (pre-registered)
@@ -149,4 +149,4 @@ This is a fourth **reference slice**, not a completion declaration. A PASS requi
 | IPv4/ICMP/DHCP | #102 | `7b76369bf947091f4e9a7b252fae34642158918e` | `unit-tests` x2 | **PASS** (both completed SUCCESS, then squash merged) |
 | Boundary/metamorphic invariants | #103 | `b2a35f7f61fa133f8b4c0b6fd754d167927e7107` | `unit-tests` x2 | **PASS** (both completed SUCCESS, then squash merged) |
 
-**Status separation:** CI on a PR HEAD is not a claim that post-merge `main` CI passed; verify each main SHA separately. The observed outcomes, run IDs, method limits and formal acceptance gate are recorded in [QUALITY_003_VERIFICATION_REPORT.md](QUALITY_003_VERIFICATION_REPORT.md). Unsupported behaviors (e.g., STP, IPv6, DHCP relay/NAT, arbitrary UDP/TCP and real NIC packet transmission) remain **UNSUPPORTED**. QUALITY-003 remains **IN PROGRESS** until the required final main-CI and documented acceptance checks pass.
+**Status separation:** CI on a PR HEAD is not a claim that post-merge `main` CI passed; verify each main SHA separately. The observed outcomes, run IDs, method limits and formal acceptance gate are recorded in [QUALITY_003_VERIFICATION_REPORT.md](QUALITY_003_VERIFICATION_REPORT.md). Unsupported behaviors (e.g., STP, IPv6, DHCP relay/NAT, arbitrary UDP/TCP and real NIC packet transmission) remain **UNSUPPORTED**. QUALITY-003 was later marked **ACCEPTED – VERIFIED SUPPORTED SUBSET** after the documented main-CI and scoped acceptance checks. Consult the acceptance report; this line does not assert correctness outside the covered subset.
