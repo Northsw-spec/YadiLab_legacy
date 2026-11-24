@@ -463,7 +463,7 @@ Källkoden i `network_core/model.py` validerar ändliga `x/y` inom intervallet `
 
 **Oberoende testvektorer:** `n=1` ger `cols=1` och nod 0 `(110,110)`. `n=4` ger `cols=2` och index 0–3 `(110,110),(370,110),(110,330),(370,330)`. `n=5` ger `cols=3` och nodindex 4 `(370,330)`. `n=2000` ger `cols=45` med `x_max=11550` och `y_max=9790`, båda <100000. `n=2001` ger en valideringsavvisning och ingen projektmutation. Kör negativ testning vid det tidigare felet `n=1821`; ordningsinvarians med omkastad fil-/radordning och case-sensitiva ID:n; två claims om samma node-ID; saknat node-ID; noll godkända noder; Save/Open och historisk replay. Bekräfta att de härledda koordinaterna aldrig skapar en fysisk länk eller ändrar IP-/ARP-/DHCP-/ICMP-beteenden.
 
-## 9. Etapp 4B – importplan, blandade enhetsvyer och kompakta auditmanifest
+## 9. HISTORISKT arbetskort 4B – importplan, blandade enhetsvyer och kompakta auditmanifest
 
 **Start:** 4A mergad och efterföljande main-CI SUCCESS. Inga andra planeringsdokument får krävas.
 
@@ -593,7 +593,7 @@ UI måste särskilja **historisk importproveniens** från användarens senare ma
 - importEvidence återläses exakt efter Save/Open och omstart; råa källceller är inte i .yadilab. Efter omstart visas korrekt "källan ej ansluten". Import av rätt källpaket återställer förmågan att granska celler; fel SHA blockeras. **Redigera därefter en port/IP/route och spara på riktigt:** projektet ska fortfarande vara schema 1.4, proveniensmanifestet oförändrat, `CHANGED_SINCE_IMPORT` synligt och alla simulatoranrop fria från importEvidence. Återställ exakt nätverksinnehåll och verifiera BASELINE_MATCH utan falskt SOURCE_VERIFIED.
 - Bytebevis för ursprungliga filer och v1.0–1.3-filer utan Save; full DIRECT_HTTP Chromium och samtliga befintliga protokolltester.
 
-## 10. Etapp 4C – målmoduler, kablar och sammanslagna dokument
+## 10. HISTORISKT arbetskort 4C – målmoduler, kablar och sammanslagna dokument
 
 **Start:** 4B mergad och efterföljande main-CI SUCCESS. Utöka samma ImportPlan/API, utan andra importmotorer.
 
@@ -605,7 +605,7 @@ U01–U12: verkliga CSV/XLSX/ODS-filer; samma blad har device+port+link-vyer; fl
 
 Ändra inte DHCP-, ARP-, IPv4- eller ICMP-motorer; 4C:s krav gäller endast att validerat indata fungerar som före refaktoreringen.
 
-## 11. Etapp 4D – mappningsprofiler, fullständigt UI och slutacceptans
+## 11. HISTORISKT arbetskort 4D – mappningsprofiler, fullständigt UI och slutacceptans
 
 **Start:** 4C mergad och efterföljande main-CI SUCCESS. Slutför ett enhetligt granskningsflöde utan nya fullständiga parsers.
 
