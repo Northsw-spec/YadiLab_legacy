@@ -1,6 +1,6 @@
 # Ren nätverkslabb-app — kanonisk topologi
 
-**Självständig nyimplementation.** Repositoryts tekniska namn är inte produktens namn. Ändra endast `APP_NAME` i `network_core/config.py` för att byta appens visningsnamn. Alla användarsynliga namn hämtas från den deklarationen. Ingen äldre produktkod har kopierats in.
+**YadiLab är projektnamnet i denna dokumentation, inte ett hårdkodat UI-namn.** Repositoryts tekniska namn och beskrivande Markdown-text kan fortsatt använda `YadiLab`. För att byta **den körbara appens visningsnamn** ändras endast `APP_NAME` i `network_core/config.py`; UI, fönstertitel och andra produktreferenser i runtime ska härledas från den deklarationen. Funktioner, klasser, moduler och källfilnamn förblir generiska och behöver inte döpas om. Detta är en självständig nyimplementation; ingen äldre produktkod har kopierats in.
 
 Applikationen är en lokal, Linux-exklusiv nätverkslabb- och dokumentationsmiljö. Den har utvecklats stegvis från en enkel topologimodell till avgränsade Ethernet/ARP/VLAN/IPv4/ICMP/DHCP-simuleringar och felövningar. Följ respektive protokollkontrakt för exakt stöd; programmet återskapar **inte** automatiskt godtyckliga kundnätverk eller alla protokoll. Projekt lagras lokalt i `.yadilab`-filer. Applikationen kör ingen live-discovery genom pedagogikplanen. Normal lokal start kräver ingen npm-installation eller molnanslutning, men webbläsardelen använder det **lokalt medpackade tredjepartsbiblioteket `elkjs 0.13.0`**; se [NOTICE](web/vendor/NOTICE.md). Ingen CDN-hämtning behövs vid start.
 
