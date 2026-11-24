@@ -68,6 +68,12 @@ Ytterligare explicit specialadressvalidering enligt RFC 1122, RFC 3927 och IANA 
 
 **Licensbeslut är BLOCKED:** GitHub rapporterade `license=null` och repo-roten har ingen `LICENSE`; README säger att licens inte valts. Vendorns ELK-licens gäller **inte** automatiskt den egna Python-/JavaScript-koden. Se [issue #115](https://github.com/Northsw-spec/YadiLab/issues/115). En publicerad källa är inte automatiskt OSI-licensierad; välj aldrig licens eller upphovsrättsligt ansvar utan rättighetsinnehavarens uttryckliga godkännande.
 
+## 4C. Källtroget JSON-uppladdningsflöde och offline-API (föreslagen separat fix)
+
+**Fynd 2026-11-24:** `web/features/projects/transfer.js` läste originalfil genom `JSON.parse` före anropet till `/api/validate`; `web/features/projects/import-review.js` gjorde motsvarande för uppladdade mappningsprofiler och originalkällpaket, och använde delvis `File.text()` som kan ersätta ogiltiga UTF-8-bytes. Det kunde normalisera bort motstridiga JSON-nycklar **före** den strikta servervalideraren från PR #111. Den nya avgränsade kod-PR:en skickar oförändrade uppladdade bytes via ett lokalt `/api/validate` respektive läsande `/api/json/strict` och begränsar `web/services/api.js` till relativa `/api/...`-vägar.
+
+**Status:** PROPOSED / **NOT_VERIFIED tills båda obligatoriska CI-körningarna på exakt slutlig PR HEAD är SUCCESS**. Inget nytt nätverksimportschema, inga externa verktygsintegrationer, ingen ändrad projektmodell och ingen automatisk Save. Se [SOURCE_INTEGRITY_AUDIT_2026-11-24.md](SOURCE_INTEGRITY_AUDIT_2026-11-24.md) och negativa HTTP-/Node-tester.
+
 ## 5. Slutlig gräns för försäkran
 
 **Riskbaserad källkodsrevision, 2026-11-24:** [SOURCE_INTEGRITY_AUDIT_2026-11-24.md](SOURCE_INTEGRITY_AUDIT_2026-11-24.md) redovisar den avgränsade kontrollen av HTTP, JSON, import, lagring, protokollsteg och CI samt öppna fynd. JSON-avvikelserna åtgärdades i PR #111 med båda obligatoriska `unit-tests` **SUCCESS** på final PR-HEAD `9a5b9b0b456185d8ebdb9271dcbfaf1bcaaebeee`, squash-mergad till `main@2c79bb75ec10e80441f6ccff8a349422d23537ac`. Det är ett begränsat verifierat ingångskontrakt; senare `main`-CI och alternativa parseranrop kräver separata kontroller. Lär ut dess uttryckliga ICMP-reply-TTL-begränsning som en modellförenkling, inte som verkligt nätverksfaktum. Rapportens kvarstående lokala API-/interoperabilitetsrisker är ingen automatisk kodorder.
