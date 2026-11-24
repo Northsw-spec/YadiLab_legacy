@@ -9,11 +9,13 @@ from __future__ import annotations
 
 from copy import deepcopy
 import ipaddress
+from pathlib import Path
 import secrets
 from threading import RLock
 from .session_idle import IdleSessions, session_activity
 
 from .icmp_ping import EchoExchange
+from .json_boundary import decode_json_document
 from .model import ProjectValidationError, validate_project
 from .routing import ConnectedRoutingTable
 from .simulation import MAX_SESSIONS
@@ -27,6 +29,39 @@ KINDS = ("CABLE_DOWN", "PORT_SHUTDOWN", "VLAN_MISMATCH", "STATIC_ROUTE_MISSING",
 LAN_KINDS = ("CABLE_DOWN", "PORT_SHUTDOWN", "VLAN_MISMATCH",
              "IPV4_HOST_ADDRESS_MISMATCH", "IPV4_PREFIX_MISMATCH")
 PROBES = ("address", "route", "ping", "link", "port", "vlan")
+
+
+REVERSE_ROUTE_LESSON = "echo-reply"
+_LESSON_FIXTURE = (Path(__file__).resolve().parent.parent / "web" / "fixtures"
+                   / "icmp-echo-lesson.json")
+_LESSON_SOURCE = {"node": "a", "port": "eth0"}
+_LESSON_TARGET = {"node": "b", "port": "eth0"}
+_LESSON_SOURCE_IP = "192.0.2.10"
+_LESSON_TARGET_IP = "203.0.113.20"
+_LESSON_FAULT = {"type": "STATIC_ROUTE_REMOVED", "nodeId": "b", "routeId": "return-to-a"}
+
+
+def _lesson_echo(exchange: dict, *, matched: bool) -> bool:
+    request, reply = exchange["request"], exchange["reply"]
+    if (request["status"] != "DELIVERED" or request["receiver"] != _LESSON_TARGET
+            or request["sourceIpv4"] != _LESSON_SOURCE_IP
+            or request["destinationIpv4"] != _LESSON_TARGET_IP
+            or reply is None or reply["sourceIpv4"] != _LESSON_TARGET_IP
+            or reply["destinationIpv4"] != _LESSON_SOURCE_IP):
+        return False
+    if matched:
+        return (exchange["status"] == "REPLIED" and exchange["replyMatched"]
+                and reply["status"] == "DELIVERED" and reply["receiver"] == _LESSON_SOURCE)
+    return (exchange["status"] == "REPLY_FAILED" and not exchange["replyMatched"]
+            and reply["status"] == "NO_ROUTE" and not reply["steps"] and not reply["icmpSent"]
+            and reply["receiver"] is None and reply["deliveredDatagram"] is None)
+
+
+def _lesson_verified(comparison: dict) -> bool:
+    return (comparison["status"] == "FAULT_CONFIRMED"
+            and _lesson_echo(comparison["baseline"], matched=True)
+            and _lesson_echo(comparison["faulted"], matched=False)
+            and _lesson_echo(comparison["restored"], matched=True))
 
 
 def _candidates(project: dict, baseline: dict) -> list[tuple[str, dict]]:
@@ -193,7 +228,8 @@ def _candidates(project: dict, baseline: dict) -> list[tuple[str, dict]]:
 
 class IcmpInvestigation:
     def __init__(self, project: object, source_node: str, source_port: str,
-                 destination_ipv4: str, ttl: int, *, _test_kind: str | None = None):
+                 destination_ipv4: str, ttl: int, *, lesson: str | None = None,
+                 _test_kind: str | None = None):
         self.project = validate_project(project)
         if type(source_node) is not str or type(source_port) is not str:
             raise ProjectValidationError("icmp investigation: source must be declared")
@@ -201,14 +237,79 @@ class IcmpInvestigation:
             raise ProjectValidationError("icmp investigation: TTL must be integer 2..255")
         self.source_node, self.source_port = source_node, source_port
         self.destination_ipv4, self.ttl = destination_ipv4, ttl
-        baseline = EchoExchange(self.project).ping(
-            source_node, source_port, destination_ipv4, ttl, 101, 1)
+        self._lesson = lesson
+        self._lesson_evidence: set[str] = set()
+        if lesson is not None:
+            self._validate_lesson()
+        if self._lesson:
+            comparison = self._compare_lesson(101, 1)
+            if not _lesson_verified(comparison):
+                raise ProjectValidationError(
+                    "icmp investigation: lesson exchange could not be verified")
+            baseline = comparison["baseline"]
+        else:
+            baseline = EchoExchange(self.project).ping(
+                source_node, source_port, destination_ipv4, ttl, 101, 1)
         if baseline["status"] != "REPLIED" or not baseline["replyMatched"]:
             raise ProjectValidationError(
                 "icmp investigation: initial Echo Request/Reply must be proven")
         self.source_ipv4 = baseline["request"]["sourceIpv4"]
         self.target_node = baseline["request"]["receiver"]["node"]
         self.target_port = baseline["request"]["receiver"]["port"]
+        self._kind, self._fault = (
+            ("STATIC_ROUTE_MISSING", deepcopy(_LESSON_FAULT)) if self._lesson else
+            self._choose_fault(baseline, _test_kind)
+        )
+        self._fault_detail, self._repair_hint, inject, _ = _mutation(self.project, self._fault)
+        self._faulted = deepcopy(self.project)
+        inject(self._faulted)
+        self._faulted = validate_project(self._faulted)
+        # Final independent proof for chosen candidate: do not admit a
+        # baseline-only or disconnected-by-coincidence exercise.
+        broken = EchoExchange(self._faulted).ping(
+            source_node, source_port, destination_ipv4, ttl, 101, 2)
+        if broken["status"] == "REPLIED":
+            raise ProjectValidationError("icmp investigation: fault did not affect Echo")
+        if self._lesson:
+            if not _lesson_echo(broken, matched=False):
+                raise ProjectValidationError("icmp investigation: lesson exchange changed")
+            self.opening_observation = {
+                "requestStatus": broken["request"]["status"],
+                "requestReceiver": broken["request"]["receiver"],
+                "replyMatched": broken["replyMatched"],
+                "source": "SIMULATED",
+            }
+        self._probes: list[str] = []
+        self._guesses = 0
+        self._diagnosed = False
+        self._repaired = False
+        self._sequence = 2
+        self._source_nodes = {
+            node["id"] for node in self.project["nodes"]
+            if node["kind"] in ("host", "router")
+        }
+
+    def _validate_lesson(self) -> None:
+        if (self._lesson != REVERSE_ROUTE_LESSON
+                or (self.source_node, self.source_port, self.destination_ipv4, self.ttl)
+                != (_LESSON_SOURCE["node"], _LESSON_SOURCE["port"], _LESSON_TARGET_IP, 5)):
+            raise ProjectValidationError("icmp investigation: invalid lesson or endpoints")
+        try:
+            expected = validate_project(decode_json_document(
+                _LESSON_FIXTURE.read_bytes(), context="icmp lesson"))
+        except (OSError, ProjectValidationError):
+            raise ProjectValidationError("icmp investigation: lesson fixture unavailable") from None
+        if self.project != expected:
+            raise ProjectValidationError("icmp investigation: lesson requires the unchanged fixture")
+
+    def _compare_lesson(self, identifier: int, sequence: int) -> dict:
+        return compare_fault(
+            self.project, self.source_node, self.source_port, self.destination_ipv4,
+            self.ttl, identifier, sequence, _LESSON_FAULT)
+
+    def _choose_fault(self, baseline: dict, _test_kind: str | None) -> tuple[str, dict]:
+        source_node, source_port = self.source_node, self.source_port
+        destination_ipv4, ttl = self.destination_ipv4, self.ttl
         # A one-hop host exchange uses connected route lookups in both
         # directions. Keep the routed candidate set for all other exchanges.
         source_port_config = next(port for node in self.project["nodes"]
@@ -266,26 +367,7 @@ class IcmpInvestigation:
             if choice is None:
                 raise ProjectValidationError(
                     "icmp investigation: category is not verified for this topology")
-        self._kind, self._fault = choice
-        self._fault_detail, self._repair_hint, inject, _ = _mutation(self.project, self._fault)
-        self._faulted = deepcopy(self.project)
-        inject(self._faulted)
-        self._faulted = validate_project(self._faulted)
-        # Final independent proof for chosen candidate: do not admit a
-        # baseline-only or disconnected-by-coincidence exercise.
-        broken = EchoExchange(self._faulted).ping(
-            source_node, source_port, destination_ipv4, ttl, 101, 2)
-        if broken["status"] == "REPLIED":
-            raise ProjectValidationError("icmp investigation: fault did not affect Echo")
-        self._probes: list[str] = []
-        self._guesses = 0
-        self._diagnosed = False
-        self._repaired = False
-        self._sequence = 2
-        self._source_nodes = {
-            node["id"] for node in self.project["nodes"]
-            if node["kind"] in ("host", "router")
-        }
+        return choice
 
     def check_project(self, project: object) -> None:
         if validate_project(project) != self.project:
@@ -293,7 +375,11 @@ class IcmpInvestigation:
 
     def state(self) -> dict:
         kinds = set(self._probes)
-        return {
+        can_diagnose = (
+            self._lesson_evidence == {"ping", "route", "port"} if self._lesson else
+            "ping" in kinds and "route" in kinds and bool(kinds & {"address", "link", "port", "vlan"})
+        )
+        state = {
             "sourceNode": self.source_node,
             "sourcePort": self.source_port,
             "sourceIpv4": self.source_ipv4,
@@ -301,8 +387,7 @@ class IcmpInvestigation:
             "ttl": self.ttl,
             "observations": len(self._probes),
             "probesPerformed": list(self._probes),
-            "canDiagnose": "ping" in kinds and "route" in kinds
-                          and bool(kinds & {"address", "link", "port", "vlan"}),
+            "canDiagnose": can_diagnose,
             "diagnosisAttempts": self._guesses,
             "diagnosed": self._diagnosed,
             "repaired": self._repaired,
@@ -311,6 +396,11 @@ class IcmpInvestigation:
             "dhcpCheck": "NOT_VERIFIED",
             "ephemeral": True,
         }
+
+        if self._lesson:
+            state["lesson"] = self._lesson
+            state["openingObservation"] = deepcopy(self.opening_observation)
+        return state
 
     def probe(self, kind: object, target: object) -> dict:
         if self._repaired:
@@ -363,6 +453,10 @@ class IcmpInvestigation:
                 "observedLinkIds": _observed_wires(result_echo),
                 "source": "SIMULATED",
             }
+            if self._lesson:
+                result["requestReceiver"] = result_echo["request"]["receiver"]
+                if _lesson_echo(result_echo, matched=False):
+                    self._lesson_evidence.add("ping")
         elif kind == "route":
             if set(target) != {"nodeId", "destinationIpv4"}:
                 raise ProjectValidationError(
@@ -382,6 +476,14 @@ class IcmpInvestigation:
                 )),
                 "source": "SIMULATED_CONFIG",
             }
+            if self._lesson:
+                # The documented table is a legitimate reference. Stable IDs
+                # for the authoritative intervention are reserved for repair.
+                for route in result["documentedStaticRoutes"]:
+                    del route["id"]
+                if (node == _LESSON_TARGET["node"] and address == _LESSON_SOURCE_IP
+                        and result["status"] == "NO_ROUTE"):
+                    self._lesson_evidence.add("route")
         elif kind == "link":
             if set(target) != {"linkId"} or type(target["linkId"]) is not str:
                 raise ProjectValidationError("icmp investigation: link requires linkId")
@@ -447,6 +549,11 @@ class IcmpInvestigation:
                 "observedVlan": deepcopy(observed["vlan"]),
                 "source": "SIMULATED_CONFIG",
             }
+        if self._lesson and kind == "port" and target == {
+                "nodeId": _LESSON_TARGET["node"], "portId": _LESSON_TARGET["port"]}:
+            if (result["observedEnabled"] and result["documentedEnabled"]
+                    and result["observedIpv4"] == result["documentedIpv4"]):
+                self._lesson_evidence.add("port")
         self._probes.append(kind)
         return {"probe": kind, "observation": result, **self.state()}
 
@@ -457,6 +564,8 @@ class IcmpInvestigation:
             raise ProjectValidationError("icmp investigation: unsupported diagnosis")
         if not self.state()["canDiagnose"]:
             raise ProjectValidationError(
+                "icmp investigation: lesson requires ping, reverse lookup and target port check"
+                if self._lesson else
                 "icmp investigation: real ping, route lookup and additional check required")
         if self._guesses >= MAX_GUESSES:
             raise ProjectValidationError("icmp investigation: maximum guesses reached")
@@ -475,27 +584,43 @@ class IcmpInvestigation:
             raise ProjectValidationError("icmp investigation: already repaired")
         if not self._diagnosed:
             raise ProjectValidationError("icmp investigation: correct diagnosis required")
-        # Independent fresh packet engines before and after the isolated change.
-        broken = EchoExchange(self._faulted).ping(
-            self.source_node, self.source_port, self.destination_ipv4,
-            self.ttl, 102, 1)
-        restored = EchoExchange(self.project).ping(
-            self.source_node, self.source_port, self.destination_ipv4,
-            self.ttl, 102, 2)
-        verified = (broken["status"] != "REPLIED" and not broken["replyMatched"]
-                    and restored["status"] == "REPLIED"
-                    and restored["replyMatched"])
+        if self._lesson:
+            comparison = self._compare_lesson(102, 1)
+            broken, restored = comparison["faulted"], comparison["restored"]
+            verified = _lesson_verified(comparison)
+        else:
+            # Independent fresh packet engines before and after the isolated change.
+            broken = EchoExchange(self._faulted).ping(
+                self.source_node, self.source_port, self.destination_ipv4,
+                self.ttl, 102, 1)
+            restored = EchoExchange(self.project).ping(
+                self.source_node, self.source_port, self.destination_ipv4,
+                self.ttl, 102, 2)
+            verified = (broken["status"] != "REPLIED" and not broken["replyMatched"]
+                        and restored["status"] == "REPLIED"
+                        and restored["replyMatched"])
         self._repaired = verified
-        return {
+        result = {
             "status": "RECOVERED" if verified else "NOT_VERIFIED",
             "failedEchoStatus": broken["status"],
-            "restoredEchoStatus": restored["status"],
-            "replyMatched": restored["replyMatched"],
+            "restoredEchoStatus": "NOT_VERIFIED" if self._lesson and not verified else restored["status"],
+            "replyMatched": restored["replyMatched"] and (not self._lesson or verified),
             "faultCategory": self._kind if verified else None,
             "repair": deepcopy(self._repair_hint) if verified else None,
             "report": self._report(broken, restored) if verified else None,
             **self.state(),
         }
+
+        if self._lesson and verified:
+            result["verification"] = {
+                "baselineStatus": comparison["baseline"]["status"],
+                "requestReceiver": restored["request"]["receiver"],
+                "replyReceiver": restored["reply"]["receiver"],
+                "sourceIpv4": restored["request"]["sourceIpv4"],
+                "destinationIpv4": restored["request"]["destinationIpv4"],
+                "source": "SIMULATED",
+            }
+        return result
 
     def _report(self, broken: dict, restored: dict) -> dict:
         fault, repair = self._fault_detail, self._repair_hint
@@ -565,13 +690,13 @@ class IcmpInvestigationRegistry(IdleSessions):
         return self._sessions[session_id]
 
     def start(self, project: object, source_node: str, source_port: str,
-              destination_ipv4: str, ttl: int) -> dict:
+              destination_ipv4: str, ttl: int, *, lesson: str | None = None) -> dict:
         with self._lock:
             self._reap_expired()
             if len(self._sessions) >= MAX_SESSIONS:
                 raise ProjectValidationError("icmp investigation: session limit reached")
             instance = IcmpInvestigation(
-                project, source_node, source_port, destination_ipv4, ttl)
+                project, source_node, source_port, destination_ipv4, ttl, lesson=lesson)
             session_id = secrets.token_urlsafe(24)
             self._sessions[session_id] = instance
             self._track(session_id)

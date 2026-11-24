@@ -2466,6 +2466,31 @@ function startIcmpInvestigation() {
   void icmpInvestigation.start({sourceNode, sourcePort, destinationIpv4, ttl},
     icmpInvestigationStartInputs);
 }
+async function loadIcmpLesson() {
+  if (!confirmDiscard()) return;
+  const context = transferContext();
+  const button = $('icmp-lesson-load');
+  button.disabled = true;
+  try {
+    const response = await fetch('/fixtures/icmp-echo-lesson.json');
+    if (!response.ok) throw new Error('Övningsprojektet kunde inte läsas.');
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    const {project: fixture} = await api('/api/validate', bytes, {rawJson: true});
+    if (!transferCurrent(context)) return;
+    resetProject(fixture);
+    notify('Övningsprojektet är inläst. Starta den guidade Om–Då-övningen när du är redo.');
+  } catch (error) {
+    if (transferCurrent(context)) notify(error.message, true);
+  } finally {
+    button.disabled = false;
+  }
+}
+function startIcmpLesson() {
+  void icmpInvestigation.start({
+    lesson: 'echo-reply', sourceNode: 'a', sourcePort: 'eth0',
+    destinationIpv4: '203.0.113.20', ttl: 5,
+  }, () => 'echo-reply');
+}
 function measureIcmpInvestigation() {
   const kind = $('icmp-investigation-probe').value;
   const state = icmpInvestigation.getState().state;
@@ -2786,10 +2811,18 @@ for (const id of ['probe-source', 'probe-destination', 'probe-ttl']) {
     forgetJourney();
   });
 }
+$('icmp-lesson-load').addEventListener('click', loadIcmpLesson);
+$('icmp-lesson-start').addEventListener('click', startIcmpLesson);
+$('icmp-lesson-review').addEventListener('click', () => {
+  $('icmp-lesson').dataset.reviewed = 'true';
+  renderIcmpInvestigation();
+  $('icmp-lesson-limits').focus();
+});
 $('icmp-investigation-start').addEventListener('click', startIcmpInvestigation);
 $('icmp-investigation-stop').addEventListener('click', stopIcmpInvestigation);
 $('icmp-investigation-measure').addEventListener('click', measureIcmpInvestigation);
 $('icmp-investigation-diagnose').addEventListener('click', diagnoseIcmpInvestigation);
+$('icmp-investigation-diagnosis').addEventListener('change', renderIcmpInvestigation);
 $('icmp-investigation-repair').addEventListener('click', repairIcmpInvestigation);
 $('icmp-investigation-probe').addEventListener('change', renderIcmpInvestigation);
 $('icmp-investigation-source').addEventListener('change', renderIcmpInvestigation);

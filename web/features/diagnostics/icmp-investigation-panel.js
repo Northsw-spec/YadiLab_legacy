@@ -12,7 +12,7 @@ function icmpInvestigationDescription(item) {
   }
   if (item.probe === 'route') {
     const formatStatic = (id, destination, nextHop, outPort) =>
-      id + ' · ' + destination + ' via ' + nextHop + ' ut ' + outPort;
+      (id ? id + ' · ' : '') + destination + ' via ' + nextHop + ' ut ' + outPort;
     const documented = o.documentedStaticRoutes.map(r =>
       formatStatic(r.id, r.destination, r.nextHop, r.outPort));
     const simulated = o.routes.filter(r => r.type === 'STATIC').map(r =>
@@ -60,6 +60,50 @@ function icmpInvestigationDescription(item) {
   return JSON.stringify(o);
 }
 
+function renderLesson(session) {
+  const panel = $('icmp-lesson');
+  const opening = session.state?.openingObservation;
+  const lessonId = opening ? session.id : '';
+  if ((panel.dataset.sessionId ?? '') !== lessonId) {
+    panel.dataset.sessionId = lessonId;
+    delete panel.dataset.reviewed;
+    $('icmp-lesson-reason').value = '';
+    if (opening) $('icmp-investigation-diagnosis').selectedIndex = -1;
+  }
+  const reviewed = panel.dataset.reviewed === 'true';
+  const measured = reviewed && session.state?.canDiagnose;
+  const diagnosed = measured && session.verdict?.correct;
+  const recovery = session.recovery;
+  const verified = diagnosed && recovery?.status === 'RECOVERED' && recovery.verification;
+  const endpoint = value => value.node + '/' + value.port;
+  panel.hidden = !opening;
+  $('icmp-lesson-symptom').textContent = opening
+    ? 'Vid övningsstart (' + opening.source + ') nådde Echo Request från '
+      + session.state.sourceNode + '/' + session.state.sourcePort + ' '
+      + endpoint(opening.requestReceiver) + ' (' + opening.requestStatus + '). '
+      + 'Källan fick inget giltigt Echo Reply.'
+    : '';
+  $('icmp-lesson-review').hidden = reviewed;
+  $('icmp-lesson-measurements').hidden = !reviewed;
+  $('icmp-lesson-interpretation').hidden = !measured;
+  $('icmp-lesson-action').hidden = !diagnosed;
+  $('icmp-lesson-action-text').textContent = verified
+    ? recovery.report.rootCause + ' ' + recovery.report.action
+      + ' På ' + recovery.repair.nodeId + ' återställdes ' + recovery.repair.expectedRoute.destination
+      + ' via ' + recovery.repair.expectedRoute.nextHop + ' på ' + recovery.repair.expectedRoute.outPort
+      + '. Åtgärden gäller bara den tillfälliga övningen.'
+    : diagnosed ? 'Diagnosen stöds av mätningarna. Välj återställning för att verifiera den med ett nytt Echo-utbyte.' : '';
+  $('icmp-lesson-verification').hidden = !verified;
+  $('icmp-lesson-verification-text').textContent = verified
+    ? 'Baslinje: ' + recovery.verification.baselineStatus + '. Med felet: '
+      + recovery.failedEchoStatus + '. Efter återställning: ' + recovery.restoredEchoStatus
+      + '. Request nådde ' + endpoint(recovery.verification.requestReceiver)
+      + ' (' + recovery.verification.destinationIpv4 + '). Matchande Reply kom tillbaka till '
+      + endpoint(recovery.verification.replyReceiver) + ' (' + recovery.verification.sourceIpv4 + ').'
+    : '';
+  return Boolean(opening && !reviewed);
+}
+
 export function renderIcmpInvestigationPanel(project, session) {
   const {id: icmpInvestigationId, state: icmpInvestigationState,
     busy: icmpInvestigationBusy, log: icmpInvestigationLog,
@@ -67,6 +111,16 @@ export function renderIcmpInvestigationPanel(project, session) {
     error: icmpInvestigationError} = session;
   const active = icmpInvestigationId !== null;
   const busy = icmpInvestigationBusy;
+  const lesson = Boolean(icmpInvestigationState?.lesson);
+  const beforeMeasurements = renderLesson(session);
+  $('icmp-lesson-start').disabled = active || busy || !project.nodes.length;
+  const diagnosis = $('icmp-investigation-diagnosis');
+  const lessonDiagnoses = ['STATIC_ROUTE_MISSING', 'IPV4_PREFIX_MISMATCH',
+    'IPV4_HOST_ADDRESS_MISMATCH', 'STATIC_NEXT_HOP_UNREACHABLE'];
+  for (const option of diagnosis.options) {
+    option.hidden = lesson && !lessonDiagnoses.includes(option.value);
+  }
+  if (!lesson && !diagnosis.value) diagnosis.selectedIndex = 0;
   const sourceSelector = $('icmp-investigation-source');
   const previousSource = sourceSelector.value;
   const sources = project.nodes.filter(n => n.kind !== 'switch').flatMap(n =>
@@ -110,23 +164,25 @@ export function renderIcmpInvestigationPanel(project, session) {
   $('icmp-investigation-source').disabled = active || busy || !sources.length;
   $('icmp-investigation-destination').disabled = active || busy;
   $('icmp-investigation-ttl').disabled = active || busy;
-  $('icmp-investigation-probe').disabled = !active || busy;
-  $('icmp-investigation-route-node').disabled = !active || busy || kind !== 'route';
-  $('icmp-investigation-route-destination').disabled = !active || busy || kind !== 'route';
-  $('icmp-investigation-link').disabled = !active || busy || kind !== 'link';
-  $('icmp-investigation-port').disabled = !active || busy || kind !== 'port';
-  $('icmp-investigation-vlan').disabled = !active || busy || kind !== 'vlan';
+  $('icmp-investigation-probe').disabled = !active || busy || beforeMeasurements;
+  $('icmp-investigation-route-node').disabled = !active || busy || beforeMeasurements || kind !== 'route';
+  $('icmp-investigation-route-destination').disabled = !active || busy || beforeMeasurements || kind !== 'route';
+  $('icmp-investigation-link').disabled = !active || busy || beforeMeasurements || kind !== 'link';
+  $('icmp-investigation-port').disabled = !active || busy || beforeMeasurements || kind !== 'port';
+  $('icmp-investigation-vlan').disabled = !active || busy || beforeMeasurements || kind !== 'vlan';
   $('icmp-investigation-start').disabled = active || busy || !sourceSelector.value
     || !$('icmp-investigation-destination').value.trim();
   $('icmp-investigation-stop').disabled = !active;
-  $('icmp-investigation-measure').disabled = !active || busy || icmpInvestigationState?.repaired
+  $('icmp-investigation-measure').disabled = !active || busy || beforeMeasurements
+    || icmpInvestigationState?.repaired
     || (kind === 'link' && !linkSelector.value)
     || (kind === 'port' && !portSelector.value)
     || (kind === 'vlan' && !vlanSelector.value)
     || (kind === 'route' && !routeSelector.value);
-  $('icmp-investigation-diagnosis').disabled = !active || busy
+  diagnosis.disabled = !active || busy || beforeMeasurements
     || Boolean(icmpInvestigationState?.diagnosed);
-  $('icmp-investigation-diagnose').disabled = !active || busy
+  $('icmp-investigation-diagnose').disabled = !active || busy || beforeMeasurements
+    || (lesson && !lessonDiagnoses.includes(diagnosis.value))
     || Boolean(icmpInvestigationState?.diagnosed)
     || Boolean(icmpInvestigationState?.repaired)
     || !icmpInvestigationState?.canDiagnose;
@@ -138,11 +194,11 @@ export function renderIcmpInvestigationPanel(project, session) {
     ? 'ICMP-felsökning pågår…'
     : icmpInvestigationError ? 'ICMP-labb: ' + icmpInvestigationError
     : active
-      ? 'Aktiv dold övning · ' + icmpInvestigationState.sourceNode
+      ? (lesson ? 'Guidad Om–Då-övning · ' : 'Aktiv dold övning · ') + icmpInvestigationState.sourceNode
         + '/' + icmpInvestigationState.sourcePort
         + ' → ' + icmpInvestigationState.destinationIpv4
         + ' · ' + icmpInvestigationState.observations + ' mätningar'
-        + ' · DHCP-ursprung: ' + icmpInvestigationState.dhcpCheck
+        + (lesson ? '' : ' · DHCP-ursprung: ' + icmpInvestigationState.dhcpCheck)
       : 'Ingen ICMP-övning startad. En fungerande ICMP-baslinje krävs.';
   const observations = $('icmp-investigation-observations');
   observations.textContent = icmpInvestigationLog.length
@@ -161,8 +217,9 @@ export function renderIcmpInvestigationPanel(project, session) {
       ? 'DIAGNOS BEKRÄFTAD. Återställ och verifiera en faktisk tur-och-retur Echo Reply.'
       : 'HYPOTES AVVISAD. Felkategorin avslöjas inte; kontrollera flera mätningar.';
   } else {
-    verdict.textContent = 'Diagnosen kräver en verklig ICMP-mätning, route lookup '
-      + 'och minst en annan oberoende kontroll.';
+    verdict.textContent = lesson
+      ? 'För diagnos behövs ICMP Echo, uppslag från b mot källan och kontroll av b/eth0.'
+      : 'Diagnosen kräver en verklig ICMP-mätning, route lookup och minst en annan oberoende kontroll.';
   }
   const recovery = $('icmp-investigation-recovery');
   recovery.classList.remove('ok', 'fail');
@@ -175,7 +232,8 @@ export function renderIcmpInvestigationPanel(project, session) {
       + '\nFöre: ' + icmpInvestigationRecovery.failedEchoStatus
       + '\nEfter återställning: ' + icmpInvestigationRecovery.restoredEchoStatus
       + '\nGiltigt ICMP Echo Reply: ' + (icmpInvestigationRecovery.replyMatched ? 'ja' : 'nej')
-      + (icmpInvestigationRecovery.status === 'RECOVERED'
+      + (icmpInvestigationRecovery.status === 'RECOVERED' && lesson ? ''
+        : icmpInvestigationRecovery.status === 'RECOVERED'
         ? '\n\nFELSÖKNINGSRAPPORT'
           + '\nSymptom: ' + icmpInvestigationRecovery.report.symptom
           + '\nRotorsak: ' + icmpInvestigationRecovery.report.rootCause
