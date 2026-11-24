@@ -58,7 +58,9 @@ class IndependentIpv4RouteOracles(unittest.TestCase):
         self.assertEqual([s["node"] for s in success["request"]["steps"]], ["a", "r", "r2"])
         self.assertEqual([s["node"] for s in success["reply"]["steps"]], ["b", "r2", "r"])
         self.assertEqual(success["request"]["finalTtl"], 2)
-        self.assertEqual(success["reply"]["finalTtl"], 2)
+        self.assertEqual(success["reply"]["finalTtl"], 62)
+        self.assertEqual(success["replyInitialTtl"], 64)
+        self.assertEqual(success["replyTtlBasis"], "SIMULATED_DEFAULT")
         self.assertEqual(project, before)
 
         no_return = copy.deepcopy(project)

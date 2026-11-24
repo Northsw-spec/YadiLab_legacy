@@ -12,7 +12,7 @@ from .icmp_errors import ICMPError, parse_icmp_message, ICMP_TIME_EXCEEDED, ICMP
 from .model import ProjectValidationError
 
 _ECHO_PAYLOAD = b"echo-check"
-# Synthetic YadiLab lab assumption, not a vendor or host-stack claim.
+# Synthetic local lab assumption, not a vendor or host-stack claim.
 DEFAULT_SIMULATED_REPLY_TTL = 64
 
 
