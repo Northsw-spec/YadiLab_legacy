@@ -18,6 +18,8 @@ Normalt används `http://127.0.0.1:8765/`; om porten är upptagen kan en annan l
 python3 -m network_core --data-dir ~/NetworkProjects --no-browser --port 8765
 ```
 
+**Lokal API-behörighet:** Vanlig start skapar en ny slumpmässig åtkomstnyckel per körning och visar den i terminalen. När webbläsaren begär åtkomst till sparade projekt eller simulering klistrar du in denna nyckel i appens låsta dialog. Nyckeln finns inte i webbadressen och lagras inte på disk. Obehöriga processer som bara känner till loopbackporten får HTTP 401 för privata API-anrop. `--no-browser` kräver fortfarande nyckel. För en manuell CLI-klient använd `Authorization: Bearer <nyckel>` (mata in nyckeln utan att lägga den i kommandoradshistorik eller URL). Se [lokal API-säkerhet](docs/LOCAL_API_AUTH.md) för hotmodell och begränsningar. Flaggan `--unsafe-test-no-auth` finns enbart för isolerade regressionstester och är osäker i delade miljöer.
+
 Avsluta med Ctrl+C. ELK för layout är medpackat lokalt; [NOTICE](web/vendor/NOTICE.md) och [ELK-licens](web/vendor/ELK-LICENSE.md) bevaras.
 
 ## Befintliga avgränsade komponenter

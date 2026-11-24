@@ -28,6 +28,8 @@ jobs:
           python3 -m playwright install --with-deps chromium
       - name: Real Chromium interaction and durable Save/Open
         run: python3 tests/browser_smoke.py
+      - name: Real Chromium protected local API capability and Save/Open
+        run: python3 tests/browser_api_capability.py
       # X11 PRIMARY is distinct from the normal clipboard and cannot be
       # verified by headless Chromium. Keep this inside the required unit-tests
       # job: if the real X11 regression fails, the PR and main CI must fail.

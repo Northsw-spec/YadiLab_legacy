@@ -216,6 +216,8 @@ class ServerStartupTests(unittest.TestCase):
                     self.assertGreater(server.server_port, port)
                     self.assertLessEqual(server.server_port, port + 9)
                     self.assertTrue(server._cleanup_thread.is_alive())
+                    self.assertIsNotNone(server.auth_token)
+                    self.assertGreaterEqual(len(server.auth_token), 40)
 
                 with patch("network_core.server.DEFAULT_PORT", port), \
                      patch.object(LabHTTPServer, "serve_forever", verify_running), \

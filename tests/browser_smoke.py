@@ -73,7 +73,8 @@ def port():
 
 def spawn_server(port_number, directory):
     process = subprocess.Popen([sys.executable, '-m', 'network_core', '--port', str(port_number),
-                                '--data-dir', str(directory), '--no-browser'],
+                                '--data-dir', str(directory), '--no-browser',
+                                '--unsafe-test-no-auth'],
                                cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
     for _ in range(100):
         if process.poll() is not None:

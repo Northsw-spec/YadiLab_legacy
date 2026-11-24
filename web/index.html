@@ -8,6 +8,18 @@
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+  <dialog id="local-api-auth-dialog" aria-labelledby="local-api-auth-title"
+      style="max-width:min(440px,92vw);padding:1.5rem;border-radius:12px;background:#18253c;color:#f4f7ff;border:1px solid #60728d">
+    <form id="local-api-auth-form" method="dialog">
+      <h2 id="local-api-auth-title">Lokal åtkomstnyckel</h2>
+      <p>Det privata lokala API:t kräver den tillfälliga nyckel som visas i terminalen när programmet startas. Nyckeln sparas inte i projektfilen eller webbadressen.</p>
+      <label for="local-api-access-key">Åtkomstnyckel från terminalen</label>
+      <input id="local-api-access-key" type="password" class="control" autocomplete="off"
+             autocapitalize="off" spellcheck="false" minlength="40" maxlength="128" required>
+      <p id="local-api-auth-feedback" role="status" aria-live="polite"></p>
+      <button id="local-api-auth-submit" class="btn btn-primary" type="submit">Lås upp lokalt API</button>
+    </form>
+  </dialog>
   <div class="shell">
     <header class="topbar">
       <div class="brand" aria-label="{{APP_NAME}}"><div class="brand-mark" aria-hidden="true">◎</div><div><strong>{{APP_NAME}}</strong><small>CANONICAL NETWORK LAB · v0.1</small></div></div>

@@ -11,6 +11,7 @@ import threading
 import time
 import unittest
 from pathlib import Path
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 from network_core.import_plan import build_plan, canonical_json, node_layout
@@ -276,25 +277,42 @@ class CandidateTests(unittest.TestCase):
             root = Path(__file__).resolve().parent.parent
 
             def launch():
-                process = subprocess.Popen(command, cwd=root, stdout=subprocess.DEVNULL,
+                process = subprocess.Popen(command, cwd=root, stdout=subprocess.PIPE,
                                            stderr=subprocess.DEVNULL)
                 for _ in range(100):
                     if process.poll() is not None:
                         self.fail('local server process exited before HTTP was ready')
                     try:
                         with urlopen(f'http://127.0.0.1:{port}/api/health', timeout=.2):
-                            return process
+                            # The normal CLI starts with a new random secret.
+                            # Health is reachable only after the startup banner.
+                            assert process.stdout is not None
+                            first = process.stdout.readline().decode().strip()
+                            second = process.stdout.readline().decode().strip()
+                            third = process.stdout.readline().decode().strip()
+                            label = 'Local API access key (this run only): '
+                            self.assertIn(' at http://127.0.0.1:', first)
+                            self.assertIn('Projects stored in', second)
+                            self.assertTrue(third.startswith(label))
+                            key = third[len(label):]
+                            self.assertGreaterEqual(len(key), 40)
+                            return process, key
                     except OSError:
                         time.sleep(.05)
                 process.terminate()
                 self.fail('local server process did not start')
 
-            process = launch()
+            process, first_key = launch()
             try:
                 payload = json.dumps({'filename':'imported','project':project,
                                       'expectedSha256':None}).encode()
+                with self.assertRaises(HTTPError) as no_key:
+                    urlopen(Request(f'http://127.0.0.1:{port}/api/save', data=payload,
+                                    headers={'Content-Type':'application/json'}),timeout=10)
+                self.assertEqual(no_key.exception.code, 401)
                 with urlopen(Request(f'http://127.0.0.1:{port}/api/save', data=payload,
-                                     headers={'Content-Type':'application/json'}), timeout=10) as response:
+                                     headers={'Content-Type':'application/json',
+                                              'Authorization': 'Bearer ' + first_key}), timeout=10) as response:
                     self.assertEqual(response.status, 200)
                     saved = json.load(response)
                 file_path = Path(directory) / 'imported.yadilab'
@@ -303,9 +321,16 @@ class CandidateTests(unittest.TestCase):
             finally:
                 process.terminate()
                 process.wait(timeout=8)
-            process = launch()
+            process, second_key = launch()
             try:
-                with urlopen(f'http://127.0.0.1:{port}/api/projects/imported', timeout=10) as response:
+                self.assertNotEqual(second_key, first_key)
+                with self.assertRaises(HTTPError) as expired:
+                    urlopen(Request(f'http://127.0.0.1:{port}/api/projects/imported',
+                                    headers={'Authorization': 'Bearer ' + first_key}),timeout=10)
+                self.assertEqual(expired.exception.code, 401)
+                with urlopen(Request(f'http://127.0.0.1:{port}/api/projects/imported',
+                                     headers={'Authorization': 'Bearer ' + second_key}),
+                             timeout=10) as response:
                     opened = json.load(response)
                 self.assertEqual(opened['sha256'], disk_sha)
                 self.assertEqual(opened['project'], project)
