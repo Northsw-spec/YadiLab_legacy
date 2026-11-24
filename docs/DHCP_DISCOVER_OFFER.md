@@ -1,5 +1,7 @@
 # Begränsad DHCPv4 DISCOVER/OFFER-diagnostik
 
+> **Historiskt delkontrakt, inte produktens hela DHCP-status (2026-11-24):** Detta dokument beskriver en avgränsad engångsdiagnostik. Senare kod har separata DORA-, DHCP-sessions-, lease-/renewal- och felsökningsfunktioner dokumenterade i [DHCP_DORA.md](DHCP_DORA.md). Påståendet ”inte komplett DORA” nedan gäller **denna specifika Discover/Offer-funktion**, inte att YadiLab helt saknar DORA. Framtida pedagogik ska följa [PEDAGOGICAL_TROUBLESHOOTING_PLAN.md](PEDAGOGICAL_TROUBLESHOOTING_PLAN.md) och får inte återuppfinna dessa motordelar.
+
 ## Faktisk funktion
 
 En **engångssimulering** av DHCPDISCOVER → DHCPOFFER (RFC 2131) via den
