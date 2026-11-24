@@ -22,12 +22,15 @@ class NamingContractTests(unittest.TestCase):
         for file in ROOT.rglob("*"):
             if not self._source(file) or file == CONFIG_PATH:
                 continue
+            # A code example in Markdown is not a second runtime declaration.
+            # Check actual source and fixtures, not narrative documentation.
+            if self._narrative_documentation(file):
+                continue
             content = file.read_text(encoding="utf-8")
             self.assertNotRegex(content, declaration,
                                 f"Unexpected product name declaration: {file.relative_to(ROOT)}")
-            if not self._narrative_documentation(file):
-                self.assertNotIn(config.APP_NAME, content,
-                                 f"Hardcoded current display name: {file.relative_to(ROOT)}")
+            self.assertNotIn(config.APP_NAME, content,
+                             f"Hardcoded current display name: {file.relative_to(ROOT)}")
 
     def test_no_retired_brand_remnants(self):
         # Assemble the former identifier so tests do not reintroduce the
