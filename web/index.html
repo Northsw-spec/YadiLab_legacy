@@ -131,8 +131,11 @@
           <span id="probe-from-ip-status" class="small-muted" role="status" aria-live="polite">Från-gränssnittet bestäms av adressen eller valet ovan.</span>
           <label for="probe-destination">To · IPv4 (klistra in måladress)</label>
             <input id="probe-destination" class="control" type="text" autocomplete="off" placeholder="192.0.2.20">
-            <label for="probe-ttl">TTL (1–255)</label>
+            <label for="probe-ttl">Echo Request TTL (1–255)</label>
             <input id="probe-ttl" class="control" type="number" min="1" max="255" step="1" value="8">
+            <label for="probe-reply-ttl">Echo Reply TTL (simulerat, 1–255)</label>
+            <input id="probe-reply-ttl" class="control" type="number" min="1" max="255" step="1" value="64">
+            <p class="muted tiny">64 är en labbinställning, inte uppmätt TTL eller en tillverkares standard.</p>
             <div class="probe-actions">
               <button id="probe-send" class="btn btn-soft" type="button" disabled>Skicka ICMP-probe</button>
               <button id="probe-replay" class="btn btn-outline" type="button" disabled>Spela upp igen</button>
@@ -373,8 +376,11 @@
           <span id="ping-from-ip-status" class="small-muted" role="status" aria-live="polite">Från-gränssnittet bestäms av adressen eller valet ovan.</span>
           <label for="ping-destination">To · IPv4 (klistra in måladress)</label>
           <input id="ping-destination" class="control" type="text" autocomplete="off" placeholder="192.0.2.20">
-          <label for="ping-ttl">TTL per riktning (1–255)</label>
+          <label for="ping-ttl">Echo Request TTL (1–255)</label>
           <input id="ping-ttl" class="control" type="number" min="1" max="255" step="1" value="4">
+          <label for="ping-reply-ttl">Echo Reply TTL (simulerat, 1–255)</label>
+          <input id="ping-reply-ttl" class="control" type="number" min="1" max="255" step="1" value="64">
+          <p class="muted tiny">64 är en explicit labbinställning, inte verifierad mot en verklig värds operativsystem.</p>
           <label for="ping-identifier">ICMP-identifierare (0–65535)</label>
           <input id="ping-identifier" class="control" type="number" min="0" max="65535" step="1" value="1">
           <label for="ping-sequence">ICMP-sekvens (0–65535)</label>

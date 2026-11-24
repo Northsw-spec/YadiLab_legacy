@@ -16,7 +16,7 @@ export function queryIPv4(snapshot, sourceNode, sourcePort, destinationIpv4, ttl
     {project: JSON.parse(snapshot), sourceNode, sourcePort, destinationIpv4, ttl});
 }
 
-export function queryPing(snapshot, sourceNode, sourcePort, destinationIpv4, ttl, identifier, sequence) {
+export function queryPing(snapshot, sourceNode, sourcePort, destinationIpv4, ttl, identifier, sequence, replyTtl) {
   return api('/api/icmp/echo',
-    {project: JSON.parse(snapshot), sourceNode, sourcePort, destinationIpv4, ttl, identifier, sequence});
+    {project: JSON.parse(snapshot), sourceNode, sourcePort, destinationIpv4, ttl, identifier, sequence, replyTtl});
 }
