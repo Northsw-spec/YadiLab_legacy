@@ -1,6 +1,6 @@
 # Applikationsarkitektur 0.1 — medvetet liten
 
-> **Historisk arkitekturöversikt (statuskorrigering 2026-11-24):** Beskrivningar av ”nästa steg”, ”inte implementerat” eller tidigare funktionsbegränsningar i denna fil är historiska. YadiLabs avgränsade IPv4/ICMP/DHCP-funktioner och ELK-06A–C tillkom senare; se kod och respektive protokolldokument. Det [bindande pedagogiska kontraktet](PEDAGOGICAL_TROUBLESHOOTING_PLAN.md) kompletterar arkitekturen **utan** en andra nätverksmodell, extern motor eller runtimeintegration. Verifiera faktisk kod och CI innan utvecklingsbeslut. Dokumentationsimport ska följa [det aktuella bindande importkontraktet](IMPORT_SOURCE_CONTRACT.md); ingen ny importfunktion är färdig genom att den har dokumenterats.
+> **Historisk arkitekturöversikt (statuskorrigering 2026-11-24):** Beskrivningar av ”nästa steg”, ”inte implementerat” eller tidigare funktionsbegränsningar i denna fil är historiska. De senare avgränsade IPv4/ICMP/DHCP-funktionerna och ELK-06A–C tillkom senare; se kod och respektive protokolldokument. Det [bindande pedagogiska kontraktet](PEDAGOGICAL_TROUBLESHOOTING_PLAN.md) kompletterar arkitekturen **utan** en andra nätverksmodell, extern motor eller runtimeintegration. Verifiera faktisk kod och CI innan utvecklingsbeslut. Dokumentationsimport ska följa [det aktuella bindande importkontraktet](IMPORT_SOURCE_CONTRACT.md) och [verifierad statusöversikt](IMPLEMENTATION_STATUS.md); ingen ny importfunktion är färdig genom att den har dokumenterats.
 
 ## Varför en ny implementation?
 
@@ -18,7 +18,7 @@ network_core/model.py  ← schema och genomskinlig validering
              └── SVG av EXAKT samma nod-/port-/länk-ID:n
 ```
 
-Visningsnamnet deklareras endast i **`network_core/config.py`** som `APP_NAME`. Runtime-paketet `network_core` är avsiktligt generiskt och behåller sitt tekniska namn vid omprofilering. Inga externa runtimemoduler krävs.
+Visningsnamnet deklareras endast i **`network_core/config.py`** som `APP_NAME`. Runtime-paketet `network_core` är avsiktligt generiskt och behåller sitt tekniska namn vid omprofilering. Pythonserverns vanliga lokala start kräver ingen separat nedladdad tredjepartsmodul. Webbläsardelen har däremot den **medpackade tredjepartskomponenten `elkjs`**; se [NOTICE](../web/vendor/NOTICE.md). Det vore fel att påstå att hela runtime saknar tredjepartskod.
 
 ## Modulgränser
 
