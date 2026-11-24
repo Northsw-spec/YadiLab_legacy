@@ -4,7 +4,7 @@
 
 A simulation session is an explicit, temporary **Python server-memory** object holding exactly one existing `ArpSession` and its underlying `EthernetFabric`. Unlike the pre-existing one-shot `POST /api/diagnostics/arp` endpoint (which stays unchanged), a live session retains actually learned switch MAC tables and per-interface ARP caches across multiple requested operations. It never invents a cable, VLAN, MAC, destination, route or packet result.
 
-Builder provides a separate Stepwise Layer 2 panel with Start, Send ARP, Send Ethernet, Reset Tables and Stop actions. Nothing runs automatically. Select a real non-switch source interface with an explicit bound MAC. To resolve ARP, that interface also needs configured IPv4/CIDR. VLANs come exclusively from persisted schema 1.2 switch-port configuration, with the same access/trunk semantics and strict missing-configuration rejection as before.
+Builder provides a separate Stepwise Layer 2 panel with Start, Send ARP, Send Ethernet, Reset Tables and Stop actions. Nothing runs automatically. Select a real non-switch source interface with an explicit bound MAC. To resolve ARP, that interface also needs configured IPv4/CIDR. VLANs come only from **explicitly declared** persisted switch-port configurations (introduced in schema 1.2 and also supported in later schemas), with the same access/trunk semantics and strict missing-configuration rejection. This Layer 2 session never infers a VLAN from naming or IP.
 
 A real Ethernet send constructs a strictly validated **opaque Ethernet II** frame, with an explicitly configured source MAC, a user-entered destination MAC and EtherType **0x88B5** with empty payload. It uses `EthernetFabric.inject_frame`; broadcast/unknown unicast and known-unicast switching and VLAN drops are observable. A destination port arrival is **not** proof a NIC accepted or decoded the frame. No IPv4 or ping simulation is implied.
 
@@ -27,7 +27,7 @@ The prior `/api/diagnostics/arp` remains a separate, one-shot diagnostic route. 
 
 ## Source-document boundary and truth claims
 
-The source `.yadilab` project schema remains **1.2** and is never extended with learned protocol state, sessions, tokens or diagnostic traces. Start/Run/Reset/Stop call no project file writer. Only explicit Save performs existing atomic writes with SHA-256 conflict control. Ethernet frames do not simulate IPv4, TTL, ICMP or ping. No ARP aging, STP, native VLAN, NIC acceptance, custom payload injection or persistent sessions.
+A simulation session **preserves the input project's validated schema version**; the current validator accepts versions **1.0–1.4** (1.4 includes separately validated historical import evidence). Session state does not introduce learned protocol data, tokens or diagnostic traces into any persisted project schema. Start/Run/Reset/Stop call no project file writer. Only explicit Save performs existing atomic writes with SHA-256 conflict control. Ethernet frames do not simulate IPv4, TTL, ICMP or ping. No ARP aging, STP, native VLAN, NIC acceptance, custom payload injection or persistent sessions.
 
 Returned `RESOLVED` is a modeled ARP exchange, `CACHE_HIT` a real previous successful entry with **no new request/reply frames**, `NO_REPLY` a missing ARP response in the modeled broadcast domain, and Ethernet `SIMULATED` only that the frame was forwarded according to declared ports/links and learned entries. No status is a generic proof of IP reachability.
 

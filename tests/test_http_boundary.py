@@ -88,7 +88,7 @@ class LocalHTTPBoundaryTests(unittest.TestCase):
                      "/features/projects/transfer.js/extra",
                      "/features/projects/../projects/persistence.js",
                      "/ui/../services/api.js",
-                     "/network_core/server.py", "/docs/QUALITY_IMPROVEMENT_PLAN.md"):
+                     "/network_core/server.py", "/docs/PEDAGOGICAL_TROUBLESHOOTING_PLAN.md"):
             with self.subTest(path=path):
                 status, _, body = self.request("GET", path, headers)
                 self.assertEqual(status, 404)

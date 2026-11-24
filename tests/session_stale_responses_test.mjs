@@ -1,5 +1,5 @@
-// QUALITY-005/5C: deterministic late-HTTP regression cases.
-// Exact expected results were registered in docs/QUALITY_005_FRONTEND_STALE_ORACLES.md.
+// Deterministic late-HTTP regression cases for stale session responses.
+// Assertions below define the expected behavior; historical design notes are in Git history.
 // This supplements, never replaces, the real Chromium and X11 CI acceptance tests.
 import test from 'node:test';
 import assert from 'node:assert/strict';

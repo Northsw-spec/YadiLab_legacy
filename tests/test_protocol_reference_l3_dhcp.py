@@ -1,7 +1,7 @@
-"""QUALITY-003 external, precommitted IPv4/ICMP/DHCP behavioral oracles.
+"""Independent IPv4/ICMP/DHCP behavioral regression oracles.
 
-See docs/PROTOCOL_REFERENCE_MATRIX.md (third slice) for reference RFCs,
-fixed byte vectors, topology, intended unsupported scope and expected results.
+Expected outcomes and supported scope are stated in the test assertions;
+protocol references include RFC 791, RFC 792 and RFC 2131.
 Test fixtures supply explicit synthetic network data, NEVER expected outputs.
 No real NICs, real network traffic, time sleeps, disk saves or product edits.
 """

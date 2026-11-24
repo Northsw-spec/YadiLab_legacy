@@ -1,7 +1,7 @@
-"""QUALITY-003 fourth slice: pre-registered address and metamorphic oracles.
+"""Independent IPv4 boundary and metamorphic regression oracles.
 
-See docs/PROTOCOL_REFERENCE_MATRIX.md: fixed outcomes derive from RFC 791,
-RFC 3021, RFC 1812 and RFC 2131 and explicit physical link declarations.
+Fixed expectations derive from RFC 791, RFC 3021, RFC 1812 and RFC 2131
+and explicit physical link declarations. Historic review is in Git history.
 Do not generate expected values from the engine under test.
 All files are disposable test files; no production or real-network changes.
 """

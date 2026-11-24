@@ -62,6 +62,20 @@ class DocumentationPolicyTests(unittest.TestCase):
                 with self.subTest(path=str(path.relative_to(ROOT)), old=filename):
                     self.assertNotIn(filename, body)
 
+    def test_source_code_has_no_broken_links_to_retired_documents(self):
+        # Deliberately exclude this policy test: its RETIRED tuple is the ban list.
+        # Vendor assets are external third-party material, not our own docs.
+        source_suffixes = {".py", ".js", ".mjs", ".html", ".css", ".yml", ".yaml", ".json"}
+        for path in ROOT.rglob("*"):
+            if not path.is_file() or path == Path(__file__).resolve():
+                continue
+            if "vendor" in path.relative_to(ROOT).parts or path.suffix not in source_suffixes:
+                continue
+            body = path.read_text(encoding="utf-8")
+            for filename in RETIRED:
+                with self.subTest(path=str(path.relative_to(ROOT)), old=filename):
+                    self.assertNotIn("docs/" + filename, body)
+
     def test_relative_markdown_links_point_to_real_files(self):
         # This is a deliberately narrow repository-file check, not a general
         # Markdown, HTTP, GitHub anchor or external-link validator.

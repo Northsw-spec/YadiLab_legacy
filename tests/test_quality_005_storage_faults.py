@@ -1,7 +1,7 @@
-"""QUALITY-005/5A-5B: pre-registered Linux local Save failure-boundary tests.
+"""Linux-local Save failure-boundary regression tests.
 
-Expected outcomes are specified BEFORE these tests run in
-docs/QUALITY_005_STORAGE_FAILURE_ORACLES.md.
+Expected outcomes are explicit in the tests. Historical review remains in Git;
+no deleted Markdown file is required for source-of-truth assertions.
 Only disposable TemporaryDirectory paths are touched. Not power-loss testing.
 """
 from __future__ import annotations
