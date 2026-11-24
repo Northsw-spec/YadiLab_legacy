@@ -2,7 +2,7 @@
 
 ## Scope
 
-`EthernetFabric(project, vlan_ports=...)` creates one VLAN-aware session using the same declared project topology and switch-forwarding queue as the original Ethernet model. Sessions without a `vlan_ports` argument retain their legacy unsegmented behavior. VLANs are never inferred from IP, MAC, port names, physical position or device type. Since schema 1.2, explicitly saved switch-port VLANs also enable the same forwarding engine; incomplete active-port configurations fail closed.
+`EthernetFabric(project, vlan_ports=...)` creates one VLAN-aware session using the same declared project topology and switch-forwarding queue as the original Ethernet model. Sessions without `vlan_ports` use persisted switch-port VLAN configuration when present; **legacy unsegmented behavior applies only when neither explicit session VLANs nor persisted VLAN declarations exist**. VLANs are never inferred from IP, MAC, port names, physical position or device type. Since schema 1.2, explicitly saved switch-port VLANs also enable the same forwarding engine; incomplete active-port configurations fail closed.
 
 Each **active, wired switch port** requires an explicit entry:
 - Access: `("sw", "p1"): {"mode": "access", "vlan": 10}`.

@@ -104,7 +104,7 @@ cases. `python3 tests/browser_elk_layout.py` exercises the actual vendored
 ELK, local Python HTTP server, Chromium UI, cable endpoints, preview cancel,
 stale response rejection, explicit Save/Open and ephemeral edge-path policy.
 
-The experiment proving a successful 2,000-node/5,000-link coordinate
-candidate remains reproducible under the isolated research branch.
-Production readability and navigation for other large topologies must not
-be considered accepted from those isolated results.
+Large-topology performance, navigation and readability need a repeatable
+test environment and measured results for the exact scenario being claimed.
+An isolated historical stress result is not proof of general production
+scalability; consult the current test suite and CI before any such claim.
