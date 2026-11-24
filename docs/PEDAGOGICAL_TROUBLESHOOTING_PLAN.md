@@ -2,21 +2,21 @@
 
 **Datum:** 2026-11-24 (ISO)  
 **Beslut:** Bindande produkt- och undervisningskontrakt för framtida *uttryckligen beställd* pedagogik.  
-**Status:** PLANNED / NOT_IMPLEMENTED som sammanhållet nytt undervisningsgränssnitt. Befintliga YadiLab-funktioner listas som befintliga endast när de har stöd i kod och tester.  
+**Status:** PLANNED / NOT_IMPLEMENTED som sammanhållet nytt undervisningsgränssnitt. Befintliga appfunktioner listas som befintliga endast när de har stöd i kod och tester.  
 **Historisk granskad bas:** `main@b1c6fb0323fc93085084128e3ff4382f2b3a9576`. Läs om aktuell HEAD/CI före varje ändring.  
 **Plattform:** Linuxdistributioner endast. Windows och macOS är UNSUPPORTED.
 
-> **LÄS FÖRST – ingen automatisk utvecklingsorder.** Detta dokument anger hur YadiLab ska undervisa om nätverk. Det godkänner inte automatiskt en ny PR, ett nytt protokoll, API, schemaversion, datalager, verktygsintegration eller ombyggnad av UI. Fortsatt utveckling följer `AGENTS.md`, `docs/MASTERPROMPT.md`, `docs/QUALITY_IMPROVEMENT_PLAN.md`, `docs/IMPORT_SOURCE_CONTRACT.md` och aktuellt kod-/testläge. Dokumentet är inte en parallell utvecklingskö. Vid konflikt: senaste uttryckliga användarbeslut, befintligt styrkontrakt och verifierad källkod; rapportera olösta konflikter, gissa inte.
+> **LÄS FÖRST – ingen automatisk utvecklingsorder.** Detta dokument anger hur applikationen ska undervisa om nätverk. Det godkänner inte automatiskt en ny PR, ett nytt protokoll, API, schemaversion, datalager, verktygsintegration eller ombyggnad av UI. Fortsatt utveckling följer `AGENTS.md`, `docs/MASTERPROMPT.md`, `docs/QUALITY_IMPROVEMENT_PLAN.md`, `docs/IMPORT_SOURCE_CONTRACT.md` och aktuellt kod-/testläge. Dokumentet är inte en parallell utvecklingskö. Vid konflikt: senaste uttryckliga användarbeslut, befintligt styrkontrakt och verifierad källkod; rapportera olösta konflikter, gissa inte.
 
 ## 1. Produktmål och orubbliga avgränsningar
 
 **Mål:** En blivande IT-konsult ska kunna se och förstå nätverksfel, tillstånd och orsakskedjor: studera dokumenterad topologi; observera eller simulera ett symptom; välja rimlig diagnostik; tolka svar; jämföra hypoteser; pröva ett motbevisande test; föreslå en avgränsad åtgärd; verifiera återställning; och dokumentera slutsatsen. Undervisningen ska överföra kunskapen mellan olika tillverkare och utrustningstyper.
 
-**Löfte:** YadiLab förklarar korrekt vad en given observation eller en stödd simulerad mekanism innebär *inom sina uttryckliga förutsättningar*. YadiLab lovar inte automatisk förståelse av alla kundnätverk, att varje faktisk felorsak går att hitta, att alla protokoll simuleras eller att någon blir senior genom enbart appanvändning. Påståenden om ”världens bästa” får inte användas som verifierad produktstatus utan en oberoende och reproducerbar jämförelse.
+**Löfte:** applikationen förklarar korrekt vad en given observation eller en stödd simulerad mekanism innebär *inom sina uttryckliga förutsättningar*. applikationen lovar inte automatisk förståelse av alla kundnätverk, att varje faktisk felorsak går att hitta, att alla protokoll simuleras eller att någon blir senior genom enbart appanvändning. Påståenden om ”världens bästa” får inte användas som verifierad produktstatus utan en oberoende och reproducerbar jämförelse.
 
-**Beslut om externa program – INGEN integration:** SuzieQ, Batfish, Netshot, NetXMS, Wireshark, FRRouting, containerlab, Linux CLI-verktyg m.fl. är **fristående verktyg för undervisning och separat praktiskt arbete**. YadiLab får förklara när de används, visa expertgranskade *statiska exempel*, förklara kommandon och utdata samt hänvisa till officiell dokumentation. YadiLab får **inte inom denna arkitektur** installera, paketera, köra, anropa, automatiskt importera från, skanna med, läsa live-utdata från eller orkestrera dessa verktyg. Inga SDK:er, API-adaptrar, containermotorer, SSH-/SNMP-klienter, automatiska CLI-anrop, PCAP-insamlare, externa NMS-/analysmotorer, forks eller kopierad källkod införs. Ett nytt, annorlunda framtida användarbeslut skulle kräva eget kontrakt; detta dokument är inte ett sådant mandat.
+**Beslut om externa program – INGEN integration:** SuzieQ, Batfish, Netshot, NetXMS, Wireshark, FRRouting, containerlab, Linux CLI-verktyg m.fl. är **fristående verktyg för undervisning och separat praktiskt arbete**. applikationen får förklara när de används, visa expertgranskade *statiska exempel*, förklara kommandon och utdata samt hänvisa till officiell dokumentation. applikationen får **inte inom denna arkitektur** installera, paketera, köra, anropa, automatiskt importera från, skanna med, läsa live-utdata från eller orkestrera dessa verktyg. Inga SDK:er, API-adaptrar, containermotorer, SSH-/SNMP-klienter, automatiska CLI-anrop, PCAP-insamlare, externa NMS-/analysmotorer, forks eller kopierad källkod införs. Ett nytt, annorlunda framtida användarbeslut skulle kräva eget kontrakt; detta dokument är inte ett sådant mandat.
 
-**Bevara YadiLab:** En kanonisk nätverksmodell och en befintlig IPv4/ARP/Ethernet/VLAN/ICMP/DHCP-motor med redan stödda funktioner. Bevara dokumentimport, källproveniens, uttryckliga fysiska portändpunkter, ELK/SVG/Worker, Builder, simuleringssessioner, dolda felövningar, Save/Open, branchskydd och testsvit. Ingen andra simulering, konkurrerande projektmodell, ny importkedja eller automatisk live-discovery som följd av pedagogikplanen. All lagring kräver befintlig uttrycklig Save.
+**Bevara befintlig funktionalitet:** En kanonisk nätverksmodell och en befintlig IPv4/ARP/Ethernet/VLAN/ICMP/DHCP-motor med redan stödda funktioner. Bevara dokumentimport, källproveniens, uttryckliga fysiska portändpunkter, ELK/SVG/Worker, Builder, simuleringssessioner, dolda felövningar, Save/Open, branchskydd och testsvit. Ingen andra simulering, konkurrerande projektmodell, ny importkedja eller automatisk live-discovery som följd av pedagogikplanen. All lagring kräver befintlig uttrycklig Save.
 
 ## 2. De nio rubrikerna – ORDAGRANN, bindande svensk mall
 
@@ -54,18 +54,18 @@ Varje genomarbetad diagnoslektion använder följande rubriker **exakt, inklusiv
 
 - **Direkt observation:** Exempelvis `operational state: down` i ett *verifierat, tidsstämplat* verktygsresultat. Det bevisar det rapporterade tillståndet i mätningens scope, inte kabelorsaken.
 - **Protokolldefinierat ”Då”:** Exempelvis OSPF `Init` har en specifik definierad protokollbetydelse i RFC 2328. Det bevisar inte varför tillståndet uppstod.
-- **Modellberäknat:** Resultat från YadiLabs uttryckligen stödda simuleringsmotor, med projektets identiteter och faktiska paketspår. Inte observation av verkligt kundnät.
+- **Modellberäknat:** Resultat från applikationens uttryckligen stödda simuleringsmotor, med projektets identiteter och faktiska paketspår. Inte observation av verkligt kundnät.
 - **Hypotes:** En möjlig orsak som ännu inte särskilts från alternativen.
 - **Fastställd orsak inom övningen:** Bevisad endast när en validerad isolerad feländring ger ett relevant fel, originalet fungerar och oberoende återställning fungerar enligt den befintliga motorn. Denna beviskedja får inte överföras automatiskt till ett verkligt kundnätverk.
 - **Verklig verifiering:** Kräver separata, tillåtna och faktiskt utförda observationer på det aktuella nätverket. Pedagogikexempel är aldrig sådan verifiering.
 
-YadiLabs redan beslutade sanningsklasser enligt `MASTERPROMPT.md` gäller där de används: `DOCUMENTED`, `CONFIGURED`, `SIMULATED`, `UNKNOWN`, `UNSUPPORTED` och `NOT_VERIFIED`. Skapa inga nya programstatusar eller API-fält enbart för pedagogiktext. ”Observerat”, ”hypotes” och ”motbevisat” kan vara pedagogiska beskrivningar, inte automatiskt schematyper.
+applikationens redan beslutade sanningsklasser enligt `MASTERPROMPT.md` gäller där de används: `DOCUMENTED`, `CONFIGURED`, `SIMULATED`, `UNKNOWN`, `UNSUPPORTED` och `NOT_VERIFIED`. Skapa inga nya programstatusar eller API-fält enbart för pedagogiktext. ”Observerat”, ”hypotes” och ”motbevisat” kan vara pedagogiska beskrivningar, inte automatiskt schematyper.
 
 ### 2.3 Konfidensprocent
 
 **Förbjudet:** godtyckliga `85 %`, `95 %` eller andra numeriska sannolikheter för felorsaker eller protokolltolkningar. Procent från LLM-utfall, generiska internetsiffror eller enbart antal symptom är inte kalibrerade.
 
-**Tillåtet:** studentens **egna självskattade säkerhet i procent**, tydligt märkt ”Elevens självskattning – inte YadiLabs sannolikhet”. Eventuella framtida statistiskt beräknade felorsakssannolikheter kräver särskilt explicit godkännande, uppmätt representativt underlag, definierad population/beroenden, metod och **extern kalibrering**; denna plan godkänner ingen sådan modell.
+**Tillåtet:** studentens **egna självskattade säkerhet i procent**, tydligt märkt ”Elevens självskattning – inte applikationens sannolikhet”. Eventuella framtida statistiskt beräknade felorsakssannolikheter kräver särskilt explicit godkännande, uppmätt representativt underlag, definierad population/beroenden, metod och **extern kalibrering**; denna plan godkänner ingen sådan modell.
 
 När ett villkor är logiskt/protokollmässigt bestämt inom en specificerad kontext: skriv den precisa betydelsen utan en artificiell konfidenssiffra. När fakta saknas: skriv `UNKNOWN` eller `NOT_VERIFIED` och föreslå ett avgränsat test.
 
@@ -105,9 +105,9 @@ Kontrollera rätt grannstatus för den aktuella nätverkstypen, stabilitet över
 
 **Beviskälla och begränsningar:**
 
-RFC 2328, särskilt OSPF Neighbor State Machine och Hello processing: https://www.rfc-editor.org/rfc/rfc2328 . Detta är statiskt pedagogiskt exempel, inte en av YadiLab genomförd OSPF-simulering eller live-sampling.
+RFC 2328, särskilt OSPF Neighbor State Machine och Hello processing: https://www.rfc-editor.org/rfc/rfc2328 . Detta är statiskt pedagogiskt exempel, inte en av applikationen genomförd OSPF-simulering eller live-sampling.
 
-## 4. YadiLabs faktiskt befintliga motor och gränser
+## 4. applikationens faktiskt befintliga motor och gränser
 
 **Vid granskad baslinje finns källkod för:** deklarerade noder/portar/kablar, importerade nätverksfakta med validering och proveniens, SVG/ELK-rendering, ARP/Ethernet/MAC-inlärning, explicita VLAN, connected och statiska IPv4-routes, IPv4-forwarding/ICMP Echo och begränsade router-ICMP-fel, DHCPv4 DORA/sessionsfall, kontrollerade feljämförelser samt dolda ICMP- och DHCP-utredningar. **Detta är en kodinventering, inte nytt bevis för generell protokollkorrekthet eller fullständigt stödda implementationer.** Se `network_core/`, `docs/ICMP_INVESTIGATION.md`, `docs/DHCP_DORA.md`, `docs/TROUBLESHOOTING.md`, `docs/PROTOCOL_REFERENCE_MATRIX.md` och relevanta tester; kontrollera aktuell HEAD.
 
@@ -123,8 +123,8 @@ Ett framtida arbetsflöde kan byggas **ovanpå** existerande Builder/topologi oc
 2. **Om:** Student ser symptom och tids-/källkontext; eventuellt en liten granskad CLI-/Wireshark-/SuzieQ-bild märkt `STATISKT EXEMPEL`.
 3. **Då:** Efter att studenten själv tolkat observationen visas korrekt, källbunden protokollbetydelse och dess förutsättningar.
 4. **Hypoteser:** Studenten väljer bland rimliga alternativ samt anger ett test som kan motbevisa sin första hypotes.
-5. **Diagnostik:** Använd redan existerande YadiLab-probes när underliggande mekanism är implementerad. För OSPF/BGP/ACL m.m. visa *endast* externa verktygsanvisningar och granskade statiska data; inga påhittade native-prober.
-6. **Paket- och beslutssteg:** Återge bara verkligt beräknade ARP/Ethernet/IPv4/ICMP-transmissioner från YadiLabs motor, med skilda request/reply och felorsaker. Extern packet capture visas enbart som separat, märkt referensmaterial.
+5. **Diagnostik:** Använd redan existerande befintliga appdiagnoser när underliggande mekanism är implementerad. För OSPF/BGP/ACL m.m. visa *endast* externa verktygsanvisningar och granskade statiska data; inga påhittade native-prober.
+6. **Paket- och beslutssteg:** Återge bara verkligt beräknade ARP/Ethernet/IPv4/ICMP-transmissioner från applikationens motor, med skilda request/reply och felorsaker. Extern packet capture visas enbart som separat, märkt referensmaterial.
 7. **Orsak och test:** Jämför alternativa hypoteser med resultat. Avslöja inte dolt övningsfacit innan studenten undersökt.
 8. **Åtgärd och verifiering:** Använd endast existerande reversibla fel-/återställningsmekanismer för native-simulering. Visa före/fel/efter, ingen förändring av originalprojektet utan uttryckligt godkännande och Save.
 9. **Efteranalys:** Förklara *varför* en hypotes var korrekt/felaktig, vilka observationer som saknades och hur man dokumenterar en driftincident utan gissning.
@@ -133,14 +133,14 @@ Ett framtida arbetsflöde kan byggas **ovanpå** existerande Builder/topologi oc
 
 **UI-kontrakt:** inga nya globala menyer eller massiv redesign utan godkänt kodkort och verkligt UX-behov. Återanvänd nuvarande diagram, From/To, labbsessioner, portval, stale guards, paketanimation, identifierare och reset/replay. Framtida pedagogiskt innehåll ska lagras som granskade textresurser/komponenter inom ett separat godkänt feature-scope; ingen ny generell kursparser eller ändrad `.yadilab`-schema är beslutad.
 
-## 6. Kompetenskarta: vad studenter ska lära sig, inte vad YadiLab redan simulerar
+## 6. Kompetenskarta: vad studenter ska lära sig, inte vad applikationen redan simulerar
 
 | Område | Centralt diagnostiskt kunnande | Undervisningstyp i detta beslut |
 |---|---|---|
 | OSI/TCP-IP, lager och dataplan/kontrollplan/managementplan | Var i kedjan kan felet uppstå? | Begrepp + stödda native-labb |
 | Fysisk länk, optics, MTU, felräknare, duplex | Admin up kontra operational up, counters, L1/L2-fel | Verktygskort/statiska exempel; native port-disable där stödd |
-| Ethernet, MAC/FDB, ARP, VLAN, 802.1Q | Inlärning, broadcast, access/trunk, L2-isolering | Native YadiLab när stödd, med oberoende referenser |
-| IPv4, CIDR, gateway, connected/static routing | Longest prefix, return path, TTL, ARP next-hop | Native YadiLab inom verifierad modell |
+| Ethernet, MAC/FDB, ARP, VLAN, 802.1Q | Inlärning, broadcast, access/trunk, L2-isolering | Native simuleringsfunktion när stödd, med oberoende referenser |
+| IPv4, CIDR, gateway, connected/static routing | Longest prefix, return path, TTL, ARP next-hop | Native simuleringsfunktion inom verifierad modell |
 | ICMP, DHCPv4, grundläggande UDP | Ping request/reply, DHCP DORA/lease, fel och tidsförlopp | Native där stödd, annars teori/statiska exempel |
 | STP/RSTP/LACP/portchannels | Fysiska kontra logiska vägar, blocked/forwarding, aggregation | Statiska exempel eller fristående Linux-labb |
 | OSPF/IS-IS/BGP | Neighbors, states, LSDB/LSA, SPF/metric, BGP-policy/RIB/FIB | FRRouting/containerlab separat; verifierat statiskt innehåll |
@@ -168,16 +168,16 @@ Ett framtida arbetsflöde kan byggas **ovanpå** existerande Builder/topologi oc
 | Linux `ip`, `bridge`, `ss`, `traceroute`, `dig` | Vilka lokala interface, grannar, rutter, lyssnande socketar, hop och DNS-resultat finns? | Automatisk förklaring av hela nätverket |
 | SNMP-klient separat | Vilket värde rapporterar OID/MIB och vilket access-/mätfel finns? | Att ett SNMP-fel innebär paketförlust eller L3-fel |
 
-**Verktygskort ska ange:** syfte; förutsättningar och nödvändigt tillstånd; exempelkommando med relevant plattform; vilka fält man läser; ett korrekt om–då-exempel; minst en felaktig vanlig tolkning; nästa skiljande test; datasäkerhet; originalreferens och verifieringsstatus. Använd enbart granskade, syntetiska eller uttryckligen tillåtna anonymiserade exempel. Verktygsexempel ska märkas `STATISKT ÖVNINGSEXEMPEL – EJ KÖRT I YADILAB`. Visa aldrig credential, verkliga hemligheter eller kundidentifierande konfigurationer.
+**Verktygskort ska ange:** syfte; förutsättningar och nödvändigt tillstånd; exempelkommando med relevant plattform; vilka fält man läser; ett korrekt om–då-exempel; minst en felaktig vanlig tolkning; nästa skiljande test; datasäkerhet; originalreferens och verifieringsstatus. Använd enbart granskade, syntetiska eller uttryckligen tillåtna anonymiserade exempel. Verktygsexempel ska märkas `STATISKT ÖVNINGSEXEMPEL – EJ KÖRT I APPEN`. Visa aldrig credential, verkliga hemligheter eller kundidentifierande konfigurationer.
 
-**Säkerhet:** Inga exekverade shellkommandon från YadiLab, ingen dold fjärranslutning, scanning eller PCAP-läsning. Terminalkommandon är pedagogiska förslag som studenten manuellt kan använda i *egen isolerad labbmiljö* eller uttryckligen godkänd miljö med lägsta rimliga rättigheter. Konfigurationsändringar i produktion kräver egen ändringsprocess.
+**Säkerhet:** Inga exekverade shellkommandon från applikationen, ingen dold fjärranslutning, scanning eller PCAP-läsning. Terminalkommandon är pedagogiska förslag som studenten manuellt kan använda i *egen isolerad labbmiljö* eller uttryckligen godkänd miljö med lägsta rimliga rättigheter. Konfigurationsändringar i produktion kräver egen ändringsprocess.
 
 ## 8. Sanningslager och testbar spårbarhet
 
 Separera i all presentation:
 
 1. **Källdokument:** angiven och validerad topologi/konfiguration, med källrad, cell, tidsstämpel och proveniens i den mån datat faktiskt innehåller detta.
-2. **Native simulerat:** resultat från existerande YadiLab-motor, exakt scenario/kanoniskt projekt och observerade simulerade steg.
+2. **Native simulerat:** resultat från existerande simuleringsmotor, exakt scenario/kanoniskt projekt och observerade simulerade steg.
 3. **Externt statiskt exempel:** explicit markerade förberedda verktygsresultat och tillverkar-/versionsscope.
 4. **Verkligt observerat:** får endast sägas när det finns faktisk tillåten mätning från real utrustning, inte bara en skärmdump i kursen.
 5. **Okänt eller ej stött:** får inte ersättas med plausibla gissningar eller positiva standardvärden.
@@ -198,7 +198,7 @@ Dessa kort är endast förslag som kräver separat uttryckligt, avgränsat anvä
 
 **P4 – statiska externa verktygskort:** Enstaka genomarbetade SuzieQ-, Wireshark-, Netshot- och Batfish-exempel som överensstämmer med officiella verktygsdata. Ingen installerare, exekvering, importerare, API eller livekontroll.
 
-**P5 – OSPF/SNMP/ACL-bredd utan falsk motor:** Expertgranskade om–då-fall med korrekta undantag, motsägande observationer och valfria instruktioner till helt separata FRRouting/containerlab-labb. Inget påstående att YadiLab simulerar OSPF, ACL eller SNMP.
+**P5 – OSPF/SNMP/ACL-bredd utan falsk motor:** Expertgranskade om–då-fall med korrekta undantag, motsägande observationer och valfria instruktioner till helt separata FRRouting/containerlab-labb. Inget påstående att applikationen simulerar OSPF, ACL eller SNMP.
 
 **P6 – effektmätning:** Låt oberoende nybörjare och nätverksexperter utföra definierade uppgifter. Mät begriplighet, diagnostisk precision, falskt säkra svar, tid till relevant test och förmågan att förklara motexempel. Rapportera faktiska resultat; inga påhittade procenttal.
 
@@ -221,7 +221,7 @@ Varje framtida konkret PR ska enligt `AGENTS.md` och kvalitetsplanen ha en avgr�
 9. Eleven får inte få en dold felorsak avslöjad i API, animation eller feedback före relevant pedagogiskt steg.
 10. Ändrad arbetsyta och sent HTTP-svar ska ogiltigförklara visat resultat enligt befintligt stale-guard-kontrakt.
 11. En pedagogisk vy får inte ändra projekt, noder, kablar, routes, importkvitto, filbytes eller sessionernas livscykel ofrivilligt.
-12. Utan externa appar installerade ska YadiLab och dess befintliga simulator fortsätta fungera fullt enligt aktuellt kontrakt.
+12. Utan externa appar installerade ska applikationen och dess befintliga simulator fortsätta fungera fullt enligt aktuellt kontrakt.
 13. Ett t.ex. `85 %`-påstående om sannolik felorsak utan validerad statistisk modell ska avvisas vid innehållsgranskning.
 14. Ingen ny Windows/macOS-bana, generisk discovery, extern motor, runtimeberoende eller automatiskt systemkommando.
 
@@ -242,12 +242,12 @@ När äldre text säger ”nästa PR”, ”inte implementerat” eller ”ny fe
 ## 12. Källor och verifieringsnivå
 
 **Kontrollerade interna källor:**  
-- https://github.com/Northsw-spec/YadiLab/blob/main/AGENTS.md  
-- https://github.com/Northsw-spec/YadiLab/blob/main/docs/MASTERPROMPT.md  
-- https://github.com/Northsw-spec/YadiLab/blob/main/docs/ICMP_INVESTIGATION.md  
-- https://github.com/Northsw-spec/YadiLab/blob/main/docs/TROUBLESHOOTING.md  
-- https://github.com/Northsw-spec/YadiLab/blob/main/docs/DHCP_DORA.md  
-- https://github.com/Northsw-spec/YadiLab/blob/main/docs/PROTOCOL_REFERENCE_MATRIX.md  
+- [../AGENTS.md](../AGENTS.md)  
+- [MASTERPROMPT.md](MASTERPROMPT.md)  
+- [ICMP_INVESTIGATION.md](ICMP_INVESTIGATION.md)  
+- [TROUBLESHOOTING.md](TROUBLESHOOTING.md)  
+- [DHCP_DORA.md](DHCP_DORA.md)  
+- [PROTOCOL_REFERENCE_MATRIX.md](PROTOCOL_REFERENCE_MATRIX.md)  
 
 **Externa referenser för egna undersökningar och kursgranskning (inte integrationsberoenden):**  
 - OSPF RFC 2328: https://www.rfc-editor.org/rfc/rfc2328  
