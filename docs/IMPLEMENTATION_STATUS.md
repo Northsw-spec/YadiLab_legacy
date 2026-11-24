@@ -68,11 +68,17 @@ Ytterligare explicit specialadressvalidering enligt RFC 1122, RFC 3927 och IANA 
 
 **Licensbeslut är BLOCKED:** GitHub rapporterade `license=null` och repo-roten har ingen `LICENSE`; README säger att licens inte valts. Vendorns ELK-licens gäller **inte** automatiskt den egna Python-/JavaScript-koden. Se [issue #115](https://github.com/Northsw-spec/YadiLab/issues/115). En publicerad källa är inte automatiskt OSI-licensierad; välj aldrig licens eller upphovsrättsligt ansvar utan rättighetsinnehavarens uttryckliga godkännande.
 
-## 4C. Källtroget JSON-uppladdningsflöde och offline-API (föreslagen separat fix)
+## 4C. Källtroget JSON-uppladdningsflöde och offline-API – verifierad delmängd PR #119
 
 **Fynd 2026-11-24:** `web/features/projects/transfer.js` läste originalfil genom `JSON.parse` före anropet till `/api/validate`; `web/features/projects/import-review.js` gjorde motsvarande för uppladdade mappningsprofiler och originalkällpaket, och använde delvis `File.text()` som kan ersätta ogiltiga UTF-8-bytes. Det kunde normalisera bort motstridiga JSON-nycklar **före** den strikta servervalideraren från PR #111. Den nya avgränsade kod-PR:en skickar oförändrade uppladdade bytes via ett lokalt `/api/validate` respektive läsande `/api/json/strict` och begränsar `web/services/api.js` till relativa `/api/...`-vägar.
 
-**Status:** PROPOSED / **NOT_VERIFIED tills båda obligatoriska CI-körningarna på exakt slutlig PR HEAD är SUCCESS**. Inget nytt nätverksimportschema, inga externa verktygsintegrationer, ingen ändrad projektmodell och ingen automatisk Save. Se [SOURCE_INTEGRITY_AUDIT_2026-11-24.md](SOURCE_INTEGRITY_AUDIT_2026-11-24.md) och negativa HTTP-/Node-tester.
+**Status:** **ACCEPTED inom specificerat stödomfång**. PR #119:s båda obligatoriska `unit-tests` var SUCCESS på final PR HEAD `81337e72a57493a14d94c792f3a93ed8c4988586` och squash-mergades till `main@f6066038ed07fe6f087fb4d654a7d003d7b60b91`. Specifika tester: 4 Node och 5 verkliga HTTP-regressioner plus Chromium-profiler, import, X11 och ELK. Senare `main`-CI är separat evidens. Inget nytt nätverksimportschema, inga externa verktygsintegrationer, ingen ändrad projektmodell och ingen automatisk Save. Se [SOURCE_INTEGRITY_AUDIT_2026-11-24.md](SOURCE_INTEGRITY_AUDIT_2026-11-24.md) och negativa HTTP-/Node-tester.
+
+## 4D. ARP Ethernetadressgräns (föreslagen tills negativ CI har PASS)
+
+**Verifierat kodfynd:** Den separata ARP-modulen accepterade adresser ur 127/8, 0/8 och reserverade 240/4 som vanliga Ethernet-ARP-källor/mål, även efter IPv4-dataplanets PR #114. För att förhindra falskt ARP-`RESOLVED` läggs ett snävt ARP-protokollvillkor och fyra positiva/negativa tester till. Befintligt sparat projekt ska fortsatt kunna dokumentera ogiltig adresskonfiguration; DHCP-bootsrapporter med `0.0.0.0` använder separat definierad codec och ska inte påverkas. Se [ARP.md](ARP.md), [PROTOCOL_REFERENCE_MATRIX.md](PROTOCOL_REFERENCE_MATRIX.md) och [issue #120](https://github.com/Northsw-spec/YadiLab/issues/120).
+
+**Status:** PROPOSED för denna nya ARP-del tills exakt PR-HEAD och båda obligatoriska CI-kontroller är SUCCESS; gör inte generella ARP-/RFC-påståenden.
 
 ## 5. Slutlig gräns för försäkran
 

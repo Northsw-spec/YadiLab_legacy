@@ -276,7 +276,7 @@ Markera `Devices.csv` samt valfria `Interfaces.csv`, `Links.csv` och `Zones.csv`
 
 ## Källtrohet vid JSON-uppladdning
 
-En uppladdad projektfil, mappningsprofil eller originalkällpaket får inte först passera en webbläsar-`JSON.parse` som kan kasta bort dubbla fältnamn. Originalbytes skickas till serverns strikta lokala JSON-avkodare innan användaren får se en validerad modell. Dubbla nycklar, ogiltig UTF-8, ogiltig Unicode och otillåtna JSON-tal avvisas; inga nätverksfakta får antas eller tyst ersättas. Nya avgränsade negativa tester finns i `tests/raw_json_ingress_test.mjs` och `tests/test_uploaded_json_boundary.py`. **Kravet är planerat som korrigering tills dess PR är godkänd på exakt HEAD och CI.**
+En uppladdad projektfil, mappningsprofil eller originalkällpaket får inte först passera en webbläsar-`JSON.parse` som kan kasta bort dubbla fältnamn. Originalbytes skickas till serverns strikta lokala JSON-avkodare innan användaren får se en validerad modell. Dubbla nycklar, ogiltig UTF-8, ogiltig Unicode och otillåtna JSON-tal avvisas; inga nätverksfakta får antas eller tyst ersättas. Nya avgränsade negativa tester finns i `tests/raw_json_ingress_test.mjs` och `tests/test_uploaded_json_boundary.py`. **Verifierad delmängd:** PR #119 accepterades efter båda obligatoriska gröna CI-körningarna på exakt slutlig PR-HEAD. Ingen fullständig garanti för godtyckliga framtida filformat eller extern drift.
 
 ## Filformat
 
