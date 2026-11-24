@@ -437,7 +437,7 @@
               <input id="trouble-next-hop" class="control" type="text" autocomplete="off" placeholder="192.0.2.254">
             </div>
           </div>
-          <label for="trouble-ttl">TTL per riktning (1–255)</label>
+          <label for="trouble-ttl">Echo Request TTL (1–255; Reply: simulerat 64)</label>
           <input id="trouble-ttl" class="control" type="number" min="1" max="255" step="1" value="5">
           <button id="run-troubleshoot" class="btn btn-soft full" type="button">Verifiera fel och återställning</button>
           <div id="trouble-result" class="trace-result" aria-live="polite">Ingen kontrollerad felsökningsjämförelse utförd.</div>
@@ -453,7 +453,7 @@
           <span id="icmp-investigation-from-ip-status" class="small-muted" role="status" aria-live="polite">Från-gränssnittet bestäms av adressen eller valet ovan.</span>
           <label for="icmp-investigation-destination">To · IPv4 (klistra in måladress)</label>
           <input id="icmp-investigation-destination" class="control" autocomplete="off" placeholder="203.0.113.20">
-          <label for="icmp-investigation-ttl">TTL per riktning (2–255)</label>
+          <label for="icmp-investigation-ttl">Echo Request TTL (2–255; Reply: simulerat 64)</label>
           <input id="icmp-investigation-ttl" class="control" type="number" min="2" max="255" step="1" value="5">
           <div class="session-actions">
             <button id="icmp-investigation-start" type="button" class="btn btn-soft">Starta dolt ICMP-fall</button>
