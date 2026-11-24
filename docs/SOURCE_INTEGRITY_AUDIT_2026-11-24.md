@@ -116,6 +116,16 @@ Enligt `QUALITY_IMPROVEMENT_PLAN.md` är QUALITY-002 `CONFIGURED / ENFORCEMENT N
 
 **Avgränsad korrigering:** Läs hela ursprungsfilen som `Uint8Array` och skicka bytesen direkt till samma strikta serverdecoder i `/api/validate`. För mappningsprofiler och källpaket finns ett read-only `/api/json/strict` som returnerar validerat JSON utan att skapa projekt eller persistera. Centrala `web/services/api.js` ska endast acceptera lokala relativa `/api/...`-adresser, inte HTTP(S)/protocol-relative, dot-segment eller query-URL:er. Nio nya Python-/Node-tester provar originalbytes, 422 för duplicerade nycklar/ogiltig UTF-8, positiv giltig JSON och lokala API-gränser. **Status: NOT_VERIFIED tills exakt slutlig PR HEAD och båda required CI-checks PASS.**
 
+## 4C. F-004 – separat ARP-panel kunde simulera otillåtna Ethernet-IP-källor
+
+**Om [observerat]:** `network_core/arp.py::_ipv4` avvisade multicast, all-zero och all-one IPv4 men hade inte uttrycklig loopback-/this-network-kontroll och avvisade inte andra reserverade klasser. Detta är en annan adressvaliderare än den i `IPv4Datagram` som rättades i PR #114.
+
+**Då [vad det faktiskt betyder]:** Ett dokumenterat 127/8- eller 0/8-interface kunde användas i en fristående ARP-övning så att nätverksappen påstod en Ethernet-ARP-transmission/RESOLVED trots ett adressval som inte ska ge vanlig trådkommunikation. Det är ett kod-/protokollfynd, inte bevis för ett fel i något faktiskt kundnät.
+
+**Möjliga orsaker [inte fastställda/hypoteser]:** Flera modulära protokollgränser byggdes i olika etapper och saknade likvärdiga negativa specialadressfall; historisk motivkedja är inte bevisad.
+
+**Korrigering:** Avgränsat stopp på ARP-wire-codec-nivå, nya negativa tester och verifierade positiva same-link 169.254/RFC1918/TEST-NET-fall. Ingen tyst borttagning av användardokumenterad felkonfiguration eller ändring av DHCP:s separata BOOTP-`0.0.0.0`-användning. **Status PENDING tills full obligatorisk CI på PR-HEAD är SUCCESS.** [Issue #120](https://github.com/Northsw-spec/YadiLab/issues/120).
+
 ## 5. Beslutsgrind och gräns för uttrycket ”verifierat rent”
 
 För **exakt den testade committen** kan följande hävdas först efter relevanta gröna tester: källkodens definierade JSON-ingångar avvisar ovanstående fall; specificerade tidigare Python/Node/Chromium/X11/ELK-regressioner rapporterar PASS; inga andra filtyper i PR #111 ändras förutom avgränsad kod, nytt test och denna rapport.
