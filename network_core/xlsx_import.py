@@ -52,7 +52,13 @@ def _xml(archive: zipfile.ZipFile, part: str) -> ET.Element:
 
 def _index(reference: str, row: int, where: str) -> int:
     match = COLREF.fullmatch(reference)
-    if match is None or int(match.group(2)) != row:
+    if match is None:
+        _fail(where, f"invalid or out-of-row cell coordinate {reference!r}")
+    try:
+        parsed_row = int(match.group(2))
+    except ValueError:
+        _fail(where, f"invalid or out-of-row cell coordinate {reference!r}")
+    if parsed_row != row:
         _fail(where, f"invalid or out-of-row cell coordinate {reference!r}")
     column = 0
     for letter in match.group(1):
@@ -102,7 +108,10 @@ def _cell(cell: ET.Element, shared: list[str], where: str, field: str) -> str:
     if kind == "s":
         if not raw.isascii() or not raw.isdecimal():
             _fail(where, "invalid shared-string index")
-        index = int(raw)
+        try:
+            index = int(raw)
+        except ValueError:
+            _fail(where, "invalid shared-string index")
         if index >= len(shared):
             _fail(where, "missing shared-string reference")
         return shared[index]
@@ -140,7 +149,13 @@ def _table(archive: zipfile.ZipFile, part: str, name: str,
         if item.tag != f"{{{NS}}}row":
             _fail(name, "unsupported worksheet row content")
         raw_row = item.get("r")
-        if raw_row is None or not raw_row.isascii() or not raw_row.isdecimal() or int(raw_row) != expected_row:
+        if raw_row is None or not raw_row.isascii() or not raw_row.isdecimal():
+            _fail(name, "rows must be consecutive from row 1")
+        try:
+            observed_row = int(raw_row)
+        except ValueError:
+            _fail(name, "rows must be consecutive from row 1")
+        if observed_row != expected_row:
             _fail(name, "rows must be consecutive from row 1")
         if item.get("hidden") in ("1", "true"):
             _fail(name, f"hidden row {expected_row} not importable")
