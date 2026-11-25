@@ -222,12 +222,17 @@ class WorkbookInspectionTests(unittest.TestCase):
     def test_oversized_numeric_xml_fields_are_rejected_in_source_inspection(self):
         huge = "9" * 5000
         oparts = ods_parts({"Data": "ID\n001\n"})
+        # Bring the fixture's default 1024 declared columns inside the
+        # inspection contract so the repeat counter is the FIRST failure.
+        oparts["content.xml"] = oparts["content.xml"].replace(
+            b'number-columns-repeated="1024"', b'number-columns-repeated="1"'
+        )
         original = b"<table:table-row>"
         self.assertIn(original, oparts["content.xml"])
         oparts["content.xml"] = oparts["content.xml"].replace(
             original, f'<table:table-row table:number-rows-repeated="{huge}">'.encode(), 1,
         )
-        with self.assertRaises(ProjectValidationError):
+        with self.assertRaisesRegex(ProjectValidationError, "invalid number-rows-repeated"):
             inspect_source(workbook_request("too-many-rows.ods", ods_zip(oparts)))
 
         xparts = workbook_parts({"Data": "ID\n001\n"})
@@ -235,7 +240,7 @@ class WorkbookInspectionTests(unittest.TestCase):
         xparts["xl/worksheets/sheet1.xml"] = xparts["xl/worksheets/sheet1.xml"].replace(
             b'r="A2"', f'r="A{huge}"'.encode(), 1,
         )
-        with self.assertRaises(ProjectValidationError):
+        with self.assertRaisesRegex(ProjectValidationError, "invalid cell coordinate"):
             inspect_source(workbook_request("huge-coordinate.xlsx", xlsx_zip(xparts)))
 
     def test_xml_numeric_helper_boundaries_preserve_valid_values(self):
