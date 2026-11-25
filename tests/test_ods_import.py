@@ -39,6 +39,26 @@ def patch(path: str, old: str, new: str, sheets=None) -> bytes:
 
 
 class OdsFunctionalTests(unittest.TestCase):
+    def test_oversized_xml_counts_are_validation_errors(self):
+        huge = "9" * 5000  # Exceeds Python's decimal-int digit limit.
+        specimens = (
+            ("<table:table-row>",
+             f'<table:table-row table:number-rows-repeated="{huge}">',
+             "invalid number-rows-repeated"),
+            ("<table:table-cell office:value-type=\"string\">",
+             f'<table:table-cell table:number-columns-repeated="{huge}" office:value-type="string">',
+             "invalid number-columns-repeated"),
+            ("<text:p>pc-a</text:p>",
+             f'<text:p>pc-a<text:s text:c="{huge}"/></text:p>',
+             "invalid repeated spaces"),
+        )
+        for before, after, expected_error in specimens:
+            with self.subTest(field=before):
+                damaged = patch("content.xml", before, after)
+                with self.assertRaisesRegex(ProjectValidationError, expected_error):
+                    import_ods_workbook(body(damaged))
+        self.assertEqual(import_ods_workbook(body(make_ods()))["schemaVersion"], "1.0")
+
     def test_real_zip_package_mime_manifest_and_exact_source_identifiers(self):
         raw=make_ods()
         self.assertEqual(raw[:2],b"PK")
@@ -255,6 +275,21 @@ class OdsHTTPTests(unittest.TestCase):
         raw=(self.root/"from-ods.yadilab").read_bytes()
         self.assertEqual(hashlib.sha256(raw).hexdigest(),save["sha256"])
         self.assertEqual(self.server.store.read("from-ods")["project"],project)
+
+    def test_http_oversized_repeat_is_422_and_preserves_saved_bytes(self):
+        canonical = import_ods_workbook(body(make_ods()))
+        self.server.store.save("existing", canonical)
+        path = self.root / "existing.yadilab"
+        before = path.read_bytes()
+        huge = "9" * 5000
+        damaged = patch("content.xml", "<table:table-row>",
+                        f'<table:table-row table:number-rows-repeated="{huge}">')
+        status, response = self.post(body(damaged))
+        self.assertEqual(status, 422)
+        self.assertEqual(response["error"], "INVALID_PROJECT")
+        self.assertIn("invalid number-rows-repeated", response["message"])
+        self.assertEqual(path.read_bytes(), before)
+        self.assertEqual(list(self.root.glob("*.yadilab")), [path])
 
     def test_http_bad_files_rejected_without_changing_existing_bytes(self):
         valid=import_ods_workbook(body(make_ods()))

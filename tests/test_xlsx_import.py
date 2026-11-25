@@ -37,6 +37,28 @@ def modify(part: str, original: str, replacement: str) -> bytes:
 
 
 class XlsxFunctionalTests(unittest.TestCase):
+    def test_oversized_cell_coordinates_and_shared_indices_are_rejected(self):
+        import xml.etree.ElementTree as ET
+        from network_core.xlsx_import import _index, _cell, NS
+
+        huge = "9" * 5000
+        with self.assertRaisesRegex(ProjectValidationError, "cell coordinate"):
+            _index("A" + huge, 2, "test")
+        self.assertEqual(_index("A2", 2, "test"), 0)
+
+        cell = ET.Element(f"{{{NS}}}c", {"t": "s"})
+        content = ET.SubElement(cell, f"{{{NS}}}v")
+        content.text = huge
+        with self.assertRaisesRegex(ProjectValidationError, "shared-string index"):
+            _cell(cell, ["A"], "test", "id")
+        content.text = "0"
+        self.assertEqual(_cell(cell, ["A"], "test", "id"), "A")
+
+        invalid = modify("xl/worksheets/sheet1.xml", 'r="A2"',
+                         f'r="A{huge}"')
+        with self.assertRaisesRegex(ProjectValidationError, "invalid or out-of-row cell coordinate"):
+            import_xlsx_workbook(request(invalid))
+
     def test_real_zip_inline_strings_numeric_positions_boolean_states(self):
         raw=make_workbook()
         self.assertEqual(raw[:2],b"PK")
@@ -245,6 +267,21 @@ class XlsxHTTPTests(unittest.TestCase):
         actual=(self.root/"xlsx-review.yadilab").read_bytes()
         self.assertEqual(saved["sha256"],hashlib.sha256(actual).hexdigest())
         self.assertEqual(self.server.store.read("xlsx-review")["project"],p)
+
+    def test_http_oversized_row_counter_is_422_without_disk_changes(self):
+        canonical = import_xlsx_workbook(request(make_workbook()))
+        self.server.store.save("existing", canonical)
+        path = self.root / "existing.yadilab"
+        before = path.read_bytes()
+        huge = "9" * 5000
+        damaged = modify("xl/worksheets/sheet1.xml", '<row r="2">',
+                         f'<row r="{huge}">')
+        status, response = self.post(request(damaged))
+        self.assertEqual(status, 422)
+        self.assertEqual(response["error"], "INVALID_PROJECT")
+        self.assertIn("rows must be consecutive", response["message"])
+        self.assertEqual(path.read_bytes(), before)
+        self.assertEqual(list(self.root.glob("*.yadilab")), [path])
 
     def test_http_bad_workbook_rejected_and_saved_bytes_unchanged(self):
         p=import_xlsx_workbook(request(make_workbook()))

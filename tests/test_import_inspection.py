@@ -219,6 +219,46 @@ class WorkbookInspectionTests(unittest.TestCase):
         self.assertEqual(table['previewRows'][3]['cells'][1], {'address': 'B4', 'type': 'number', 'value': '12.50'})
         self.assertEqual(table['previewRows'][3]['cells'][2], {'address': 'C4', 'type': 'boolean', 'value': 'true'})
 
+    def test_oversized_numeric_xml_fields_are_rejected_in_source_inspection(self):
+        huge = "9" * 5000
+        oparts = ods_parts({"Data": "ID\n001\n"})
+        # Bring the fixture's default 1024 declared columns inside the
+        # inspection contract so the repeat counter is the FIRST failure.
+        oparts["content.xml"] = oparts["content.xml"].replace(
+            b'number-columns-repeated="1024"', b'number-columns-repeated="1"'
+        )
+        original = b"<table:table-row>"
+        self.assertIn(original, oparts["content.xml"])
+        oparts["content.xml"] = oparts["content.xml"].replace(
+            original, f'<table:table-row table:number-rows-repeated="{huge}">'.encode(), 1,
+        )
+        with self.assertRaisesRegex(ProjectValidationError, "invalid number-rows-repeated"):
+            inspect_source(workbook_request("too-many-rows.ods", ods_zip(oparts)))
+
+        xparts = workbook_parts({"Data": "ID\n001\n"})
+        self.assertIn(b'r="A2"', xparts["xl/worksheets/sheet1.xml"])
+        xparts["xl/worksheets/sheet1.xml"] = xparts["xl/worksheets/sheet1.xml"].replace(
+            b'r="A2"', f'r="A{huge}"'.encode(), 1,
+        )
+        with self.assertRaisesRegex(ProjectValidationError, "invalid cell coordinate"):
+            inspect_source(workbook_request("huge-coordinate.xlsx", xlsx_zip(xparts)))
+
+    def test_xml_numeric_helper_boundaries_preserve_valid_values(self):
+        import xml.etree.ElementTree as ET
+        from network_core.import_workbooks import index, count, count_text_spaces, q, T, S
+
+        huge = "9" * 5000
+        self.assertEqual(index("B2", 2, "test"), 2)
+        with self.assertRaises(ProjectValidationError):
+            index("A" + huge, 1, "test")
+        for attribute, parser in (
+                (q(T, "number-rows-repeated"), lambda e: count(e, "number-rows-repeated", "test", 5000)),
+                (q(S, "c"), lambda e: count_text_spaces(e, "test"))):
+            with self.subTest(attribute=attribute):
+                with self.assertRaises(ProjectValidationError):
+                    parser(ET.Element("test", {attribute: huge}))
+                self.assertEqual(parser(ET.Element("test", {attribute: "2"})), 2)
+
     def test_ods_rejects_mime_hidden_formula_merge_and_huge_repeat(self):
         base = ods_parts({'Data': 'ID\n001\n'})
         base['content.xml'] = base['content.xml'].replace(b'1024', b'1')

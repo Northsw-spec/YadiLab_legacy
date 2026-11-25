@@ -55,7 +55,12 @@ def _count(element: ET.Element, attr: str, where: str, limit: int) -> int:
         return 1
     if not raw.isascii() or not raw.isdecimal():
         _fail(where, f"invalid {attr}")
-    count = int(raw)
+    try:
+        count = int(raw)
+    except ValueError:
+        # Python rejects decimal strings exceeding its integer digit limit.
+        # Malformed source XML must be a validation error, not HTTP 500.
+        _fail(where, f"invalid {attr}")
     if not 1 <= count <= limit:
         _fail(where, f"{attr} outside 1..{limit}")
     return count
@@ -72,11 +77,17 @@ def _text(paragraph: ET.Element, where: str) -> str:
             result.append("\t")
         elif child.tag == _q(TEXT, "s") and not len(child):
             raw = child.get(_q(TEXT, "c"), "1")
-            if not raw.isascii() or not raw.isdecimal() or not 1 <= int(raw) <= 1000:
+            if not raw.isascii() or not raw.isdecimal():
+                _fail(where, "invalid repeated spaces")
+            try:
+                spaces = int(raw)
+            except ValueError:
+                _fail(where, "invalid repeated spaces")
+            if not 1 <= spaces <= 1000:
                 _fail(where, "invalid repeated spaces")
             if set(child.attrib) - {_q(TEXT, "c")}:
                 _fail(where, "unsupported styled spaces")
-            result.append(" " * int(raw))
+            result.append(" " * spaces)
         else:
             _fail(where, "rich text, links and embedded content unsupported")
         result.append(child.tail or "")
