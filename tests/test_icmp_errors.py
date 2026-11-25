@@ -20,7 +20,7 @@ from network_core.ipv4_packet import IPv4Datagram, ICMP_PROTOCOL, checksum
 from network_core.model import ProjectValidationError
 from network_core.server import LabHTTPServer
 from network_core.storage import ProjectStore
-from test_ipv4_forwarding import lab, getport
+from test_ipv4_forwarding import lab, getport, multihop
 from test_icmp_echo import routed_reply_lab
 
 
@@ -125,6 +125,41 @@ class RouterErrorSimulationTests(unittest.TestCase):
                       bytes.fromhex(candidate["quotedIpv4Hex"])).icmp_type,
             ICMP_TIME_EXCEEDED,
         )
+
+    def test_no_nested_router_error_candidate_after_ttl_or_missing_route(self):
+        # RFC 1812 4.3.2.7: no ICMP error is generated in response to an
+        # existing ICMP error. Both original errors are valid wire packets.
+        # The failing packet and its real transmissions must remain visible.
+        for kind in (ICMP_TIME_EXCEEDED, ICMP_DEST_UNREACHABLE):
+            payload = ICMPError(kind, 0, sample_quote()).serialize()
+            for failure in ("TTL_EXPIRED", "NO_ROUTE"):
+                with self.subTest(original_error=kind, failure=failure):
+                    project = lab()
+                    if failure == "NO_ROUTE":
+                        getport(project, "r", "lan")["enabled"] = False
+                    trace = IPv4Trace(project).send(
+                        "a", "eth0", "203.0.113.20",
+                        1 if failure == "TTL_EXPIRED" else 5,
+                        protocol=ICMP_PROTOCOL, payload=payload,
+                    )
+                    self.assertEqual(trace["status"], failure)
+                    self.assertIsNone(trace["routerErrorCandidate"])
+                    self.assertEqual([step["node"] for step in trace["steps"]], ["a"])
+                    self.assertEqual(
+                        [wire["linkId"] for wire in trace["steps"][0]["ipv4Transmissions"]],
+                        ["la", "lr1"],
+                    )
+                    self.assertTrue(trace["icmpSent"])
+
+        # ICMP Echo is an informational message, not an ICMP error.
+        # A router may still report an expired TTL for an Echo datagram.
+        echo = ICMPEcho(8, 7, 9, b"payload!").serialize()
+        allowed = IPv4Trace(lab()).send(
+            "a", "eth0", "203.0.113.20", 1,
+            protocol=ICMP_PROTOCOL, payload=echo,
+        )
+        self.assertEqual(allowed["status"], "TTL_EXPIRED")
+        self.assertEqual(allowed["routerErrorCandidate"]["icmpType"], ICMP_TIME_EXCEEDED)
 
     def test_real_ttl_expired_router_sends_received_type11_reply(self):
         p=routed_reply_lab()
@@ -274,6 +309,38 @@ class RouterErrorHTTPTests(unittest.TestCase):
         self.assertEqual(d["icmpError"]["status"],"RECEIVED")
         self.assertEqual(d["icmpError"]["type"],3)
         self.assertEqual(d["icmpError"]["code"],0)
+
+    def test_real_http_time_exceeded_error_lost_on_return_has_no_nested_candidate(self):
+        # a -> r -> r2: original Echo expires at r2. The resulting type 11
+        # travels back via r, which has no route to a because its ingress
+        # interface is deliberately narrower. Preserve the actual ICMP error
+        # transmission and NO_ROUTE without proposing an error in reply.
+        project = multihop()
+        getport(project, "r", "wan")["ipv4"] = "192.0.2.1/30"
+        r2 = next(node for node in project["nodes"] if node["id"] == "r2")
+        r2["staticRoutes"] = [{
+            "id": "icmp-return-via-r",
+            "destination": "192.0.2.10/32",
+            "nextHop": "203.0.113.1",
+            "outPort": "in",
+        }]
+        original = copy.deepcopy(project)
+        status, response = self.request(self.body(
+            project, "198.51.100.20", 2,
+        ))
+        self.assertEqual(status, 200)
+        self.assertEqual(response["status"], "REQUEST_FAILED")
+        self.assertEqual(response["request"]["status"], "TTL_EXPIRED")
+        error = response["icmpError"]
+        self.assertEqual(error["type"], ICMP_TIME_EXCEEDED)
+        self.assertEqual(error["status"], "NOT_DELIVERED")
+        returned = error["trace"]
+        self.assertEqual(returned["status"], "NO_ROUTE")
+        self.assertIsNone(returned["routerErrorCandidate"])
+        self.assertEqual([step["node"] for step in returned["steps"]], ["r2"])
+        self.assertTrue(returned["steps"][0]["ipv4Transmissions"])
+        self.assertTrue(returned["icmpSent"])
+        self.assertEqual(project, original)
 
     def test_real_http_no_router_reception_does_not_claim_error(self):
         p=lab()
