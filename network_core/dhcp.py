@@ -128,6 +128,14 @@ class DhcpMessage:
             object.__setattr__(self, "server_identifier",
                                _address(self.server_identifier, "server identifier"))
             object.__setattr__(self, "subnet_mask", _mask(self.subnet_mask))
+            # An offered address can be globally valid unicast yet be this
+            # subnet's network or directed broadcast. RFC 2131 yiaddr is an
+            # assignable client host address, not either subnet sentinel.
+            offered = ipaddress.IPv4Address(self.offered_address)
+            subnet = ipaddress.IPv4Interface(
+                f"{self.offered_address}/{self.subnet_mask}").network
+            if offered in (subnet.network_address, subnet.broadcast_address):
+                _fail("OFFER/ACK yiaddr must not be a network or broadcast address")
             if type(self.lease_seconds) is not int or not 60 <= self.lease_seconds <= 604800:
                 _fail("lease time must be an integer 60..604800 seconds")
 

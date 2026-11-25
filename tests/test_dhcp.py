@@ -93,6 +93,43 @@ class DhcpCodecTests(unittest.TestCase):
                         DhcpMessage(kind, 55, CLIENT_MAC, "192.0.2.70",
                                     illegal, "255.255.255.0", 3600)
 
+    def test_offer_ack_reject_subnet_network_and_broadcast_yiaddr(self):
+        # RFC 2131 yiaddr assigns a *host* IP. A globally valid unicast
+        # address is not necessarily usable for the offered subnet mask.
+        from ipaddress import IPv4Address
+
+        cases = (
+            ("192.0.2.0", "192.0.2.70", "192.0.2.1", "255.255.255.0"),
+            ("192.0.2.255", "192.0.2.70", "192.0.2.1", "255.255.255.0"),
+            ("198.51.100.4", "198.51.100.6", "198.51.100.5", "255.255.255.252"),
+            ("198.51.100.7", "198.51.100.6", "198.51.100.5", "255.255.255.252"),
+        )
+        for offered, usable, server, mask in cases:
+            for kind in (2, 5):
+                with self.subTest(offered=offered, kind=kind):
+                    # First prove the independent positive case with the
+                    # SAME mask/server, to isolate the proposed host address.
+                    valid = DhcpMessage(kind, 0x120301, CLIENT_MAC,
+                                        usable, server, mask, 3600)
+                    self.assertEqual(DhcpMessage.parse(valid.serialize()), valid)
+
+                    # Native constructor and independently altered raw BOOTP
+                    # must agree that subnet network/broadcast is not a lease.
+                    with self.assertRaisesRegex(ProjectValidationError,
+                                                "network or broadcast"):
+                        DhcpMessage(kind, 0x120301, CLIENT_MAC,
+                                    offered, server, mask, 3600)
+                    raw = bytearray(valid.serialize())
+                    raw[16:20] = IPv4Address(offered).packed
+                    with self.assertRaisesRegex(ProjectValidationError,
+                                                "network or broadcast"):
+                        DhcpMessage.parse(bytes(raw))
+
+        # DHCPDISCOVER's 0.0.0.0 bootstrap source remains a distinct,
+        # separately validated wire case; no yiaddr is assigned yet.
+        self.assertEqual(DhcpMessage.parse(
+            DhcpMessage(1, 5, CLIENT_MAC).serialize()).message_type, 1)
+
     def test_reject_corrupt_udp_and_ipv4_checksums(self):
         request = DhcpMessage(1, 1, CLIENT_MAC)
         wire = _datagram(request, "0.0.0.0")
