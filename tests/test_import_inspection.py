@@ -221,7 +221,7 @@ class WorkbookInspectionTests(unittest.TestCase):
 
     def test_oversized_numeric_xml_fields_are_rejected_in_source_inspection(self):
         huge = "9" * 5000
-        oparts = ods_parts({"Data": "ID\\n001\\n"})
+        oparts = ods_parts({"Data": "ID\n001\n"})
         original = b"<table:table-row>"
         self.assertIn(original, oparts["content.xml"])
         oparts["content.xml"] = oparts["content.xml"].replace(
@@ -230,7 +230,7 @@ class WorkbookInspectionTests(unittest.TestCase):
         with self.assertRaises(ProjectValidationError):
             inspect_source(workbook_request("too-many-rows.ods", ods_zip(oparts)))
 
-        xparts = workbook_parts({"Data": "ID\\n001\\n"})
+        xparts = workbook_parts({"Data": "ID\n001\n"})
         self.assertIn(b'r="A2"', xparts["xl/worksheets/sheet1.xml"])
         xparts["xl/worksheets/sheet1.xml"] = xparts["xl/worksheets/sheet1.xml"].replace(
             b'r="A2"', f'r="A{huge}"'.encode(), 1,
