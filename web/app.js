@@ -11,6 +11,7 @@ import {createIcmpInvestigationController} from './features/sessions/icmp-invest
 import {createDoraSessionController} from './features/sessions/dora-session.js';
 import {createSimulationSessionController} from './features/sessions/simulation-session.js';
 import {renderIcmpInvestigationPanel} from './features/diagnostics/icmp-investigation-panel.js';
+import {setupProtocolLessons} from './features/diagnostics/protocol-lessons.js';
 import {createImportReview} from './features/projects/import-review.js';
 import {computeElkPreview} from './features/layout/elk.js';
 
@@ -2941,6 +2942,7 @@ window.addEventListener('beforeunload', event => {
   event.returnValue = '';
 });
 setupWorkspacePanels();
+setupProtocolLessons($('protocol-lessons'));
 layoutStatus();
 setupTopologyContextMenu();
 arrangeFromToRows();
