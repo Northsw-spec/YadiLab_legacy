@@ -110,11 +110,24 @@ class ProjectStore:
         project = validate_project(document)
         if expected_sha256 is not None and (not isinstance(expected_sha256, str) or not re.fullmatch(r"[0-9a-f]{64}", expected_sha256)):
             raise ProjectValidationError("expectedSha256: must be a SHA-256 string or null")
-        # The lock file is never replaced: its inode remains a stable lock
-        # target even while the project file is atomically renamed.
-        lock_fd = os.open(self.root / f".lock-{slug}",
-                          os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+        # The lock file is never replaced: its regular inode remains a
+        # stable flock target while the project file is atomically renamed.
+        # Reject substituted symlinks/directories/FIFOs before taking a lock
+        # or touching the user project; FIFOs must never block on open.
         try:
+            lock_fd = os.open(self.root / f".lock-{slug}",
+                              os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW |
+                              os.O_NONBLOCK | os.O_CLOEXEC, 0o600)
+        except OSError as error:
+            if error.errno in (errno.ELOOP, errno.EISDIR, errno.ENXIO, errno.ENODEV):
+                raise ProjectValidationError(
+                    "project lock: expected a regular file, not a link or special file"
+                ) from None
+            raise
+        try:
+            if not stat.S_ISREG(os.fstat(lock_fd).st_mode):
+                raise ProjectValidationError(
+                    "project lock: expected a regular file, not a link or special file")
             fcntl.flock(lock_fd, fcntl.LOCK_EX)
             try:
                 existing = self._regular_file_bytes(path)
