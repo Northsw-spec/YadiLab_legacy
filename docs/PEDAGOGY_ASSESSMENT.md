@@ -40,6 +40,24 @@ ska visas och ingen tolkning, åtgärd eller verifiering ska öppnas för det
 testet. Kontrollerna av den egna utvärderingen matar in motsägande svar,
 fel destination, falsk återhämtning och avslöjade svar i isolerade tester.
 
+## Komplettering: P7:s DHCP-evidensgrind
+
+Den tidigare P6-rapporten angav DHCP som utanför bedömningsfallen. Tre
+fördefinierade, native-körda DHCP-fall kompletterar nu mätningen:
+\`CABLE_DOWN\`, \`PORT_SHUTDOWN\` och \`VLAN_MISMATCH\`. Varje fall använder
+den dokumenterade switch-/klient-/server-fixturen och kontrollerar:
+
+- misslyckad DHCP-förnyelse med \`REQUEST_NOT_RECEIVED\`,
+- avvisad förtida diagnos trots rätt gissning, utan förbrukat diagnosförsök,
+- särskiljande mätningar av serverlänk och relevant switchport/VLAN,
+- avvisad felhypotes utan upplåst reparation,
+- bevisad återhämtning och oförändrat ursprungsprojekt.
+
+Förväntad carrier, administrativ portstatus och VLAN anges separat i
+testreferensen och hämtas inte från den dolda felorsakens facit.
+Resultaten är automatiska kontroller, inte uppmätt mänsklig inlärningseffekt
+och inte en fullständig utvärdering av DHCP-kursmaterialet.
+
 ## Läs rapporten
 
 - **defined** är referenslistans storlek. **executed**, **PASS**, **FAIL**
