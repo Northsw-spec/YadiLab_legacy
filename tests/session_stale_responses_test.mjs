@@ -266,7 +266,7 @@ test('P7-I2: a malformed HTTP 200 is not a confirmed DHCP investigation Stop', a
   request.reply({status: 'NOT_STOPPED'});
   await stopped;
   assert.equal(c.getState().id, 'unconfirmed-investigation');
-  assert.match(c.getState().error, /Stop på servern/);
+  assert.match(c.getState().error, /avsluta sessionen på servern/);
   assert.equal(c.getState().busy, false);
   assert.equal(c.getState().pendingStopCount, 1);
 
