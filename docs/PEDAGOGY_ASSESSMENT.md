@@ -44,10 +44,10 @@ fel destination, falsk återhämtning och avslöjade svar i isolerade tester.
 
 Den tidigare P6-rapporten angav DHCP som utanför bedömningsfallen. Tre
 fördefinierade, native-körda DHCP-fall kompletterar nu mätningen:
-\`CABLE_DOWN\`, \`PORT_SHUTDOWN\` och \`VLAN_MISMATCH\`. Varje fall använder
+`CABLE_DOWN`, `PORT_SHUTDOWN` och `VLAN_MISMATCH`. Varje fall använder
 den dokumenterade switch-/klient-/server-fixturen och kontrollerar:
 
-- misslyckad DHCP-förnyelse med \`REQUEST_NOT_RECEIVED\`,
+- misslyckad DHCP-förnyelse med `REQUEST_NOT_RECEIVED`,
 - avvisad förtida diagnos trots rätt gissning, utan förbrukat diagnosförsök,
 - särskiljande mätningar av serverlänk och relevant switchport/VLAN,
 - avvisad felhypotes utan upplåst reparation,
