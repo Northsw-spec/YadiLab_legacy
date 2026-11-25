@@ -442,6 +442,33 @@ class IcmpInvestigationTests(unittest.TestCase):
         with self.assertRaisesRegex(ProjectValidationError, "maximum guesses"):
             case.diagnose("STATIC_ROUTE_MISSING")
 
+    def test_numeric_equivalent_json_projects_fail_exact_session_snapshot(self):
+        from network_core.simulation import _signature
+
+        project = routed_reply_lab()
+        changed = deepcopy(project)
+        self.assertIs(type(project["nodes"][0]["x"]), int)
+        changed["nodes"][0]["x"] = float(project["nodes"][0]["x"])
+        # Python dict equality masks the JSON type change (0 == 0.0).
+        self.assertEqual(changed, project)
+        self.assertNotEqual(_signature(changed), _signature(project))
+
+        registry = IcmpInvestigationRegistry()
+        with patch("network_core.icmp_investigation.secrets.randbelow", return_value=0):
+            started = registry.start(project, "a", "eth0", "203.0.113.20", 5)
+        session_id = started["sessionId"]
+        for operation in (
+                lambda: registry.probe(session_id, changed, "address", {}),
+                lambda: registry.diagnose(session_id, changed, "CABLE_DOWN"),
+                lambda: registry.repair(session_id, changed)):
+            with self.assertRaisesRegex(ProjectValidationError, "project changed"):
+                operation()
+        self.assertEqual(registry._get(session_id).state()["observations"], 0)
+        original = registry.probe(session_id, project, "address", {})
+        self.assertEqual(original["observation"]["source"], "DOCUMENTED")
+        self.assertEqual(original["observations"], 1)
+        self.assertEqual(registry.stop(session_id), {"status": "STOPPED"})
+
     def test_project_bound_opaque_multi_session_and_restart_semantics(self):
         p = routed_reply_lab()
         registry = IcmpInvestigationRegistry()
@@ -493,6 +520,45 @@ class IcmpInvestigationHttpTests(unittest.TestCase):
                 return response.status, json.loads(response.read())
         except HTTPError as error:
             return error.code, json.loads(error.read())
+
+    def test_http_numeric_equivalent_stale_project_returns_422_without_writes(self):
+        p = routed_reply_lab()
+        saved = self.store.save("snapshot", p)
+        path = self.root / "snapshot.yadilab"
+        before = path.read_bytes()
+        with patch("network_core.icmp_investigation.secrets.randbelow", return_value=0):
+            status, opened = self.post("start", {
+                "project": p, "sourceNode": "a", "sourcePort": "eth0",
+                "destinationIpv4": "203.0.113.20", "ttl": 5,
+            })
+        self.assertEqual(status, 200)
+        sid = opened["sessionId"]
+        changed = deepcopy(p)
+        changed["nodes"][0]["x"] = float(p["nodes"][0]["x"])
+        self.assertEqual(changed, p)
+        calls = (
+            ("probe", {"sessionId": sid, "project": changed,
+                       "probe": "address", "target": {}}),
+            ("diagnose", {"sessionId": sid, "project": changed,
+                          "diagnosis": "CABLE_DOWN"}),
+            ("repair", {"sessionId": sid, "project": changed}),
+        )
+        for route, body in calls:
+            with self.subTest(route=route):
+                code, response = self.post(route, body)
+                self.assertEqual(code, 422)
+                self.assertEqual(response["error"], "INVALID_PROJECT")
+                self.assertIn("project changed", response["message"])
+                self.assertEqual(path.read_bytes(), before)
+                self.assertEqual(self.store.read("snapshot")["sha256"], saved["sha256"])
+        self.assertEqual(self.server.icmp_investigations._get(sid).state()["observations"], 0)
+        code, response = self.post("probe", {
+            "sessionId": sid, "project": p, "probe": "address", "target": {},
+        })
+        self.assertEqual(code, 200)
+        self.assertEqual(response["observations"], 1)
+        self.assertEqual(path.read_bytes(), before)
+        self.assertEqual([entry["filename"] for entry in self.store.list()], ["snapshot"])
 
     def test_real_http_observations_repair_and_byte_identical_project(self):
         p = routed_reply_lab()
