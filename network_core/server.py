@@ -49,6 +49,10 @@ DEFAULT_PORT = 8765
 DEFAULT_PORT_CANDIDATES = 10
 
 
+class RequestFramingError(ProjectValidationError):
+    """Invalid HTTP body framing; the connection must not be reused."""
+
+
 class LabHTTPServer(ThreadingHTTPServer):
     # Linux loopback bursts can exceed TCPServer's default backlog of 5 before
     # the bounded session registries return explicit HTTP 422 capacity errors.
@@ -158,16 +162,30 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def _read_json(self) -> object:
+        # RFC 9112: competing length fields or transfer codings make the
+        # request boundary ambiguous. This server supports one decimal length,
+        # not chunked transfer; reject before reading or mutating project data.
+        lengths = self.headers.get_all("Content-Length", [])
+        if self.headers.get_all("Transfer-Encoding", []) or len(lengths) != 1:
+            raise RequestFramingError(
+                "request: exactly one Content-Length required; Transfer-Encoding unsupported")
+        length = lengths[0]
+        if not length.isascii() or not length.isdecimal():
+            raise RequestFramingError("request: invalid Content-Length")
         try:
-            size = int(self.headers.get("Content-Length", "-1"))
+            size = int(length)
         except ValueError:
-            raise ProjectValidationError("request: invalid Content-Length") from None
-        if not 0 <= size <= MAX_BODY:
-            raise ProjectValidationError("request: PAYLOAD_LIMIT: body missing or larger than 8 MiB")
+            raise RequestFramingError("request: invalid Content-Length") from None
+        if size > MAX_BODY:
+            raise ProjectValidationError("request: PAYLOAD_LIMIT: body larger than 8 MiB")
         return decode_json_document(self.rfile.read(size), context="request")
 
     def _respond_error(self, error: Exception) -> None:
-        if isinstance(error, ProjectConflictError):
+        if isinstance(error, RequestFramingError):
+            self.close_connection = True
+            self._json(HTTPStatus.BAD_REQUEST, {
+                "error": "INVALID_REQUEST", "message": error.message})
+        elif isinstance(error, ProjectConflictError):
             self._json(HTTPStatus.CONFLICT, {"error": "CONFLICT", "message": str(error), "currentSha256": error.actual_hash})
         elif isinstance(error, ProjectValidationError):
             self._json(HTTPStatus.UNPROCESSABLE_ENTITY, {"error": "INVALID_PROJECT", "message": error.message})

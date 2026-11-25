@@ -60,6 +60,48 @@ class LocalHTTPBoundaryTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertEqual(self.store.read("local")["project"], example())
 
+    def test_reject_ambiguous_post_framing_without_saving_a_project(self):
+        project = {"filename": "framing", "project": example(), "expectedSha256": None}
+        payload = json.dumps(project).encode("utf-8")
+        length = str(len(payload))
+        variants = (
+            ("conflicting duplicate", (("Content-Length", length),
+                                       ("Content-Length", str(len(payload) + 1)))),
+            ("identical duplicate", (("Content-Length", length),
+                                     ("Content-Length", length))),
+            ("transfer and length", (("Content-Length", length),
+                                     ("Transfer-Encoding", "chunked"))),
+            ("transfer only", (("Transfer-Encoding", "chunked"),)),
+            ("missing length", ()),
+            ("signed length", (("Content-Length", "+" + length),)),
+            ("comma list", (("Content-Length", length + ", " + length),)),
+            ("huge decimal", (("Content-Length", "9" * 5000),)),
+        )
+        for label, framing_headers in variants:
+            with self.subTest(case=label):
+                connection = http.client.HTTPConnection(
+                    "127.0.0.1", self.server.server_port, timeout=5)
+                try:
+                    connection.putrequest("POST", "/api/save", skip_host=True)
+                    connection.putheader("Host", self.host)
+                    connection.putheader("Content-Type", "application/json")
+                    for field, value in framing_headers:
+                        connection.putheader(field, value)
+                    connection.endheaders(payload)
+                    response = connection.getresponse()
+                    self.assertEqual(response.status, 400)
+                    self.assertEqual(json.loads(response.read())["error"], "INVALID_REQUEST")
+                    self.assertTrue(response.will_close)
+                finally:
+                    connection.close()
+                self.assertEqual(self.store.list(), [])
+        # The malformed requests must not disable normal, explicitly saved JSON.
+        status, _, raw = self.request("POST", "/api/save",
+                                      (("Host", self.host),), project)
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(raw)["filename"], "framing")
+        self.assertEqual(self.store.read("framing")["project"], example())
+
     def test_trace_rejects_non_string_node_ids_with_422(self):
         headers = (("Host", self.host),)
         project = example()
