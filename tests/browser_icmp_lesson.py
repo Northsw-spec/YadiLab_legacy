@@ -13,6 +13,7 @@ from time import monotonic
 
 from playwright.sync_api import expect, sync_playwright
 from browser_smoke import ROOT, hold_http_reply, release_http_reply
+from pedagogy_assessment import Assessment, disclosed, static_boundary_holds, wrong_answer_accepted
 
 
 HEADINGS = [
@@ -87,7 +88,7 @@ def validate_disclosure(data):
     assert "expectedNextHop" not in str(data)
 
 
-def check_tool_cards(page):
+def check_tool_cards(page, assessment):
     """Read course material while the real ICMP session has earned its diagnosis."""
     section = page.locator("#external-tool-cards")
     outer = page.locator(".dropdown-card").filter(has=section).first.locator(":scope > summary")
@@ -106,7 +107,6 @@ def check_tool_cards(page):
     sources = {
         "wireshark": (
             "4.6.0", "arp.opcode: 1 / 2", "icmp.type: 8 / 0",
-            "bevisar inte att inget svar sändes på en annan mätpunkt",
             ["https://www.wireshark.org/docs/wsug_html_chunked/ChWorkDisplayFilterSection.html",
              "https://www.wireshark.org/docs/dfref/a/arp.html",
              "https://www.wireshark.org/docs/dfref/i/icmp.html",
@@ -114,20 +114,17 @@ def check_tool_cards(page):
         ),
         "suzieq": (
             "v0.24.0", "prefix=192.0.2.0/24", "peerHostname=r2",
-            "En registrerad route bevisar inte lyckad paketleverans",
             ["https://github.com/netenglabs/suzieq/blob/v0.24.0/docs/analyzer.md",
              *["https://github.com/netenglabs/suzieq/blob/v0.24.0/suzieq/config/schema/" + f
                for f in ("interfaces.avsc", "lldp.avsc", "routes.avsc")]],
         ),
         "netshot": (
             "v0.25.2", "- Access-VLAN för klientport: 10", "+ Access-VLAN för klientport: 20",
-            "En konfigurationsskillnad bevisar inte driftorsaken",
             ["https://github.com/netshot-net/Netshot/blob/v0.25.2/docs/content/user-guide/"
              + f for f in ("devices.md#configuration-history", "administration.md#permission-levels")],
         ),
         "batfish": (
             "v2026.08.27", "Reference_Traces: ACCEPTED", "Snapshot_Traces: NO_ROUTE",
-            "Den bevisar inte att trafik levererades på den faktiska utrustningen",
             ["https://batfish.readthedocs.io/en/latest/notebooks/differentialQuestions.html",
              "https://batfish.readthedocs.io/en/latest/notebooks/snapshot.html",
              "https://github.com/batfish/batfish/blob/v2026.08.27/projects/question/src/main/java/"
@@ -148,31 +145,32 @@ def check_tool_cards(page):
         expect(section).to_be_hidden()
         outer.press("Enter")
         expect(section).to_be_visible()
-        for name, (version, field, comparison, boundary, urls) in sources.items():
-            card = section.locator("#tool-" + name)
-            card.locator(":scope > summary").press("Enter")
-            expect(section.locator(":scope > details[open]")).to_have_count(1)
-            expect(card.locator(".external-tool-label")).to_have_text(
-                "STATISKT ÖVNINGSEXEMPEL – EJ KÖRT I APPEN")
-            expect(card.locator(":scope > h4")).to_have_text(["Situation", "Verktyg"])
-            expect(card).to_contain_text(workflows[name])
-            expect(card.locator("pre")).to_be_hidden()
-            steps = card.locator(":scope > details")
-            expect(steps.locator("summary")).to_have_text(
-                ["Observation", "Tolkning", "Begränsning", "Nästa steg"])
-            for step in steps.all():
-                step.locator("summary").press("Enter")
-                expect(step.locator("p").first).to_be_visible()
-            expect(card.locator("pre")).to_contain_text(field)
-            expect(card.locator("pre")).to_contain_text(comparison)
-            expect(card).to_contain_text(boundary)
-            expect(card.locator(".external-tool-source")).to_contain_text(version)
-            expect(card.locator(".external-tool-source")).to_contain_text("NOT_VERIFIED")
-            assert all(label not in card.inner_text()
-                       for label in ("LIVE", "VERIFIED_NETWORK", "SIMULATED"))
-            links = card.get_by_role("link").all()
-            assert [link.get_attribute("href") for link in links] == urls
-            assert all(link.get_attribute("rel") == "noopener noreferrer" for link in links)
+        for name, (version, field, comparison, urls) in sources.items():
+            with assessment.case(f"tool-{name}"):
+                card = section.locator("#tool-" + name)
+                card.locator(":scope > summary").press("Enter")
+                expect(section.locator(":scope > details[open]")).to_have_count(1)
+                expect(card.locator(".external-tool-label")).to_have_text(
+                    "STATISKT ÖVNINGSEXEMPEL – EJ KÖRT I APPEN")
+                expect(card.locator(":scope > h4")).to_have_text(["Situation", "Verktyg"])
+                expect(card).to_contain_text(workflows[name])
+                expect(card.locator("pre")).to_be_hidden()
+                steps = card.locator(":scope > details")
+                expect(steps.locator("summary")).to_have_text(
+                    ["Observation", "Tolkning", "Begränsning", "Nästa steg"])
+                for step in steps.all():
+                    step.locator("summary").press("Enter")
+                    expect(step.locator("p").first).to_be_visible()
+                expect(card.locator("pre")).to_contain_text(field)
+                expect(card.locator("pre")).to_contain_text(comparison)
+                assert static_boundary_holds(name, card.inner_text()), name
+                expect(card.locator(".external-tool-source")).to_contain_text(version)
+                expect(card.locator(".external-tool-source")).to_contain_text("NOT_VERIFIED")
+                assert all(label not in card.inner_text()
+                           for label in ("LIVE", "VERIFIED_NETWORK", "SIMULATED"))
+                links = card.get_by_role("link").all()
+                assert [link.get_attribute("href") for link in links] == urls
+                assert all(link.get_attribute("rel") == "noopener noreferrer" for link in links)
         expect(section.locator("button, form, script, iframe, img, video, audio, object, embed")).to_have_count(0)
         outer.press("Enter")
         expect(section).to_be_hidden()
@@ -185,7 +183,7 @@ def check_tool_cards(page):
     expect(page.locator("#icmp-investigation-diagnose")).to_be_enabled()
 
 
-def check_protocol_lessons(page):
+def check_protocol_lessons(page, assessment):
     """Choose evidence and test which interpretations are accepted in each branch."""
     section = page.locator("#protocol-lessons")
     outer = page.locator(".dropdown-card").filter(has=section).locator(":scope > summary")
@@ -243,36 +241,46 @@ def check_protocol_lessons(page):
             test_form = lesson.locator("[data-lesson-test]")
             result = lesson.locator("[data-lesson-result]")
             test_choice = test_form.locator("select")
-            test_choice.select_option("other")
-            test_form.get_by_role("button").click()
-            expect(result.locator("h4")).to_have_text(HEADINGS[5:6])
-            expect(result).to_contain_text("NOT_VERIFIED")
-            expect(result.locator("select, button")).to_have_count(0)
+            with assessment.case(f"lesson-{name}-other") as signals:
+                test_choice.select_option("other")
+                test_form.get_by_role("button").click()
+                unavailable = "NOT_VERIFIED" in result.inner_text() and not result.locator("select, button").count()
+                signals["insufficient_evidence"] = unavailable
+                headings = result.locator("h4").all_text_contents()
+                signals["answer_leak"] = any(title in HEADINGS[6:] for title in headings)
+                assert unavailable and headings == HEADINGS[5:6]
 
             for test, right, wrong, observation, rationale in (primary, alternate):
-                test_choice.select_option(test)
-                expect(result.locator("h4")).to_have_count(0)
-                test_form.get_by_role("button").click()
-                expect(result.locator("h4")).to_have_text(HEADINGS[5:6])
-                expect(result).to_contain_text(observation)
-                assert rationale not in result.inner_text()
-                expect(result.get_by_role("link")).to_have_count(0)
-                answer = result.locator("select")
-                submit = result.get_by_role("button")
-                answer.select_option(wrong)
-                submit.click()
-                expect(result.get_by_role("status")).to_contain_text("Underlaget räcker inte")
-                expect(result.locator("h4")).to_have_text(HEADINGS[5:6])
-                assert rationale not in result.inner_text()
-                answer.select_option(right)
-                submit.click()
-                expect(result.get_by_role("status")).to_contain_text("Tolkningen stöds")
-                expect(result.locator("h4")).to_have_text(HEADINGS[5:])
-                expect(result).to_contain_text(rationale)
-                expect(result).to_contain_text("NOT_VERIFIED")
-                expect(result).to_contain_text(version)
-                expect(result.locator(f'a[href="{url}"]')).to_be_visible()
-                expect(submit).to_be_disabled()
+                with assessment.case(f"lesson-{name}-{test}") as signals:
+                    test_choice.select_option(test)
+                    expect(result.locator("h4")).to_have_count(0)
+                    test_form.get_by_role("button").click()
+                    expect(result.locator("h4")).to_have_text(HEADINGS[5:6])
+                    expect(result).to_contain_text(observation)
+                    signals["answer_leak"] = (rationale in result.inner_text()
+                                              or result.get_by_role("link").count() != 0)
+                    assert not signals["answer_leak"]
+                    answer = result.locator("select")
+                    submit = result.get_by_role("button")
+                    answer.select_option(wrong)
+                    submit.click()
+                    feedback = result.get_by_role("status")
+                    signals["false_diagnosis"] = wrong_answer_accepted(feedback.inner_text()) or submit.is_disabled()
+                    headings = result.locator("h4").all_text_contents()
+                    signals["answer_leak"] |= (rationale in result.inner_text()
+                                               or any(title in HEADINGS[6:] for title in headings))
+                    assert not signals["false_diagnosis"] and not signals["answer_leak"]
+                    assert headings == HEADINGS[5:6]
+                    expect(feedback).to_contain_text("Underlaget räcker inte")
+                    answer.select_option(right)
+                    submit.click()
+                    expect(result.get_by_role("status")).to_contain_text("Tolkningen stöds")
+                    expect(result.locator("h4")).to_have_text(HEADINGS[5:])
+                    expect(result).to_contain_text(rationale)
+                    expect(result).to_contain_text("NOT_VERIFIED")
+                    expect(result).to_contain_text(version)
+                    expect(result.locator(f'a[href="{url}"]')).to_be_visible()
+                    expect(submit).to_be_disabled()
 
             assert all(token not in lesson.inner_text()
                        for token in ("LIVE", "VERIFIED_NETWORK", "SIMULATED"))
@@ -288,7 +296,13 @@ def check_protocol_lessons(page):
     expect(page.locator("#icmp-investigation-diagnose")).to_be_enabled()
 
 
-def run_lesson(page, directory, lesson, filename):
+def run_lesson(page, directory, lesson, filename, assessment):
+    case = "icmp-arp-browser" if lesson == "echo-reply-b" else "icmp-route-browser"
+    with assessment.case(case) as signals:
+        return _run_lesson(page, directory, lesson, filename, assessment, signals)
+
+
+def _run_lesson(page, directory, lesson, filename, assessment, signals):
     case_b = lesson == "echo-reply-b"
     reply_status = "ARP_FAILED" if case_b else "NO_ROUTE"
     right_diagnosis = "STATIC_NEXT_HOP_UNREACHABLE" if case_b else "STATIC_ROUTE_MISSING"
@@ -331,12 +345,13 @@ def run_lesson(page, directory, lesson, filename):
     opening = click_response(START, "#icmp-lesson-start")
     assert opening["lesson"] == lesson
     expect(case_selector).to_be_disabled()
+    signals["answer_leak"] = disclosed(opening) or any(
+        marker in str(opening) for marker in ("NO_ROUTE", "ARP_FAILED", "203.0.113.254", "requestReceiver"))
+    assert not signals["answer_leak"]
     validate_disclosure(opening)
     assert opening["openingObservation"] == {
         "replyMatched": False, "source": "SIMULATED",
     }
-    for marker in ("NO_ROUTE", "ARP_FAILED", "203.0.113.254", "requestReceiver"):
-        assert marker not in str(opening)
     show_sections(panel, 3)
     expect(panel).to_contain_text("Källan fick inget giltigt Echo Reply")
     opening_text = panel.locator("#icmp-lesson-symptom").inner_text()
@@ -367,8 +382,12 @@ def run_lesson(page, directory, lesson, filename):
             return null;
           } catch (error) { return error.code; }
         }''', {"sessionId": opening["sessionId"], "project": fixture})
+    early_payload = early.value.json()
+    signals["false_diagnosis"] = bool(early_payload.get("correct") or early_payload.get("repairAvailable"))
+    signals["answer_leak"] |= disclosed(early_payload)
     assert result == "INVALID_PROJECT" and early.value.status == 422
-    validate_disclosure(early.value.json())
+    assert not signals["false_diagnosis"] and not signals["answer_leak"]
+    validate_disclosure(early_payload)
 
     review.click()
     show_sections(panel, 5)
@@ -388,6 +407,7 @@ def run_lesson(page, directory, lesson, filename):
         if port is not None:
             page.locator("#icmp-investigation-port").select_option(port)
         data = click_response(PROBE, "#icmp-investigation-measure")
+        signals["answer_leak"] |= disclosed(data)
         validate_disclosure(data)
         return data
 
@@ -417,18 +437,21 @@ def run_lesson(page, directory, lesson, filename):
     expect(page.locator("#icmp-lesson-plan")).to_contain_text("Mätstatus: utförd i simuleringen")
     show_sections(panel, 6)
     if not case_b:
-        check_tool_cards(page)
-        check_protocol_lessons(page)
+        check_tool_cards(page, assessment)
+        check_protocol_lessons(page, assessment)
         assert target.read_bytes() == original
     wrong = click_response(DIAGNOSE, "#icmp-investigation-diagnose")
-    assert not wrong["correct"]
+    signals["false_diagnosis"] |= bool(wrong["correct"] or wrong["repairAvailable"])
+    signals["answer_leak"] |= disclosed(wrong)
+    assert not signals["false_diagnosis"] and not signals["answer_leak"]
     validate_disclosure(wrong)
     expect(page.locator("#icmp-investigation-verdict")).to_contain_text("HYPOTES AVVISAD")
     expect(repair).to_be_disabled()
 
     diagnosis.select_option(right_diagnosis)
     correct = click_response(DIAGNOSE, "#icmp-investigation-diagnose")
-    assert correct["correct"]
+    signals["answer_leak"] |= disclosed(correct)
+    assert correct["correct"] and not signals["answer_leak"]
     validate_disclosure(correct)
     show_sections(panel, 7)
     expect(page.locator("#icmp-lesson-action-text")).not_to_contain_text("return-to-a")
@@ -448,70 +471,76 @@ def run_lesson(page, directory, lesson, filename):
     expect(page.locator("#icmp-lesson-verification-text")).to_contain_text("REPLIED")
     expect(page.locator("#icmp-lesson-verification-text")).to_contain_text("a/eth0 (192.0.2.10)")
 
-    click_response(STOP, "#icmp-investigation-stop")
-    second = click_response(START, "#icmp-lesson-start")
-    assert second["sessionId"] != opening["sessionId"]
-    assert second["openingObservation"] == opening["openingObservation"]
-    show_sections(panel, 3)
-    expect(page.locator("#icmp-lesson-reason")).to_have_value("")
-    expect(panel.locator('input[type="radio"]:checked')).to_have_count(0)
-    expect(page.locator("#icmp-lesson-plan")).to_have_text("")
-    expect(review).to_be_disabled()
-    expect(page.locator("#icmp-lesson-action-text")).to_have_text("")
-    hypotheses.nth(1).check()
-    tests.nth(2).check()
-    expect(review).to_be_enabled()
-    review.click()
-    expect(page.locator("#icmp-lesson-plan")).to_contain_text("Returroute finns men ARP-svar saknas")
-    hold_http_reply(page, PROBE)
-    page.locator("#icmp-investigation-probe").select_option("ping")
-    page.locator("#icmp-investigation-measure").click()
-    page.wait_for_function("window.__heldReply === true")
-    with page.expect_response("**" + STOP) as stopped:
-        page.locator("#new-project").click()
-    assert stopped.value.status == 200
-    expect(panel).to_be_hidden()
-    expect(page.locator("#empty-state")).to_be_visible()
-    release_http_reply(page)
-    expect(page.locator("#icmp-investigation-status")).to_contain_text("Ingen ICMP-övning")
-    expect(page.locator("#icmp-investigation-observations")).not_to_contain_text(reply_status)
-    expect(page.locator("#icmp-lesson-plan")).to_have_text("")
-    expect(diagnose).to_be_disabled()
-    assert target.read_bytes() == original
-    assert attempts_to_save == ["POST"]
-    page.remove_listener("request", record_save)
+    with assessment.case("workspace-isolation-arp" if case_b else "workspace-isolation-route"):
+        click_response(STOP, "#icmp-investigation-stop")
+        second = click_response(START, "#icmp-lesson-start")
+        assert second["sessionId"] != opening["sessionId"]
+        assert second["openingObservation"] == opening["openingObservation"]
+        show_sections(panel, 3)
+        expect(page.locator("#icmp-lesson-reason")).to_have_value("")
+        expect(panel.locator('input[type="radio"]:checked')).to_have_count(0)
+        expect(page.locator("#icmp-lesson-plan")).to_have_text("")
+        expect(review).to_be_disabled()
+        expect(page.locator("#icmp-lesson-action-text")).to_have_text("")
+        hypotheses.nth(1).check()
+        tests.nth(2).check()
+        expect(review).to_be_enabled()
+        review.click()
+        expect(page.locator("#icmp-lesson-plan")).to_contain_text("Returroute finns men ARP-svar saknas")
+        hold_http_reply(page, PROBE)
+        page.locator("#icmp-investigation-probe").select_option("ping")
+        page.locator("#icmp-investigation-measure").click()
+        page.wait_for_function("window.__heldReply === true")
+        with page.expect_response("**" + STOP) as stopped:
+            page.locator("#new-project").click()
+        assert stopped.value.status == 200
+        expect(panel).to_be_hidden()
+        expect(page.locator("#empty-state")).to_be_visible()
+        release_http_reply(page)
+        expect(page.locator("#icmp-investigation-status")).to_contain_text("Ingen ICMP-övning")
+        expect(page.locator("#icmp-investigation-observations")).not_to_contain_text(reply_status)
+        expect(page.locator("#icmp-lesson-plan")).to_have_text("")
+        expect(diagnose).to_be_disabled()
+        assert target.read_bytes() == original
+        assert attempts_to_save == ["POST"]
+        page.remove_listener("request", record_save)
     return fixture, original, digest, opening_text
 
 
-def main():
+def main(assessment=None):
+    assessment = assessment or Assessment()
     executable = shutil.which("chromium") or shutil.which("chromium-browser")
     with TemporaryDirectory() as temporary, sync_playwright() as playwright:
         directory = Path(temporary)
         browser = playwright.chromium.launch(headless=True, executable_path=executable)
+        assessment.browser_version = browser.version
         page = browser.new_page(viewport={"width": 1440, "height": 940})
         errors = []
         page.on("pageerror", lambda error: errors.append(str(error)))
         with protected_process(directory) as (port, first_key):
             enter_workspace(page, port, first_key)
-            a = run_lesson(page, directory, "echo-reply", "echo-lesson")
-            b = run_lesson(page, directory, "echo-reply-b", "echo-lesson-b")
-            assert a == b  # Identical initial UI symptom and durable baseline.
+            assessment.browser_transport = "DIRECT_HTTP"
+            a = run_lesson(page, directory, "echo-reply", "echo-lesson", assessment)
+            b = run_lesson(page, directory, "echo-reply-b", "echo-lesson-b", assessment)
+            with assessment.case("same-opening-browser"):
+                assert a == b  # Identical initial UI symptom and durable baseline.
 
         fixture, original, digest, _ = a
-        with protected_process(directory, port) as (same_port, key):
-            assert same_port == port and key != first_key
-            enter_workspace(page, same_port, key)
-            for filename in ("echo-lesson", "echo-lesson-b"):
-                page.locator("#saved-projects").select_option(filename)
-                with page.expect_response("**/api/projects/" + filename) as reopened:
-                    page.locator("#open-project").click()
-                assert reopened.value.status == 200
-                payload = reopened.value.json()
-                assert payload["project"] == fixture and payload["sha256"] == digest
-                expect(page.locator("#project-name")).to_have_value(fixture["name"])
-                expect(page.locator("#icmp-lesson")).to_be_hidden()
-                assert (directory / (filename + ".yadilab")).read_bytes() == original
-            assert not errors, errors
+        with assessment.case("save-open"):
+            with protected_process(directory, port) as (same_port, key):
+                assert same_port == port and key != first_key
+                enter_workspace(page, same_port, key)
+                for filename in ("echo-lesson", "echo-lesson-b"):
+                    page.locator("#saved-projects").select_option(filename)
+                    with page.expect_response("**/api/projects/" + filename) as reopened:
+                        page.locator("#open-project").click()
+                    assert reopened.value.status == 200
+                    payload = reopened.value.json()
+                    assert payload["project"] == fixture and payload["sha256"] == digest
+                    expect(page.locator("#project-name")).to_have_value(fixture["name"])
+                    expect(page.locator("#icmp-lesson")).to_be_hidden()
+                    assert (directory / (filename + ".yadilab")).read_bytes() == original
+                assert not errors, errors
         browser.close()
         print("PASS real Chromium DIRECT_HTTP: four tool cards, three protocol lessons, both Echo cases, "
               "capability, stale reply and Save/Open after process restart")
