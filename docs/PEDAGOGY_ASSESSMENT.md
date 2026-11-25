@@ -58,6 +58,19 @@ testreferensen och hämtas inte från den dolda felorsakens facit.
 Resultaten är automatiska kontroller, inte uppmätt mänsklig inlärningseffekt
 och inte en fullständig utvärdering av DHCP-kursmaterialet.
 
+## P7: kontroll av T2 och utgången DHCP-lease
+
+Två ytterligare native-fall utvärderar uttryckligen den virtuella tidslinjen
+utan att läsa hemlig felorsak eller ändra originalprojekt: `T2_REBIND`
+och `EXPIRY_RECOVERY`, båda med ett avsiktligt VLAN-fel i fixturen.
+
+De kontrollerar att tiden inte kan flyttas över T1/T2 utan verkligt
+simulerade misslyckade DHCPREQUEST, att ingen diagnos eller återställning
+öppnas för tidigt, att giltig särskiljande VLAN-evidens krävs och att
+återhämtning före expiry använder `RENEWAL` medan en utgången lease
+kräver `NEW_DORA`. De kontrollerar också att ursprungsprojektet är
+identiskt efteråt. Ingen verklig DHCP-klient eller tid mäts.
+
 ## Läs rapporten
 
 - **defined** är referenslistans storlek. **executed**, **PASS**, **FAIL**
