@@ -17,6 +17,7 @@ ICMP_TIME_EXCEEDED = 11
 ICMP_DEST_UNREACHABLE = 3
 ICMP_NET_UNREACHABLE = 0
 ICMP_TTL_EXPIRED = 0
+_THIS_NETWORK = ipaddress.IPv4Network("0.0.0.0/8")
 _ERROR_HEADER = struct.Struct("!BBH4s")
 
 
@@ -46,7 +47,11 @@ class ICMPError:
             raise ProjectValidationError("icmp: do not generate errors in response to ICMP errors")
         for offset in (12, 16):
             address = ipaddress.IPv4Address(quoted[offset:offset + 4])
-            if address.is_unspecified or address.is_multicast or address.is_reserved:
+            # Quoted datagrams must obey the same Ethernet wire-address
+            # boundaries as the native IPv4 and ARP codecs. Python's
+            # is_reserved does NOT include 127/8 or 0/8 (except 0.0.0.0).
+            if (address.is_unspecified or address.is_multicast or address.is_reserved
+                    or address.is_loopback or address in _THIS_NETWORK):
                 raise ProjectValidationError("icmp: unusable original IPv4 source/destination")
 
     def serialize(self) -> bytes:
