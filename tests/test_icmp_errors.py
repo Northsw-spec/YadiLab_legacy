@@ -101,7 +101,7 @@ class RouterErrorWireTests(unittest.TestCase):
                         parse_icmp_message(wire)
 
         # The restriction is only on special wire-invalid addresses, not on
-        # valid private or documentation networks commonly used by YadiLab.
+        # valid private or documentation networks used in these lab tests.
         good = bytearray(sample_quote())
         good[12:16] = ipaddress.IPv4Address("192.168.50.10").packed
         good[10:12] = bytes(2)
