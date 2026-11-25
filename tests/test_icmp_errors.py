@@ -98,6 +98,34 @@ class RouterErrorWireTests(unittest.TestCase):
 
 
 class RouterErrorSimulationTests(unittest.TestCase):
+    def test_router_error_quote_requires_eight_original_data_bytes(self):
+        # RFC 792's bounded codec needs the IPv4 header plus eight original
+        # data octets. A protocol-253 datagram may legally have fewer than eight.
+        # Its failed delivery remains observable, but no malformed ICMP error
+        # candidate may be claimed.
+        project = lab()
+        for length in (0, 1, 7):
+            with self.subTest(data_length=length):
+                result = IPv4Trace(project).send(
+                    "a", "eth0", "203.0.113.20", 1,
+                    payload=b"x" * length,
+                )
+                self.assertEqual(result["status"], "TTL_EXPIRED")
+                self.assertIsNone(result["routerErrorCandidate"])
+                self.assertFalse(result["icmpSent"])
+        complete = IPv4Trace(project).send(
+            "a", "eth0", "203.0.113.20", 1, payload=b"12345678",
+        )
+        self.assertEqual(complete["status"], "TTL_EXPIRED")
+        candidate = complete["routerErrorCandidate"]
+        self.assertIsNotNone(candidate)
+        self.assertEqual(len(bytes.fromhex(candidate["quotedIpv4Hex"])), 28)
+        self.assertEqual(
+            ICMPError(candidate["icmpType"], candidate["icmpCode"],
+                      bytes.fromhex(candidate["quotedIpv4Hex"])).icmp_type,
+            ICMP_TIME_EXCEEDED,
+        )
+
     def test_real_ttl_expired_router_sends_received_type11_reply(self):
         p=routed_reply_lab()
         before=copy.deepcopy(p)

@@ -60,11 +60,15 @@ class IPv4Trace:
         steps: list[dict] = []
 
         def router_failure(icmp_type: int, received: IPv4Datagram,
-                           device_id: str, ingress_port: str) -> dict:
-            # The original header is captured at router ingress, before TTL
-            # decrement, exactly as transmitted to that router on the wire.
-            # This is evidence only; no error packet has been sent yet.
+                           device_id: str, ingress_port: str) -> dict | None:
+            # The bounded ICMP error codec quotes exactly the original IPv4
+            # header and eight data bytes. Protocol 253 also permits shorter
+            # packets; do not advertise a malformed 20..27-byte candidate.
+            # An absent candidate is not evidence that a real router would
+            # suppress ICMP, only that this model cannot encode that quote.
             original = received.serialize()
+            if len(original) < 28:
+                return None
             return {
                 "router": device_id,
                 "ingressPort": ingress_port,
@@ -108,7 +112,7 @@ class IPv4Trace:
                 return finish("NON_ROUTER", "A non-router endpoint does not forward transit IPv4 packets.")
             if hop:
                 if packet.ttl <= 1:
-                    return finish("TTL_EXPIRED", "TTL expired before transit-router forwarding; candidate for a separately routed ICMP Time Exceeded message.",
+                    return finish("TTL_EXPIRED", "TTL expired before transit-router forwarding; no ICMP router-error delivery is implied.",
                                   failure_context=router_failure(ICMP_TIME_EXCEEDED, received_packet,
                                                                 device_id, ingress_or_source_port))
                 # A router decrements TTL when forwarding; the preceding sender
