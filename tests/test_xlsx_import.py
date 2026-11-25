@@ -56,7 +56,7 @@ class XlsxFunctionalTests(unittest.TestCase):
 
         invalid = modify("xl/worksheets/sheet1.xml", 'r="A2"',
                          f'r="A{huge}"')
-        with self.assertRaises(ProjectValidationError):
+        with self.assertRaisesRegex(ProjectValidationError, "invalid or out-of-row cell coordinate"):
             import_xlsx_workbook(request(invalid))
 
     def test_real_zip_inline_strings_numeric_positions_boolean_states(self):
@@ -279,6 +279,7 @@ class XlsxHTTPTests(unittest.TestCase):
         status, response = self.post(request(damaged))
         self.assertEqual(status, 422)
         self.assertEqual(response["error"], "INVALID_PROJECT")
+        self.assertIn("rows must be consecutive", response["message"])
         self.assertEqual(path.read_bytes(), before)
         self.assertEqual(list(self.root.glob("*.yadilab")), [path])
 
