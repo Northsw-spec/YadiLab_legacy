@@ -169,3 +169,9 @@
 .external-tool-card .external-tool-source{margin-top:12px}
 .external-tool-sources{margin:4px 0 0;padding-left:16px}
 .external-tool-sources a{color:#adcfed}
+
+#protocol-lessons :is([data-lesson-test],[data-lesson-answer-controls]){display:grid;gap:6px;margin:10px 0}
+#protocol-lessons .btn{white-space:normal;text-align:left}
+#protocol-lessons label{font-size:12px}
+#protocol-lessons dd{margin:0 0 6px 10px}
+#protocol-lessons [data-lesson-result]:not(:empty){border-top:1px solid var(--line);margin-top:10px;padding-top:2px}

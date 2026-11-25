@@ -735,6 +735,287 @@ Snapshot_Traces: NO_ROUTE</pre>
             </ul>
           </details>
         </section>
+        <section id="protocol-lessons" class="trace-panel external-tool-cards" aria-label="Protokolllektioner">
+          <h3>Protokolllektioner</h3>
+          <p class="muted tiny">Välj ett test och tolka ett förberett utfall. Lektionerna använder syntetiska underlag.</p>
+          <details id="protocol-ospf" class="external-tool-card" name="protocol-lesson">
+            <summary>OSPF · Grannen stannar i Init</summary>
+            <p class="external-tool-label">STATISKT ÖVNINGSEXEMPEL – EJ KÖRT I APPEN</p>
+            <h4>Om [observerat]:</h4>
+            <p>I en syntetisk avläsning kl. 10.05 UTC rapporterar R1 att grannen R2 är i Init. Planen anger att paret ska bilda adjacency på Ethernetsegmentet, där R2 förväntas vara DR.</p>
+            <h4>Då [vad det faktiskt betyder]:</h4>
+            <p>R1 har tagit emot ett godtaget Hello från R2. R1 såg ännu inte sitt eget Router ID i R2:s Hello-lista. Tvåvägsigenkänning var därför inte bekräftad vid avläsningen.</p>
+            <h4>Möjliga orsaker [inte fastställda/hypoteser]:</h4>
+            <ul>
+              <li>R2 får eller godtar inte R1:s Hello, trots att R1 tar emot från R2.</li>
+              <li>En kort uppstartsfas förklarar tillståndet.</li>
+              <li>Rollerna i underlaget kan vara inaktuella. Två DROther kan stanna i 2-Way, men det förklarar inte kvarstående Init.</li>
+            </ul>
+            <details>
+              <summary>Vad detta inte bevisar:</summary>
+              <p>Init identifierar inget fysiskt kabelfel. Ett fel i area, autentisering eller Hello-parametrar kan få ett Hello att avvisas. Ett ömsesidigt avvisande kan ge Down, medan en ensidig avvikelse kan bidra till Init. MTU-problem vid databasutbytet brukar i stället visa sig kring ExStart eller Exchange.</p>
+              <p>Full krävs för förväntade adjacencies, exempelvis mot DR och BDR på ett broadcastsegment. Två DROther kan ha normal 2-Way. Inte ens Full bevisar end-to-end-trafik.</p>
+              <dl>
+                <dt><strong>Down</strong></dt>
+                <dd>Ingen aktuell grannkommunikation. På NBMA finns dessutom tillståndet Attempt.</dd>
+                <dt><strong>Init</strong></dt>
+                <dd>Hello mottaget. Tvåvägsigenkänning saknas.</dd>
+                <dt><strong>2-Way</strong></dt>
+                <dd>Den lokala routern ser sitt Router ID i grannens Hello och avgör om adjacency ska bildas.</dd>
+                <dt><strong>ExStart</strong></dt>
+                <dd>Routrarna förhandlar roller och startsekvens för Database Description.</dd>
+                <dt><strong>Exchange</strong></dt>
+                <dd>Routrarna utbyter Database Description med rubriker för LSA:er.</dd>
+                <dt><strong>Loading</strong></dt>
+                <dd>Saknade eller nyare LSA:er begärs tills listan över utestående begäranden är tom.</dd>
+                <dt><strong>Full</strong></dt>
+                <dd>Grannarna är fullt adjacenta och databassynkroniseringen mellan dem är klar.</dd>
+              </dl>
+            </details>
+            <details>
+              <summary>Nästa diagnostiska steg:</summary>
+              <p>Jämför grannstatus på båda sidor. FRRouting 10.4 dokumenterar show ip ospf neighbor. Här använder du bara de förberedda avläsningarna och Hello-observationerna.</p>
+              <div data-lesson-test>
+                <label for="ospf-test">Välj nästa test</label>
+                <select id="ospf-test" class="control">
+                  <option value="">Välj…</option>
+                  <option value="hello">Jämför Hello i båda riktningarna.</option>
+                  <option value="roles">Kontrollera roller och upprepa statusavläsningen.</option>
+                  <option value="other">Läs portarnas felräknare.</option>
+                </select>
+                <button type="button" class="btn btn-outline">Visa förberett utfall</button>
+              </div>
+            </details>
+            <div data-lesson-result aria-live="polite"></div>
+            <template data-outcome="other">
+              <h4>Förväntat resultat och tolkning:</h4>
+              <p>NOT_VERIFIED. Det här testet saknar ett förberett utfall. Välj en annan mätning för att gå vidare.</p>
+            </template>
+            <template data-lesson-answer>
+              <div data-lesson-answer-controls>
+                <p>Vilken observation skulle tala emot din hypotes?</p>
+                <label for="ospf-interpretation">Välj den slutsats som stöds av utfallet</label>
+                <select id="ospf-interpretation" class="control">
+                  <option value="">Välj…</option>
+                  <option value="cable">En fysisk länk är bevisat trasig.</option>
+                  <option value="one-way">Hello når fram asymmetriskt i mätningen.</option>
+                  <option value="normal">Två DROther har normal 2-Way här.</option>
+                </select>
+                <button type="button" class="btn btn-soft">Pröva tolkningen</button>
+                <p data-lesson-feedback role="status"></p>
+              </div>
+            </template>
+            <template data-outcome="hello" data-correct="one-way">
+              <h4>Förväntat resultat och tolkning:</h4>
+              <p>Samma fem Hello-intervall, med båda riktningarna täckta. R1:s lokala mätpunkt visar sända Hello. R2:s mottagningspunkt visar inga av dem. R1 tar emot Hello från R2 utan R1:s Router ID. R1 fortsätter rapportera Init.</p>
+              <template data-lesson-review>
+                <p>Asymmetrin är belagd i det syntetiska mätintervallet. En ögonblicksbild vid uppstart räcker inte som förklaring till mönstret. Exakt stoppunkt och fysisk orsak är fortfarande UNKNOWN.</p>
+                <h4>Åtgärd [först efter fastställd orsak]:</h4>
+                <p>Lokalisera stoppet mellan mätpunkterna. Ändra exempelvis en portinställning först när den har visats hindra R1:s Hello i den riktningen.</p>
+                <h4>Verifiering [fungerar det nu?]:</h4>
+                <p>Mät Hello igen i båda riktningar och kontrollera att båda ser varandras Router ID. Om R2 är DR ska avsedd adjacency stabiliseras i Full. Testa avsedd datatrafik separat.</p>
+              </template>
+            </template>
+            <template data-outcome="roles" data-correct="normal">
+              <h4>Förväntat resultat och tolkning:</h4>
+              <p>Alternativt syntetiskt utfall. Båda mottagna Hello listar den andra routerns Router ID. R1 och R2 är DROther. R3 är DR och båda har Full mot R3. R1 och R2 visar stabil 2-Way mot varandra.</p>
+              <template data-lesson-review>
+                <p>De ömsesidiga Hello-listorna talar emot att ensidiga Hello fortfarande förklarar läget. 2-Way är väntat för just detta par. Underlaget om vem som skulle vara DR stämde inte med observationen.</p>
+                <h4>Åtgärd [först efter fastställd orsak]:</h4>
+                <p>Rätta den felaktiga designförväntningen efter kontroll av avsedda roller. Det här utfallet motiverar ingen reparation av grannrelationen mellan R1 och R2.</p>
+                <h4>Verifiering [fungerar det nu?]:</h4>
+                <p>Verifiera DR/BDR-roller och Full för de par där designen kräver det. Följ stabiliteten över tid och pröva dataplanet separat.</p>
+              </template>
+            </template>
+            <template data-lesson-sources>
+              <h4>Beviskälla och begränsningar:</h4>
+              <p>OSPFv2 enligt RFC 2328, särskilt §§ 7.5, 10.1 och 10.5. Kommandoreferens för FRRouting 10.4. Utdata är syntetiska och körningen är NOT_VERIFIED.</p>
+              <ul class="external-tool-sources">
+                <li><a href="https://www.rfc-editor.org/rfc/rfc2328" target="_blank" rel="noopener noreferrer">RFC 2328</a></li>
+                <li><a href="https://docs.frrouting.org/en/stable-10.4/ospfd.html" target="_blank" rel="noopener noreferrer">FRRouting 10.4 · OSPF</a></li>
+              </ul>
+            </template>
+          </details>
+          <details id="protocol-snmp" class="external-tool-card" name="protocol-lesson">
+            <summary>SNMP · Övervakningen får timeout</summary>
+            <p class="external-tool-label">STATISKT ÖVNINGSEXEMPEL – EJ KÖRT I APPEN</p>
+            <h4>Om [observerat]:</h4>
+            <p>Syntetiskt övervakningsutdrag kl. 10.10 UTC. En manager försökte läsa sysName.0 från 192.0.2.20 med SNMPv3. Efter 2 sekunder registrerades timeout för försöket.</p>
+            <h4>Då [vad det faktiskt betyder]:</h4>
+            <p>Managern fick inget användbart, matchande svar inom sin väntetid. SNMP används för övervakning och administration. En GET begär värdet för en angiven objektinstans, en OID.</p>
+            <h4>Möjliga orsaker [inte fastställda/hypoteser]:</h4>
+            <ul>
+              <li>Agenten är otillgänglig eller svarar inte.</li>
+              <li>SNMP-version, autentisering, säkerhetsnivå eller läsrättighet är fel.</li>
+              <li>Begäran eller svaret stoppas på vägen eller vid målet.</li>
+              <li>Enheten kan fortsätta vidarebefordra trafik medan övervakningsmätningen misslyckas.</li>
+            </ul>
+            <details>
+              <summary>Vad detta inte bevisar:</summary>
+              <p>SNMP hör till övervaknings- och administrationsplanet. Vidarebefordran sker i dataplanet. Timeout bevisar inte att routing, dataplan eller enheten är nere. SNMP är inte ett routingprotokoll.</p>
+              <p>SNMPv2c använder en community och har ingen kryptografisk meddelandeautentisering eller kryptering. SNMPv3 med USM kan använda exempelvis authNoPriv eller authPriv. Autentisering kontrollerar vem meddelandet kommer från, sekretess skyddar innehållet och auktorisation avgör vilka objekt som får läsas. En policy som begränsar källadresser eller transport kan stoppa kommunikationen tidigare. Särskilda fel kan ge Report, Response eller ett undantagsvärde beroende på version och implementation.</p>
+            </details>
+            <details>
+              <summary>Nästa diagnostiska steg:</summary>
+              <p>Jämför en IP-kontroll med observationer av den aktuella förfrågan vid båda ändar, eller pröva en godkänd kontroll-OID med samma säkerhetsprofil. Exemplet använder UDP 161 på agentsidan enligt den rekommenderade porten för SNMP-kommandon.</p>
+              <div data-lesson-test>
+                <label for="snmp-test">Välj nästa test</label>
+                <select id="snmp-test" class="control">
+                  <option value="">Välj…</option>
+                  <option value="path">Jämför ping och GET vid båda ändarna.</option>
+                  <option value="control">Jämför två GET med samma säkerhetsprofil.</option>
+                  <option value="other">Läs agentens lokala processlogg.</option>
+                </select>
+                <button type="button" class="btn btn-outline">Visa förberett utfall</button>
+              </div>
+            </details>
+            <div data-lesson-result aria-live="polite"></div>
+            <template data-outcome="other">
+              <h4>Förväntat resultat och tolkning:</h4>
+              <p>NOT_VERIFIED. Det här testet saknar ett förberett utfall. Välj en annan mätning för att gå vidare.</p>
+            </template>
+            <template data-lesson-answer>
+              <div data-lesson-answer-controls>
+                <p>Vilken observation skulle tala emot din hypotes?</p>
+                <label for="snmp-interpretation">Välj den slutsats som stöds av utfallet</label>
+                <select id="snmp-interpretation" class="control">
+                  <option value="">Välj…</option>
+                  <option value="routing">Timeout visar att routingen är nere.</option>
+                  <option value="transport">IP svarar, men GET syns inte vid agenten.</option>
+                  <option value="object">Agenten svarar. Undersök OID och läsvy.</option>
+                </select>
+                <button type="button" class="btn btn-soft">Pröva tolkningen</button>
+                <p data-lesson-feedback role="status"></p>
+              </div>
+            </template>
+            <template data-outcome="path" data-correct="transport">
+              <h4>Förväntat resultat och tolkning:</h4>
+              <p>ICMP Echo Reply når managern. Managerns mätpunkt visar ett utgående SNMPv3 GET till UDP 161. En samtidig mätning på enhetens ingång visar ICMP men inget motsvarande GET. Ingen SNMP Response når managern.</p>
+              <template data-lesson-review>
+                <p>ICMP och SNMP-testet har olika utfall. Det ger anledning att granska vägen och åtkomstreglerna för just SNMP. Underlaget avgör inte vilken utrustning eller regel som stoppade begäran, och agentens och behörighetens tillstånd är UNKNOWN.</p>
+                <h4>Åtgärd [först efter fastställd orsak]:</h4>
+                <p>Lokalisera förlusten mellan mätpunkterna. Om en godkänd kommunikationsregel bevisas stoppa begäran, korrigera den för rätt manager enligt ändringsprocessen.</p>
+                <h4>Verifiering [fungerar det nu?]:</h4>
+                <p>Upprepa GET från samma godkända manager med avsedd version, säkerhetsnivå och OID. Bekräfta ett matchande svar och rätt värde eller explicit SNMP-fel.</p>
+              </template>
+            </template>
+            <template data-outcome="control" data-correct="object">
+              <h4>Förväntat resultat och tolkning:</h4>
+              <p>Alternativt syntetiskt utfall. Vid omprov med samma SNMPv3-profil och kontext får GET sysUpTime.0 ett värde. GET sysName.0 får en matchande Response med noSuchObject.</p>
+              <template data-lesson-review>
+                <p>Ett matchande svar talar emot total agent- eller transportförlust vid omprovet. noSuchObject betyder i denna GET att ingen potentiellt tillgänglig variabel har ett matchande objektprefix. Kontroll-OID:n kan vara åtkomlig samtidigt som mål-OID:n saknas eller ligger utanför läsvyn. Orsaken till den tidigare timeouten är fortfarande UNKNOWN.</p>
+                <h4>Åtgärd [först efter fastställd orsak]:</h4>
+                <p>Kontrollera OID och läsvy dokumenterat för den avsedda användaren. Korrigera OID eller behörighet först när respektive fel har styrkts.</p>
+                <h4>Verifiering [fungerar det nu?]:</h4>
+                <p>Upprepa både kontrollen och avsedd GET. Särredovisa om rätt objektvärde, ett protokollfel eller timeout observeras.</p>
+              </template>
+            </template>
+            <template data-lesson-sources>
+              <h4>Beviskälla och begränsningar:</h4>
+              <p>SNMPv2c och SNMPv3 med USM och VACM. Standardernas GET-semantik och OID:er är källgranskade. Externa mätningar är NOT_VERIFIED.</p>
+              <ul class="external-tool-sources">
+                <li><a href="https://www.rfc-editor.org/rfc/rfc1901" target="_blank" rel="noopener noreferrer">RFC 1901 · SNMPv2c</a></li>
+                <li><a href="https://www.rfc-editor.org/rfc/rfc3411" target="_blank" rel="noopener noreferrer">RFC 3411 · SNMP-arkitektur</a></li>
+                <li><a href="https://www.rfc-editor.org/rfc/rfc3414" target="_blank" rel="noopener noreferrer">RFC 3414 · USM</a></li>
+                <li><a href="https://www.rfc-editor.org/rfc/rfc3415" target="_blank" rel="noopener noreferrer">RFC 3415 · VACM</a></li>
+                <li><a href="https://www.rfc-editor.org/rfc/rfc3416" target="_blank" rel="noopener noreferrer">RFC 3416 · GET och Response</a></li>
+                <li><a href="https://www.rfc-editor.org/rfc/rfc3417" target="_blank" rel="noopener noreferrer">RFC 3417 · Transport</a></li>
+                <li><a href="https://www.rfc-editor.org/rfc/rfc3418" target="_blank" rel="noopener noreferrer">RFC 3418 · systemobjekt</a></li>
+              </ul>
+            </template>
+          </details>
+          <details id="protocol-acl" class="external-tool-card" name="protocol-lesson">
+            <summary>ACL · Begäran passerar, svaret uteblir</summary>
+            <p class="external-tool-label">STATISKT ÖVNINGSEXEMPEL – EJ KÖRT I APPEN</p>
+            <h4>Om [observerat]:</h4>
+            <p>Syntetiska avläsningar kl. 10.15 UTC visar att en ICMP Echo Request från 192.0.2.10 når 203.0.113.20. Klienten ser inget matchande Echo Reply. En Linux-routers dokumenterade framåtfilter ligger på den förväntade vägen.</p>
+            <h4>Då [vad det faktiskt betyder]:</h4>
+            <p>Begäran nådde målet under försöket. Svaret saknas vid den observerade klientpunkten. Ett trafikfilter kan tillåta eller neka paket efter exempelvis adress, protokoll, port och gränssnitt.</p>
+            <h4>Möjliga orsaker [inte fastställda/hypoteser]:</h4>
+            <ul>
+              <li>En regel i filtret nekar returpaketet.</li>
+              <li>Svaret tar en annan väg än den dokumenterade.</li>
+              <li>Returrouten saknas eller ett annat hopp stoppar paketet.</li>
+              <li>Svaret når klientens nätsegment men stoppas vid klienten.</li>
+            </ul>
+            <details>
+              <summary>Vad detta inte bevisar:</summary>
+              <p>I det här nftables-exemplet prövas raderna i den visade kedjan i ordning. Den första matchande regeln med accept eller drop avslutar den kedjan. accept kan följas av prövning i en senare basiskedja eller hook. Att en regel finns i konfigurationen bevisar inte träff i försöket.</p>
+              <p>Ingress och egress är det inkommande respektive utgående gränssnittet sett från routern. Matcha käll- och måladress i rätt riktning, protokoll och portar när protokollet har portar. ICMP har typer och koder i stället för TCP-/UDP-portar. Reglerna här är tillståndslösa. En stateful policy kan i stället ta hänsyn till exempelvis ct state established. En tillåten Request innebär inte automatiskt en tillåten Reply.</p>
+            </details>
+            <details>
+              <summary>Nästa diagnostiska steg:</summary>
+              <p>Jämför ett spår mot den dokumenterade forward-kedjan i ett avgränsat Linux-exempel. Kontrollera både iifname och oifname. Endast denna basiskedja vid forward-hook ingår i det syntetiska fallet.</p>
+              <p>Dokumenterad syntetisk konfiguration</p>
+              <pre>table inet p5_demo {
+    chain transit {
+        type filter hook forward priority filter; policy accept;
+        iifname &quot;client-lan&quot; oifname &quot;server-lan&quot; ip saddr 192.0.2.10 ip daddr 203.0.113.20 icmp type echo-request counter accept
+        iifname &quot;server-lan&quot; oifname &quot;client-lan&quot; ip saddr 203.0.113.20 ip daddr 192.0.2.10 icmp type echo-reply counter drop
+    }
+}</pre>
+              <div data-lesson-test>
+                <label for="acl-test">Välj nästa test</label>
+                <select id="acl-test" class="control">
+                  <option value="">Välj…</option>
+                  <option value="match">Följ paket och regelträff på routern.</option>
+                  <option value="actual">Kontrollera svarets faktiska väg.</option>
+                  <option value="other">Läs klientens lokala filterlogg.</option>
+                </select>
+                <button type="button" class="btn btn-outline">Visa förberett utfall</button>
+              </div>
+            </details>
+            <div data-lesson-result aria-live="polite"></div>
+            <template data-outcome="other">
+              <h4>Förväntat resultat och tolkning:</h4>
+              <p>NOT_VERIFIED. Det här testet saknar ett förberett utfall. Välj en annan mätning för att gå vidare.</p>
+            </template>
+            <template data-lesson-answer>
+              <div data-lesson-answer-controls>
+                <p>Vilken observation skulle tala emot din hypotes?</p>
+                <label for="acl-interpretation">Välj den slutsats som stöds av utfallet</label>
+                <select id="acl-interpretation" class="control">
+                  <option value="">Välj…</option>
+                  <option value="configuration">Filtret är orsaken eftersom regeln finns.</option>
+                  <option value="drop">Rätt Reply träffar routerns drop-regel.</option>
+                  <option value="different">Det här svaret går förbi filtret.</option>
+                </select>
+                <button type="button" class="btn btn-soft">Pröva tolkningen</button>
+                <p data-lesson-feedback role="status"></p>
+              </div>
+            </template>
+            <template data-outcome="match" data-correct="drop">
+              <h4>Förväntat resultat och tolkning:</h4>
+              <p>Syntetiskt spår för samma Echo-utbyte. Request: 192.0.2.10 → 203.0.113.20, ICMP typ 8, client-lan in och server-lan ut, regel 1 accept. Reply: 203.0.113.20 → 192.0.2.10, ICMP typ 0, server-lan in och client-lan valt som utgång, regel 2 drop. Räknaren för Reply-regeln ökar med ett i det isolerade försöket och inget matchande svar syns vid routerns utgång.</p>
+              <template data-lesson-review>
+                <p>Det förväntade utfallet för Reply enligt regel 2 är drop. Det förberedda spåret knyter rätt returpaket till regeln. Orsaken stöds i detta försök av den observerade träffen och paketets väg.</p>
+                <h4>Åtgärd [först efter fastställd orsak]:</h4>
+                <p>Om avsedd, godkänd policy ska tillåta just returflödet, begränsa ändringen till det verifierade villkoret. Granska även regelordning och oavsiktligt tillåten trafik före ändring.</p>
+                <h4>Verifiering [fungerar det nu?]:</h4>
+                <p>Upprepa Echo-utbytet efter en godkänd ändring och följ både Request och Reply. Verifiera matchande Echo Reply hos klienten och kontrollera att trafik som ska nekas fortfarande nekas.</p>
+              </template>
+            </template>
+            <template data-outcome="actual" data-correct="different">
+              <h4>Förväntat resultat och tolkning:</h4>
+              <p>Alternativt syntetiskt utfall. Rätt Echo Reply följs över en annan router och syns på klientens nätsegment. Det matchas med omvända adresser, samma ICMP-identifierare och sekvens. Ingen träff syns i den dokumenterade routerns drop-regel i det isolerade försöket.</p>
+              <template data-lesson-review>
+                <p>Förväntat utfall för Reply genom den dokumenterade kedjan var drop. Den observerade vägen går förbi kedjan, vilket talar emot att just regeln stoppade detta svar. Klientens mottagning i nästa steg är UNKNOWN.</p>
+                <h4>Åtgärd [först efter fastställd orsak]:</h4>
+                <p>Ändra inte den här regeln på detta underlag. Kartlägg returvägen och undersök klientens mottagning innan någon åtgärd föreslås.</p>
+                <h4>Verifiering [fungerar det nu?]:</h4>
+                <p>Bekräfta faktisk väg och om rätt Reply når klientens nätstack. Om en mottagningsorsak styrks och åtgärdas, kör ett nytt Echo och kontrollera matchande svar.</p>
+              </template>
+            </template>
+            <template data-lesson-sources>
+              <h4>Beviskälla och begränsningar:</h4>
+              <p>Linux nftables 1.1.1. Syntax och ordning gäller detta plattformsexempel. Konfigurationen är dokumenterat syntetisk, spåren är förberedda och körningen är NOT_VERIFIED.</p>
+              <ul class="external-tool-sources">
+                <li><a href="https://netfilter.org/projects/nftables/manpage.html" target="_blank" rel="noopener noreferrer">nftables · Officiell manual</a></li>
+                <li><a href="https://netfilter.org/projects/nftables/files/nftables-1.1.1.tar.xz" target="_blank" rel="noopener noreferrer">nftables 1.1.1 · Versionskälla</a></li>
+              </ul>
+            </template>
+          </details>
+        </section>
       </aside>
     </div>
     <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
@@ -742,5 +1023,6 @@ Snapshot_Traces: NO_ROUTE</pre>
   </div>
   <script src="/vendor/elk-api.js"></script>
   <script type="module" src="/app.js"></script>
+  <script type="module" src="/features/diagnostics/protocol-lessons.js"></script>
 </body>
 </html>

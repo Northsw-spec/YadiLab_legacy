@@ -185,6 +185,109 @@ def check_tool_cards(page):
     expect(page.locator("#icmp-investigation-diagnose")).to_be_enabled()
 
 
+def check_protocol_lessons(page):
+    """Choose evidence and test which interpretations are accepted in each branch."""
+    section = page.locator("#protocol-lessons")
+    outer = page.locator(".dropdown-card").filter(has=section).locator(":scope > summary")
+    before = {
+        name: page.locator("#icmp-" + name).inner_text()
+        for name in ("investigation-status", "investigation-observations", "lesson-plan")
+    }
+    scenarios = {
+        "ospf": (
+            ("hello", "one-way", "cable", "R2:s mottagningspunkt visar inga", "Exakt stoppunkt"),
+            ("roles", "normal", "one-way", "stabil 2-Way", "2-Way är väntat"),
+            "https://www.rfc-editor.org/rfc/rfc2328", "FRRouting 10.4",
+        ),
+        "snmp": (
+            ("path", "transport", "routing", "ICMP Echo Reply når managern", "agentens och behörighetens"),
+            ("control", "object", "transport", "Response med noSuchObject", "total agent- eller transportförlust"),
+            "https://www.rfc-editor.org/rfc/rfc3416", "SNMPv2c och SNMPv3",
+        ),
+        "acl": (
+            ("match", "drop", "configuration", "regel 1 accept", "rätt returpaket till regeln"),
+            ("actual", "different", "drop", "Ingen träff syns", "går förbi kedjan"),
+            "https://netfilter.org/projects/nftables/manpage.html", "nftables 1.1.1",
+        ),
+    }
+    requests = []
+
+    def record_request(request):
+        requests.append(request.url)
+
+    page.on("request", record_request)
+    try:
+        expect(section.locator(":scope > details")).to_have_count(3)
+        for name, (primary, alternate, url, version) in scenarios.items():
+            lesson = section.locator("#protocol-" + name)
+            lesson.locator(":scope > summary").press("Enter")
+            expect(section.locator(":scope > details[open]")).to_have_count(1)
+            expect(lesson.locator(".external-tool-label")).to_have_text(
+                "STATISKT ÖVNINGSEXEMPEL – EJ KÖRT I APPEN")
+            expect(lesson.locator("h4:visible")).to_have_text(HEADINGS[:3])
+            boundaries = lesson.locator(":scope > details").nth(0)
+            test_section = lesson.locator(":scope > details").nth(1)
+            expect(boundaries.locator("summary")).to_have_text(HEADINGS[3])
+            expect(test_section.locator("summary")).to_have_text(HEADINGS[4])
+            boundaries.locator("summary").press("Enter")
+            if name == "ospf":
+                expect(boundaries.locator("dt")).to_have_text(
+                    ["Down", "Init", "2-Way", "ExStart", "Exchange", "Loading", "Full"])
+            if name == "snmp":
+                expect(boundaries).to_contain_text("SNMP är inte ett routingprotokoll")
+            test_section.locator("summary").press("Enter")
+            if name == "acl":
+                expect(test_section.locator("pre")).to_contain_text("echo-request counter accept")
+                expect(test_section.locator("pre")).to_contain_text("echo-reply counter drop")
+
+            test_form = lesson.locator("[data-lesson-test]")
+            result = lesson.locator("[data-lesson-result]")
+            test_choice = test_form.locator("select")
+            test_choice.select_option("other")
+            test_form.get_by_role("button").click()
+            expect(result.locator("h4")).to_have_text(HEADINGS[5:6])
+            expect(result).to_contain_text("NOT_VERIFIED")
+            expect(result.locator("select, button")).to_have_count(0)
+
+            for test, right, wrong, observation, rationale in (primary, alternate):
+                test_choice.select_option(test)
+                expect(result.locator("h4")).to_have_count(0)
+                test_form.get_by_role("button").click()
+                expect(result.locator("h4")).to_have_text(HEADINGS[5:6])
+                expect(result).to_contain_text(observation)
+                assert rationale not in result.inner_text()
+                expect(result.get_by_role("link")).to_have_count(0)
+                answer = result.locator("select")
+                submit = result.get_by_role("button")
+                answer.select_option(wrong)
+                submit.click()
+                expect(result.get_by_role("status")).to_contain_text("Underlaget räcker inte")
+                expect(result.locator("h4")).to_have_text(HEADINGS[5:6])
+                assert rationale not in result.inner_text()
+                answer.select_option(right)
+                submit.click()
+                expect(result.get_by_role("status")).to_contain_text("Tolkningen stöds")
+                expect(result.locator("h4")).to_have_text(HEADINGS[5:])
+                expect(result).to_contain_text(rationale)
+                expect(result).to_contain_text("NOT_VERIFIED")
+                expect(result).to_contain_text(version)
+                expect(result.locator(f'a[href="{url}"]')).to_be_visible()
+                expect(submit).to_be_disabled()
+
+            assert all(token not in lesson.inner_text()
+                       for token in ("LIVE", "VERIFIED_NETWORK", "SIMULATED"))
+        expect(section.locator("form, script, iframe, img, video, audio, object, embed")).to_have_count(0)
+        outer.press("Enter")
+        expect(section).to_be_hidden()
+        assert not requests, requests
+    finally:
+        page.remove_listener("request", record_request)
+
+    for name, previous in before.items():
+        assert page.locator("#icmp-" + name).inner_text() == previous
+    expect(page.locator("#icmp-investigation-diagnose")).to_be_enabled()
+
+
 def run_lesson(page, directory, lesson, filename):
     case_b = lesson == "echo-reply-b"
     reply_status = "ARP_FAILED" if case_b else "NO_ROUTE"
@@ -315,6 +418,7 @@ def run_lesson(page, directory, lesson, filename):
     show_sections(panel, 6)
     if not case_b:
         check_tool_cards(page)
+        check_protocol_lessons(page)
         assert target.read_bytes() == original
     wrong = click_response(DIAGNOSE, "#icmp-investigation-diagnose")
     assert not wrong["correct"]
@@ -409,7 +513,7 @@ def main():
                 assert (directory / (filename + ".yadilab")).read_bytes() == original
             assert not errors, errors
         browser.close()
-        print("PASS real Chromium DIRECT_HTTP: four static tool cards, both Echo cases, "
+        print("PASS real Chromium DIRECT_HTTP: four tool cards, three protocol lessons, both Echo cases, "
               "capability, stale reply and Save/Open after process restart")
         print("Saved project SHA-256:", digest)
 

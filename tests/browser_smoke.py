@@ -144,6 +144,7 @@ def browser_open(page, base, expand_panels=True):
     html = urlopen(base, timeout=5).read().decode('utf-8')
     html = html.replace('<link rel="stylesheet" href="/styles.css">', '')
     html = html.replace('<script type="module" src="/app.js"></script>', '')
+    html = html.replace('<script type="module" src="/features/diagnostics/protocol-lessons.js"></script>', '')
     page.set_content(html, wait_until='domcontentloaded')
     page.add_style_tag(content=(ROOT / 'web/styles.css').read_text(encoding='utf8'))
     page.evaluate("""() => {
