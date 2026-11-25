@@ -82,16 +82,26 @@ def validate_disclosure(data):
     assert "return-to-a" not in str(data)
     assert "RESTORE_STATIC_ROUTE" not in str(data)
     assert "STATIC_ROUTE_MISSING" not in str(data)
+    assert "STATIC_NEXT_HOP_UNREACHABLE" not in str(data)
+    assert "RESTORE_NEXT_HOP" not in str(data)
+    assert "expectedNextHop" not in str(data)
 
 
-def run_lesson(page, directory):
+def run_lesson(page, directory, lesson, filename):
+    case_b = lesson == "echo-reply-b"
+    reply_status = "ARP_FAILED" if case_b else "NO_ROUTE"
+    right_diagnosis = "STATIC_NEXT_HOP_UNREACHABLE" if case_b else "STATIC_ROUTE_MISSING"
+    wrong_diagnosis = "STATIC_ROUTE_MISSING" if case_b else "STATIC_NEXT_HOP_UNREACHABLE"
     panel = page.locator("#icmp-lesson")
     diagnose = page.locator("#icmp-investigation-diagnose")
     repair = page.locator("#icmp-investigation-repair")
     diagnosis = page.locator("#icmp-investigation-diagnosis")
     attempts_to_save = []
-    page.on("request", lambda request: attempts_to_save.append(request.method)
-            if request.url.endswith("/api/save") else None)
+    def record_save(request):
+        if request.url.endswith("/api/save"):
+            attempts_to_save.append(request.method)
+
+    page.on("request", record_save)
 
     def click_response(path, button, status=200):
         with page.expect_response("**" + path) as event:
@@ -105,25 +115,31 @@ def run_lesson(page, directory):
     fixture = fixture_response.value.json()
     expect(page.locator('[data-node-id="a"]')).to_have_count(1)
     expect(page.locator('[data-node-id="b"]')).to_have_count(1)
-    assert not list(directory.glob("*.yadilab"))
+    target = directory / (filename + ".yadilab")
+    assert not target.exists()
 
-    page.locator("#project-filename").fill("echo-lesson")
+    page.locator("#project-filename").fill(filename)
     page.locator("#project-filename").press("Tab")
     saved = click_response("/api/save", "#save-project")
-    target = directory / "echo-lesson.yadilab"
     original = target.read_bytes()
     digest = sha256(original).hexdigest()
     assert saved["project"] == fixture and saved["sha256"] == digest
 
+    case_selector = page.locator("#icmp-lesson-case")
+    case_selector.select_option(lesson)
     opening = click_response(START, "#icmp-lesson-start")
+    assert opening["lesson"] == lesson
+    expect(case_selector).to_be_disabled()
     validate_disclosure(opening)
     assert opening["openingObservation"] == {
-        "requestStatus": "DELIVERED", "requestReceiver": {"node": "b", "port": "eth0"},
         "replyMatched": False, "source": "SIMULATED",
     }
-    assert "NO_ROUTE" not in str(opening)
+    for marker in ("NO_ROUTE", "ARP_FAILED", "203.0.113.254", "requestReceiver"):
+        assert marker not in str(opening)
     show_sections(panel, 3)
-    expect(panel).to_contain_text("Källan fick inget giltigt Echo Reply.")
+    expect(panel).to_contain_text("Källan fick inget giltigt Echo Reply")
+    opening_text = panel.locator("#icmp-lesson-symptom").inner_text()
+    expect(panel.locator("#icmp-lesson-symptom")).not_to_contain_text("DELIVERED")
     expect(panel).to_contain_text("Vilken observation skulle tala emot din hypotes?")
     expect(diagnose).to_be_disabled()
     expect(repair).to_be_disabled()
@@ -176,18 +192,26 @@ def run_lesson(page, directory):
 
     ping = probe("ping")["observation"]
     assert (ping["requestStatus"], ping["status"], ping["replyStatus"], ping["replyMatched"]) == (
-        "DELIVERED", "REPLY_FAILED", "NO_ROUTE", False)
-    assert ping["requestReceiver"] == {"node": "b", "port": "eth0"} and ping["replySteps"] == []
+        "DELIVERED", "REPLY_FAILED", reply_status, False)
+    assert ping["requestReceiver"] == {"node": "b", "port": "eth0"}
+    if case_b:
+        step, = ping["replySteps"]
+        assert step["arpStatus"] == "NO_REPLY" and step["transmissions"] == []
+        assert step["nextHopIpv4"] == "203.0.113.254"
+    else:
+        assert ping["replySteps"] == []
     assert not probe("port", port='["b","eth0"]')["canDiagnose"]
     assert not probe("route", node="a", destination="source")["canDiagnose"]
     assert not probe("route", node="b", destination="destination")["canDiagnose"]
-    diagnose_option = "STATIC_NEXT_HOP_UNREACHABLE"
-    diagnosis.select_option(diagnose_option)
+    diagnosis.select_option(wrong_diagnosis)
     expect(diagnose).to_be_disabled()
     show_sections(panel, 5)
 
     route = probe("route", node="b", destination="source")
-    assert route["canDiagnose"] and route["observation"]["status"] == "NO_ROUTE"
+    assert route["canDiagnose"]
+    assert route["observation"]["status"] == ("MATCH" if case_b else "NO_ROUTE")
+    if case_b:
+        assert route["observation"]["selectedRoute"]["nextHop"] == "203.0.113.254"
     assert route["observation"]["destinationIpv4"] == "192.0.2.10"
     expect(page.locator("#icmp-lesson-plan")).to_contain_text("Mätstatus: utförd i simuleringen")
     show_sections(panel, 6)
@@ -197,7 +221,7 @@ def run_lesson(page, directory):
     expect(page.locator("#icmp-investigation-verdict")).to_contain_text("HYPOTES AVVISAD")
     expect(repair).to_be_disabled()
 
-    diagnosis.select_option("STATIC_ROUTE_MISSING")
+    diagnosis.select_option(right_diagnosis)
     correct = click_response(DIAGNOSE, "#icmp-investigation-diagnose")
     assert correct["correct"]
     validate_disclosure(correct)
@@ -209,6 +233,9 @@ def run_lesson(page, directory):
             recovered["replyMatched"]) == ("RECOVERED", "REPLY_FAILED", "REPLIED", True)
     assert recovered["repair"]["routeId"] == "return-to-a"
     assert recovered["repair"]["scope"] == "PREVIEW_ONLY"
+    assert recovered["repair"]["action"] == ("RESTORE_NEXT_HOP" if case_b else "RESTORE_STATIC_ROUTE")
+    if case_b:
+        assert recovered["repair"]["expectedNextHop"] == "203.0.113.1"
     assert recovered["verification"]["requestReceiver"] == {"node": "b", "port": "eth0"}
     assert recovered["verification"]["replyReceiver"] == {"node": "a", "port": "eth0"}
     show_sections(panel, 9)
@@ -242,12 +269,13 @@ def run_lesson(page, directory):
     expect(page.locator("#empty-state")).to_be_visible()
     release_http_reply(page)
     expect(page.locator("#icmp-investigation-status")).to_contain_text("Ingen ICMP-övning")
-    expect(page.locator("#icmp-investigation-observations")).not_to_contain_text("NO_ROUTE")
+    expect(page.locator("#icmp-investigation-observations")).not_to_contain_text(reply_status)
     expect(page.locator("#icmp-lesson-plan")).to_have_text("")
     expect(diagnose).to_be_disabled()
     assert target.read_bytes() == original
     assert attempts_to_save == ["POST"]
-    return fixture, original, digest
+    page.remove_listener("request", record_save)
+    return fixture, original, digest, opening_text
 
 
 def main():
@@ -260,23 +288,27 @@ def main():
         page.on("pageerror", lambda error: errors.append(str(error)))
         with protected_process(directory) as (port, first_key):
             enter_workspace(page, port, first_key)
-            fixture, original, digest = run_lesson(page, directory)
+            a = run_lesson(page, directory, "echo-reply", "echo-lesson")
+            b = run_lesson(page, directory, "echo-reply-b", "echo-lesson-b")
+            assert a == b  # Identical initial UI symptom and durable baseline.
 
+        fixture, original, digest, _ = a
         with protected_process(directory, port) as (same_port, key):
             assert same_port == port and key != first_key
             enter_workspace(page, same_port, key)
-            page.locator("#saved-projects").select_option("echo-lesson")
-            with page.expect_response("**/api/projects/echo-lesson") as reopened:
-                page.locator("#open-project").click()
-            assert reopened.value.status == 200
-            payload = reopened.value.json()
-            assert payload["project"] == fixture and payload["sha256"] == digest
-            expect(page.locator("#project-name")).to_have_value(fixture["name"])
-            expect(page.locator("#icmp-lesson")).to_be_hidden()
-            assert (directory / "echo-lesson.yadilab").read_bytes() == original
+            for filename in ("echo-lesson", "echo-lesson-b"):
+                page.locator("#saved-projects").select_option(filename)
+                with page.expect_response("**/api/projects/" + filename) as reopened:
+                    page.locator("#open-project").click()
+                assert reopened.value.status == 200
+                payload = reopened.value.json()
+                assert payload["project"] == fixture and payload["sha256"] == digest
+                expect(page.locator("#project-name")).to_have_value(fixture["name"])
+                expect(page.locator("#icmp-lesson")).to_be_hidden()
+                assert (directory / (filename + ".yadilab")).read_bytes() == original
             assert not errors, errors
         browser.close()
-        print("PASS real Chromium DIRECT_HTTP: guided Echo lesson, capability, stale reply, Save/Open after process restart")
+        print("PASS real Chromium DIRECT_HTTP: both guided Echo cases, capability, stale reply, Save/Open after process restart")
         print("Saved project SHA-256:", digest)
 
 

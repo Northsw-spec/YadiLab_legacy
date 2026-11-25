@@ -2486,10 +2486,11 @@ async function loadIcmpLesson() {
   }
 }
 function startIcmpLesson() {
+  const selectedCase = () => $('icmp-lesson-case').value;
   void icmpInvestigation.start({
-    lesson: 'echo-reply', sourceNode: 'a', sourcePort: 'eth0',
+    lesson: selectedCase(), sourceNode: 'a', sourcePort: 'eth0',
     destinationIpv4: '203.0.113.20', ttl: 5,
-  }, () => 'echo-reply');
+  }, selectedCase);
 }
 function measureIcmpInvestigation() {
   const kind = $('icmp-investigation-probe').value;

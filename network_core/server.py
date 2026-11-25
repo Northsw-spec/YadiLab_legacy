@@ -33,7 +33,7 @@ from .arp import ArpSession
 from .dhcp import discover_offer, simulate_dora
 from .dhcp_registry import DhcpSessionRegistry
 from .dhcp_investigation import InvestigationRegistry
-from .icmp_investigation import IcmpInvestigationRegistry, REVERSE_ROUTE_LESSON
+from .icmp_investigation import ICMP_LESSON_IDS, IcmpInvestigationRegistry
 from .simulation import SimulationRegistry
 from .session_idle import CLEANUP_INTERVAL_SECONDS, CLEANUP_JOIN_SECONDS
 from .routing import ConnectedRoutingTable
@@ -355,7 +355,7 @@ class Handler(BaseHTTPRequestHandler):
             elif path == "/api/icmp/investigation/start":
                 required = {"project", "sourceNode", "sourcePort", "destinationIpv4", "ttl"}
                 if (not isinstance(body, dict) or set(body) not in (required, required | {"lesson"})
-                        or ("lesson" in body and body["lesson"] != REVERSE_ROUTE_LESSON)):
+                        or ("lesson" in body and body["lesson"] not in ICMP_LESSON_IDS)):
                     raise ProjectValidationError(
                         "icmp investigation start: expected project, sourceNode, sourcePort, "
                         "destinationIpv4, ttl and optional supported lesson")

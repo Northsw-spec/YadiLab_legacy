@@ -67,6 +67,34 @@ injekteras bara på en validerad privat kopia av den ursprungliga
 kanoniska modellen. Klientens privata felnamn och målpunkt är
 oåtkomliga via publika start-/probe-/diagnose-svar.
 
+## Guidad kursbank (P3)
+
+De neutrala elevvalen **Fall A** och **Fall B** använder samma kanoniska
+[övningsprojekt](../web/fixtures/icmp-echo-lesson.json). Baslinjen
+och den oberoende återställningen ska båda ge ett matchande Echo Reply från
+`b/eth0` till `a/eth0`. Öppningen för båda fallen visar att ett giltigt
+Echo Reply uteblev. Paketens riktning och stoppunkt visas först vid mätning.
+
+| Handledarens facit | Ping i felkopian | Uppslag från `b` till `192.0.2.10` |
+|---|---|---|
+| A. Saknad statisk returroute | Request `DELIVERED`, Reply `NO_ROUTE` före ARP | `NO_ROUTE` |
+| B. Fel nästa hopp i samma statiska returroute | Request `DELIVERED`, Reply `ARP_FAILED`. Ett retur-ARP skickas och ger `NO_REPLY`. | `MATCH` via `203.0.113.254` |
+
+I B ändras bara nästa hopp i övningskopian. Adressen är en avsiktligt
+felaktig parameter från det befintliga Echo-regressionstestet. Den
+representerar ingen deklarerad enhet. `MATCH` bekräftar valet av route
+och ARP-spåret visar vad som hände vid adressupplösningen.
+
+Startanropet använder frivilligt `lesson` med det neutrala ID:t
+`echo-reply` (A) eller `echo-reply-b` (B). Utelämnat fält ger ordinarie
+dold övning. Båda fallen kräver simulerat Echo, returuppslaget ovan och
+portkontroll på `b/eth0`. Proberna visar mätvärden. Feltypens facit,
+auktoritativt route-ID och åtgärd visas efter verifierad återställning.
+Elevens hypotes, val av första test och anteckning hör till den
+tillfälliga webbsessionen.
+
+[Motor- och HTTP-tester](../tests/test_icmp_lesson.py) · [Chromium-test för båda fallen](../tests/browser_icmp_lesson.py)
+
 ## Begäran och observerbara svar
 
 `POST /api/icmp/investigation/start` kräver exakt:

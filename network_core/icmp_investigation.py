@@ -31,17 +31,27 @@ LAN_KINDS = ("CABLE_DOWN", "PORT_SHUTDOWN", "VLAN_MISMATCH",
 PROBES = ("address", "route", "ping", "link", "port", "vlan")
 
 
-REVERSE_ROUTE_LESSON = "echo-reply"
 _LESSON_FIXTURE = (Path(__file__).resolve().parent.parent / "web" / "fixtures"
                    / "icmp-echo-lesson.json")
 _LESSON_SOURCE = {"node": "a", "port": "eth0"}
 _LESSON_TARGET = {"node": "b", "port": "eth0"}
 _LESSON_SOURCE_IP = "192.0.2.10"
 _LESSON_TARGET_IP = "203.0.113.20"
-_LESSON_FAULT = {"type": "STATIC_ROUTE_REMOVED", "nodeId": "b", "routeId": "return-to-a"}
+_LESSON_RETURN_ROUTE = {"nodeId": "b", "routeId": "return-to-a"}
+_LESSON_UNREACHABLE_HOP = "203.0.113.254"
+_LESSONS = {
+    "echo-reply": ("STATIC_ROUTE_MISSING", "NO_ROUTE", {
+        **_LESSON_RETURN_ROUTE, "type": "STATIC_ROUTE_REMOVED",
+    }),
+    "echo-reply-b": ("STATIC_NEXT_HOP_UNREACHABLE", "ARP_FAILED", {
+        **_LESSON_RETURN_ROUTE, "type": "STATIC_NEXT_HOP_CHANGED",
+        "newNextHop": _LESSON_UNREACHABLE_HOP,
+    }),
+}
+ICMP_LESSON_IDS = tuple(_LESSONS)
 
 
-def _lesson_echo(exchange: dict, *, matched: bool) -> bool:
+def _lesson_echo(exchange: dict, *, matched: bool, reply_status: str = "NO_ROUTE") -> bool:
     request, reply = exchange["request"], exchange["reply"]
     if (request["status"] != "DELIVERED" or request["receiver"] != _LESSON_TARGET
             or request["sourceIpv4"] != _LESSON_SOURCE_IP
@@ -52,15 +62,26 @@ def _lesson_echo(exchange: dict, *, matched: bool) -> bool:
     if matched:
         return (exchange["status"] == "REPLIED" and exchange["replyMatched"]
                 and reply["status"] == "DELIVERED" and reply["receiver"] == _LESSON_SOURCE)
-    return (exchange["status"] == "REPLY_FAILED" and not exchange["replyMatched"]
-            and reply["status"] == "NO_ROUTE" and not reply["steps"] and not reply["icmpSent"]
-            and reply["receiver"] is None and reply["deliveredDatagram"] is None)
+    if (exchange["status"] != "REPLY_FAILED" or exchange["replyMatched"]
+            or reply["status"] != reply_status or reply["icmpSent"]
+            or reply["receiver"] is not None or reply["deliveredDatagram"] is not None):
+        return False
+    if reply_status == "NO_ROUTE":
+        return not reply["steps"]
+    if reply_status != "ARP_FAILED" or len(reply["steps"]) != 1:
+        return False
+    step = reply["steps"][0]
+    return (step["node"] == _LESSON_TARGET["node"] and step["outPort"] == _LESSON_TARGET["port"]
+            and step["nextHopIpv4"] == _LESSON_UNREACHABLE_HOP
+            and step["route"].get("routeId") == _LESSON_RETURN_ROUTE["routeId"]
+            and step["arp"]["status"] == "NO_REPLY" and bool(step["arp"]["requestTransmissions"])
+            and not step["arp"]["replyTransmissions"] and not step["ipv4Transmissions"])
 
 
-def _lesson_verified(comparison: dict) -> bool:
+def _lesson_verified(comparison: dict, reply_status: str) -> bool:
     return (comparison["status"] == "FAULT_CONFIRMED"
             and _lesson_echo(comparison["baseline"], matched=True)
-            and _lesson_echo(comparison["faulted"], matched=False)
+            and _lesson_echo(comparison["faulted"], matched=False, reply_status=reply_status)
             and _lesson_echo(comparison["restored"], matched=True))
 
 
@@ -241,9 +262,10 @@ class IcmpInvestigation:
         self._lesson_evidence: set[str] = set()
         if lesson is not None:
             self._validate_lesson()
-        if self._lesson:
+            self._kind, self._lesson_reply_status, fault = _LESSONS[lesson]
+            self._fault = deepcopy(fault)
             comparison = self._compare_lesson(101, 1)
-            if not _lesson_verified(comparison):
+            if not _lesson_verified(comparison, self._lesson_reply_status):
                 raise ProjectValidationError(
                     "icmp investigation: lesson exchange could not be verified")
             baseline = comparison["baseline"]
@@ -256,10 +278,8 @@ class IcmpInvestigation:
         self.source_ipv4 = baseline["request"]["sourceIpv4"]
         self.target_node = baseline["request"]["receiver"]["node"]
         self.target_port = baseline["request"]["receiver"]["port"]
-        self._kind, self._fault = (
-            ("STATIC_ROUTE_MISSING", deepcopy(_LESSON_FAULT)) if self._lesson else
-            self._choose_fault(baseline, _test_kind)
-        )
+        if not self._lesson:
+            self._kind, self._fault = self._choose_fault(baseline, _test_kind)
         self._fault_detail, self._repair_hint, inject, _ = _mutation(self.project, self._fault)
         self._faulted = deepcopy(self.project)
         inject(self._faulted)
@@ -271,11 +291,9 @@ class IcmpInvestigation:
         if broken["status"] == "REPLIED":
             raise ProjectValidationError("icmp investigation: fault did not affect Echo")
         if self._lesson:
-            if not _lesson_echo(broken, matched=False):
+            if not _lesson_echo(broken, matched=False, reply_status=self._lesson_reply_status):
                 raise ProjectValidationError("icmp investigation: lesson exchange changed")
             self.opening_observation = {
-                "requestStatus": broken["request"]["status"],
-                "requestReceiver": broken["request"]["receiver"],
                 "replyMatched": broken["replyMatched"],
                 "source": "SIMULATED",
             }
@@ -290,7 +308,7 @@ class IcmpInvestigation:
         }
 
     def _validate_lesson(self) -> None:
-        if (self._lesson != REVERSE_ROUTE_LESSON
+        if (self._lesson not in ICMP_LESSON_IDS
                 or (self.source_node, self.source_port, self.destination_ipv4, self.ttl)
                 != (_LESSON_SOURCE["node"], _LESSON_SOURCE["port"], _LESSON_TARGET_IP, 5)):
             raise ProjectValidationError("icmp investigation: invalid lesson or endpoints")
@@ -305,7 +323,16 @@ class IcmpInvestigation:
     def _compare_lesson(self, identifier: int, sequence: int) -> dict:
         return compare_fault(
             self.project, self.source_node, self.source_port, self.destination_ipv4,
-            self.ttl, identifier, sequence, _LESSON_FAULT)
+            self.ttl, identifier, sequence, self._fault)
+
+    def _lesson_route_matches(self, lookup: dict) -> bool:
+        if self._lesson_reply_status == "NO_ROUTE":
+            return lookup["status"] == "NO_ROUTE"
+        selected = lookup["selectedRoute"]
+        return (lookup["status"] == "MATCH" and selected is not None
+                and selected.get("routeId") == _LESSON_RETURN_ROUTE["routeId"]
+                and selected["nextHop"] == _LESSON_UNREACHABLE_HOP
+                and selected["outInterface"] == _LESSON_TARGET)
 
     def _choose_fault(self, baseline: dict, _test_kind: str | None) -> tuple[str, dict]:
         source_node, source_port = self.source_node, self.source_port
@@ -455,8 +482,11 @@ class IcmpInvestigation:
             }
             if self._lesson:
                 result["requestReceiver"] = result_echo["request"]["receiver"]
-                if _lesson_echo(result_echo, matched=False):
+                if _lesson_echo(result_echo, matched=False, reply_status=self._lesson_reply_status):
                     self._lesson_evidence.add("ping")
+                for step in result["requestSteps"] + result["replySteps"]:
+                    step["route"] = {key: value for key, value in step["route"].items()
+                                     if key != "routeId"}
         elif kind == "route":
             if set(target) != {"nodeId", "destinationIpv4"}:
                 raise ProjectValidationError(
@@ -477,13 +507,17 @@ class IcmpInvestigation:
                 "source": "SIMULATED_CONFIG",
             }
             if self._lesson:
-                # The documented table is a legitimate reference. Stable IDs
-                # for the authoritative intervention are reserved for repair.
+                if (node == _LESSON_TARGET["node"] and address == _LESSON_SOURCE_IP
+                        and self._lesson_route_matches(result)):
+                    self._lesson_evidence.add("route")
+                # Keep observed next hops and prefixes. Authoritative route
+                # identities appear with the verified repair.
                 for route in result["documentedStaticRoutes"]:
                     del route["id"]
-                if (node == _LESSON_TARGET["node"] and address == _LESSON_SOURCE_IP
-                        and result["status"] == "NO_ROUTE"):
-                    self._lesson_evidence.add("route")
+                for route in result["routes"] + result["candidates"]:
+                    route.pop("routeId", None)
+                if result["selectedRoute"] is not None:
+                    result["selectedRoute"].pop("routeId", None)
         elif kind == "link":
             if set(target) != {"linkId"} or type(target["linkId"]) is not str:
                 raise ProjectValidationError("icmp investigation: link requires linkId")
@@ -587,7 +621,7 @@ class IcmpInvestigation:
         if self._lesson:
             comparison = self._compare_lesson(102, 1)
             broken, restored = comparison["faulted"], comparison["restored"]
-            verified = _lesson_verified(comparison)
+            verified = _lesson_verified(comparison, self._lesson_reply_status)
         else:
             # Independent fresh packet engines before and after the isolated change.
             broken = EchoExchange(self._faulted).ping(
