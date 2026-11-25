@@ -5162,11 +5162,20 @@ def run():
             expect(vlan_page.locator('#investigation-observations')).to_contain_text(
                 'DHCPREQUEST: REQUEST_NOT_RECEIVED')
             vlan_page.locator('#investigation-probe').select_option('link')
+            vlan_page.locator('#investigation-link').select_option('to-client')
+            with vlan_page.expect_response('**/api/dhcp/investigation/probe') as unrelated_link:
+                vlan_page.locator('#investigation-run-probe').click()
+            assert unrelated_link.value.json()['canDiagnose'] is False
+            expect(vlan_page.locator('#investigation-submit')).to_be_disabled()
+            expect(vlan_page.locator('#investigation-repair')).to_be_disabled()
+            expect(vlan_page.locator('#investigation-verdict')).to_contain_text(
+                'Mät länken till DHCP-servern')
             vlan_page.locator('#investigation-link').select_option('to-server')
             with vlan_page.expect_response('**/api/dhcp/investigation/probe') as measured_link:
                 vlan_page.locator('#investigation-run-probe').click()
             link_observation = measured_link.value.json()['observation']
             assert link_observation['documentedActive'] is True
+            assert measured_link.value.json()['canDiagnose'] is False
             vlan_page.locator('#investigation-probe').select_option('port')
             vlan_page.locator('#investigation-port').select_option(
                 json.dumps(['sw', 's'], separators=(',', ':')))
@@ -5180,6 +5189,8 @@ def run():
                 vlan_page.locator('#investigation-run-probe').click()
             vlan_observation = measured_vlan.value.json()['observation']
             assert vlan_observation['documentedVlan'] == 10
+            expect(vlan_page.locator('#investigation-verdict')).to_contain_text(
+                'Mätningarna räcker')
             if link_observation['observedCarrier'] == 'DOWN':
                 inferred = ('PORT_SHUTDOWN'
                             if port_observation['observedAdmin'] == 'DOWN'

@@ -419,10 +419,17 @@ anses ensam bevisa fysisk rotorsak.
 
 **Diagnose** kräver exakt `sessionId`, `project`, `diagnosis`.
 Tillåtna slutsatser: `CABLE_DOWN`, `PORT_SHUTDOWN`, `VLAN_MISMATCH`.
-Backend kräver minst ett observerat `renew` och minst två
-**olika** andra probe-kategorier. Maximalt tre hypotesförsök.
-Felaktig hypotes avslöjar inte felet; efter korrekt diagnos
-sätts en separat reparationsflagga.
+Backend kräver att en simulerad T1-REQUEST inte når servern och
+att mätningarna på den valda DHCP-vägen skiljer felorsakerna åt.
+Mät serverns deklarerade länk. Vid utebliven carrier skiljer
+serverlänkens switchportläge ett kabelavbrott (`UP`) från en
+administrativt avstängd port (`DOWN`). En direktlänk behöver
+ingen portmätning. Vid fungerande carrier måste klientens
+anslutna accessport visa en avvikelse från sitt dokumenterade VLAN.
+Leasehistorik och andra portar ersätter inte dessa mätningar.
+Otillräckligt underlag ger HTTP 422 utan att förbruka något av
+de tre hypotesförsöken. Efter styrkt diagnos kan eleven initiera
+reparationen. Feltyp och målpunkt visas först efter verifierad återhämtning.
 
 **Repair** kräver exakt `sessionId` och `project`. Endast en
 korrekt diagnos kan utlösa den av användaren explicit beställda
@@ -463,15 +470,15 @@ ACK-bekräftad baseline och exakt deklarerad L2-/VLAN-topologi.
 boolean och null, avvisas som felaktigt projekt/HTTP 422.
 
 **T1_ONLY:** övningen stannar vid T1 och avvisar framflyttad
-klocka. Efter faktisk DHCPREQUEST och minst två olika
-andra mätningar går det att pröva hypotes och verifiera
-vanlig ACK-bekräftad `RENEWING`-förnyelse.
+klocka. Efter ett misslyckat DHCPREQUEST och rätt mätningar på
+DHCP-vägen går det att pröva hypotes och verifiera vanlig
+ACK-bekräftad `RENEWING`-förnyelse.
 
 **T2_REBIND:** efter faktiskt observerad T1-REQUEST får
 användaren explicit flytta fram tiden till och **inte förbi**
 den riktiga `t2AtSeconds`. DHCPREQUEST vid T2 använder den
-befintliga RFC2131-motorns broadcast och måste faktiskt
-observeras innan diagnos tillåts. Reparation före expiration
+befintliga RFC2131-motorns broadcast och får inte nå servern i
+den observerade felkörningen. Reparation före expiration
 använder `REBINDING`-förnyelse med riktig mottagen DHCPACK.
 
 **EXPIRY_RECOVERY:** samma T1- och T2-observationer är
