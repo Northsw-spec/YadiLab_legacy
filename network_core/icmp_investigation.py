@@ -18,7 +18,7 @@ from .icmp_ping import EchoExchange
 from .json_boundary import decode_json_document
 from .model import ProjectValidationError, validate_project
 from .routing import ConnectedRoutingTable
-from .simulation import MAX_SESSIONS
+from .simulation import MAX_SESSIONS, _signature
 from .troubleshooting import _mutation, _observed_wires, compare_fault
 
 MAX_PROBES = 48
@@ -252,6 +252,9 @@ class IcmpInvestigation:
                  destination_ipv4: str, ttl: int, *, lesson: str | None = None,
                  _test_kind: str | None = None):
         self.project = validate_project(project)
+        # Match the other session registries: Python equality conflates JSON
+        # numbers such as 0 and 0.0, so it cannot enforce an exact snapshot.
+        self._project_signature = _signature(self.project)
         if type(source_node) is not str or type(source_port) is not str:
             raise ProjectValidationError("icmp investigation: source must be declared")
         if type(ttl) is not int or not 2 <= ttl <= 255:
@@ -403,7 +406,7 @@ class IcmpInvestigation:
         return choice
 
     def check_project(self, project: object) -> None:
-        if validate_project(project) != self.project:
+        if _signature(project) != self._project_signature:
             raise ProjectValidationError("icmp investigation: project changed since session start")
 
     def _record_exercise_evidence(self, kind: str, target: dict, result: dict) -> None:
