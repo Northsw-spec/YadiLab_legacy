@@ -112,6 +112,33 @@ def workbook_request(name, raw):
 
 
 class WorkbookInspectionTests(unittest.TestCase):
+    def test_xlsx_giant_decimal_row_and_shared_index_are_validation_errors(self):
+        # Real OOXML source bytes, with a single malformed XML value.
+        # A 5000-digit decimal causes Python's int() digit-limit ValueError,
+        # which must become ProjectValidationError rather than HTTP 500.
+        huge = "9" * 5000
+        mutations = (
+            ("row", b'<row r="2">', f'<row r="{huge}">'.encode(),
+             "invalid row coordinate"),
+            ("shared", b'<v>1</v>', f'<v>{huge}</v>'.encode(),
+             "invalid shared-string index"),
+        )
+        for label, original, changed, expected in mutations:
+            with self.subTest(field=label):
+                parts = workbook_parts({"Data": "ID\n001\n"}, shared_strings=True)
+                xml = parts["xl/worksheets/sheet1.xml"]
+                self.assertEqual(xml.count(original), 1)
+                parts["xl/worksheets/sheet1.xml"] = xml.replace(original, changed, 1)
+                raw = xlsx_zip(parts)
+                with self.assertRaisesRegex(ProjectValidationError, expected):
+                    inspect_source(workbook_request("malformed.xlsx", raw))
+
+        good = xlsx_zip(workbook_parts({"Data": "ID\n001\n"}, shared_strings=True))
+        table = inspect_source(workbook_request("valid.xlsx", good))["tables"][0]
+        self.assertEqual(table["rowCount"], 2)
+        self.assertEqual([row["cells"][0]["value"] for row in table["previewRows"]],
+                         ["ID", "001"])
+
     def test_xlsx_real_sparse_multiple_sheets_and_literal_types(self):
         parts = workbook_parts({"Älg inventering": "ID,x,enabled\n001,12.50,true\n", "Second": "Note\nHej\n"}, shared_strings=True)
         sheet = parts["xl/worksheets/sheet1.xml"].decode().replace('<row r="2">', '<row r="4">').replace('A2', 'A4').replace('B2', 'D4').replace('C2', 'E4')
@@ -336,6 +363,32 @@ class HTTPSourceInspectionTests(unittest.TestCase):
         result = response.status, json.loads(response.read())
         connection.close()
         return result
+
+    def test_http_giant_xlsx_row_and_shared_index_are_422_without_disk_change(self):
+        from network_core.model import blank_project
+
+        saved = self.store.save("proof", blank_project(), None)
+        project_path = Path(self.tmp.name) / "proof.yadilab"
+        original_bytes = project_path.read_bytes()
+        huge = "9" * 5000
+        for name, before, after, expected in (
+            ("row", b'<row r="2">', f'<row r="{huge}">'.encode(),
+             "invalid row coordinate"),
+            ("shared", b'<v>1</v>', f'<v>{huge}</v>'.encode(),
+             "invalid shared-string index"),
+        ):
+            with self.subTest(field=name):
+                parts = workbook_parts({"Data": "ID\n001\n"}, shared_strings=True)
+                xml = parts["xl/worksheets/sheet1.xml"]
+                self.assertEqual(xml.count(before), 1)
+                parts["xl/worksheets/sheet1.xml"] = xml.replace(before, after, 1)
+                status, reply = self.post(workbook_request("bad.xlsx", xlsx_zip(parts)))
+                self.assertEqual(status, 422)
+                self.assertEqual(reply["error"], "INVALID_PROJECT")
+                self.assertIn(expected, reply["message"])
+                self.assertEqual(project_path.read_bytes(), original_bytes)
+                self.assertEqual(self.store.read("proof")["sha256"], saved["sha256"])
+        self.assertEqual([item["filename"] for item in self.store.list()], ["proof"])
 
     def test_real_http_preview_never_writes_or_changes_saved_project(self):
         before = self.store.list()

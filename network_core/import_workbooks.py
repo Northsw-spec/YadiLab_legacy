@@ -132,9 +132,17 @@ def xlsx_cell(cell, shared, where):
         fail(where, 'invalid cell value')
     raw = child.text
     if kind == 's':
-        if not raw.isascii() or not raw.isdecimal() or int(raw) >= len(shared):
+        if not raw.isascii() or not raw.isdecimal():
             fail(where, 'invalid shared-string index')
-        return 'text', shared[int(raw)]
+        try:
+            position = int(raw)
+        except ValueError:
+            # An oversized decimal from untrusted OOXML is a validation error,
+            # not an uncaught Python integer-conversion exception.
+            fail(where, 'invalid shared-string index')
+        if position >= len(shared):
+            fail(where, 'invalid shared-string index')
+        return 'text', shared[position]
     if kind == 'b' and raw in ('0', '1'):
         return 'boolean', raw
     if kind == 'n' and re.fullmatch(r'[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[Ee][+-]?\d+)?', raw):
@@ -171,7 +179,10 @@ def xlsx_sheet(z, part, name, serial, shared, budget, from_row=1, row_limit=PREV
         raw = row.get('r')
         if not raw or not raw.isascii() or not raw.isdecimal():
             fail(name, 'row lacks coordinate')
-        number = int(raw)
+        try:
+            number = int(raw)
+        except ValueError:
+            fail(name, 'invalid row coordinate')
         if number <= last_row or number > MAX_ROWS or row.get('hidden', '0').lower() not in ('0', 'false'):
             fail(name, f'invalid or hidden row {raw}')
         last_row = number
