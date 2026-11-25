@@ -63,6 +63,17 @@ class CanonicalModelTests(unittest.TestCase):
         with self.assertRaises(ProjectValidationError):
             topology_trace(example(), 'pc-a', 'pretend-node')
 
+    def test_trace_rejects_non_string_node_ids(self):
+        project = example()
+        for source, target in (
+                ([], 'pc-b'), ('pc-a', {}),
+                ({}, 'pc-b'), ('pc-a', []),
+                (None, 'pc-b'), ('pc-a', None),
+                (12, 'pc-b'), ('pc-a', True)):
+            with self.subTest(source=source, target=target):
+                with self.assertRaisesRegex(ProjectValidationError, 'node ID strings'):
+                    topology_trace(project, source, target)
+
     def test_undeclared_endpoint_rejected(self):
         p = example(); p['links'][0]['a']['port'] = 'fake-port'
         with self.assertRaisesRegex(ProjectValidationError, 'undeclared endpoint'):
