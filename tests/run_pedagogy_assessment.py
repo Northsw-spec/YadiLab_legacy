@@ -9,7 +9,7 @@ import sys
 
 from browser_icmp_lesson import ROOT, main as run_browser
 from pedagogy_assessment import (
-    Assessment, RETURN_CASES, check_insensitive_test, check_native_case,
+    Assessment, DHCP_CASES, RETURN_CASES, check_dhcp_case, check_insensitive_test, check_native_case,
     check_shared_symptom, check_unverified_repair,
 )
 
@@ -42,6 +42,8 @@ def run_assessment():
     run("shared-symptom", lambda _: check_shared_symptom())
     run("insensitive-test", check_insensitive_test)
     run("unverified-repair", check_unverified_repair)
+    for spec in DHCP_CASES:
+        run(spec[0], lambda signals, case=spec: check_dhcp_case(case, signals))
 
     try:
         with redirect_stdout(sys.stderr):
@@ -66,7 +68,8 @@ def run_assessment():
         "cases": cases,
         "harness_errors": errors,
         "coverage_limits": [
-            "P1–P3: två guidade ICMP-fall. DHCP och övriga slumpade fall täcks av ordinarie regression.",
+            "P1–P3: två guidade ICMP-fall. Övriga slumpade fall täcks av ordinarie regression.",
+            "P7: tre fördefinierade DHCP-fall verifierar evidensgrind, felaktig hypotes och återställning i native-motorn.",
             "P4: fyra kort och uttryckliga påståenden. Körning av externa verktyg är NOT_VERIFIED.",
             "P5: två förberedda utfall och ett otillgängligt test per lektion.",
             "Teknisk korrekthet bedöms mot fixture och protokollfacit inom dessa fall.",
