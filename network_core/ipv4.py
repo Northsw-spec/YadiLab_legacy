@@ -13,7 +13,7 @@ import ipaddress
 from .arp import ArpSession
 from .ethernet_frame import EthernetFrame
 from .ipv4_packet import IPv4Datagram, _ip, ICMP_PROTOCOL, EXPERIMENTAL_PROTOCOL
-from .icmp_errors import parse_icmp_message, ICMP_TIME_EXCEEDED, ICMP_DEST_UNREACHABLE
+from .icmp_errors import ICMPError, parse_icmp_message, ICMP_TIME_EXCEEDED, ICMP_DEST_UNREACHABLE
 from .model import ProjectValidationError
 from .routing import ConnectedRoutingTable
 
@@ -66,6 +66,13 @@ class IPv4Trace:
             # packets; do not advertise a malformed 20..27-byte candidate.
             # An absent candidate is not evidence that a real router would
             # suppress ICMP, only that this model cannot encode that quote.
+            # RFC 1812 section 4.3.2.7 prohibits a router from generating
+            # an ICMP error in response to an ICMP error. The incoming ICMP
+            # payload was validated at the send boundary; recognize both
+            # supported error types without suppressing informational Echo.
+            if (received.protocol == ICMP_PROTOCOL
+                    and isinstance(parse_icmp_message(received.payload), ICMPError)):
+                return None
             original = received.serialize()
             if len(original) < 28:
                 return None
