@@ -271,6 +271,25 @@ class DhcpRealHTTPTests(unittest.TestCase):
             self.assertIsNone(ProjectStore(Path(self.tmp.name)).read("baseline")["project"]["nodes"][0]["ports"][0]["ipv4"])
         self.assertEqual(list(Path(self.tmp.name).glob("*.yadilab")), [saved])
 
+    def test_http_refuses_loopback_and_this_network_dhcp_offers(self):
+        baseline = topology()
+        self.store.save("baseline", baseline)
+        saved = Path(self.tmp.name) / "baseline.yadilab"
+        before = saved.read_bytes()
+        for server_address, offered in (
+                ("127.0.0.1/24", "127.0.0.70"),
+                ("0.0.0.1/24", "0.0.0.70")):
+            with self.subTest(server=server_address):
+                candidate = copy.deepcopy(baseline)
+                candidate["nodes"][2]["ports"][0]["ipv4"] = server_address
+                body = self.body(candidate)
+                body["proposedIpv4"] = offered
+                code, response = self.post(body)
+                self.assertEqual(code, 422)
+                self.assertEqual(response["error"], "INVALID_PROJECT")
+                self.assertIn("usable canonical unicast", response["message"])
+                self.assertEqual(saved.read_bytes(), before)
+
     def test_reject_incomplete_http_and_illegal_candidate_preserving_disk(self):
         p = topology()
         self.store.save("baseline", p)
