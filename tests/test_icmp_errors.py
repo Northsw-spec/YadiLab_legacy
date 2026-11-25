@@ -126,6 +126,41 @@ class RouterErrorSimulationTests(unittest.TestCase):
             ICMP_TIME_EXCEEDED,
         )
 
+    def test_no_nested_router_error_candidate_after_ttl_or_missing_route(self):
+        # RFC 1812 4.3.2.7: no ICMP error is generated in response to an
+        # existing ICMP error. Both original errors are valid wire packets.
+        # The failing packet and its real transmissions must remain visible.
+        for kind in (ICMP_TIME_EXCEEDED, ICMP_DEST_UNREACHABLE):
+            payload = ICMPError(kind, 0, sample_quote()).serialize()
+            for failure in ("TTL_EXPIRED", "NO_ROUTE"):
+                with self.subTest(original_error=kind, failure=failure):
+                    project = lab()
+                    if failure == "NO_ROUTE":
+                        getport(project, "r", "lan")["enabled"] = False
+                    trace = IPv4Trace(project).send(
+                        "a", "eth0", "203.0.113.20",
+                        1 if failure == "TTL_EXPIRED" else 5,
+                        protocol=ICMP_PROTOCOL, payload=payload,
+                    )
+                    self.assertEqual(trace["status"], failure)
+                    self.assertIsNone(trace["routerErrorCandidate"])
+                    self.assertEqual([step["node"] for step in trace["steps"]], ["a"])
+                    self.assertEqual(
+                        [wire["linkId"] for wire in trace["steps"][0]["ipv4Transmissions"]],
+                        ["la", "lr1"],
+                    )
+                    self.assertTrue(trace["icmpSent"])
+
+        # ICMP Echo is an informational message, not an ICMP error.
+        # A router may still report an expired TTL for an Echo datagram.
+        echo = ICMPEcho(8, 7, 9, b"payload!").serialize()
+        allowed = IPv4Trace(lab()).send(
+            "a", "eth0", "203.0.113.20", 1,
+            protocol=ICMP_PROTOCOL, payload=echo,
+        )
+        self.assertEqual(allowed["status"], "TTL_EXPIRED")
+        self.assertEqual(allowed["routerErrorCandidate"]["icmpType"], ICMP_TIME_EXCEEDED)
+
     def test_real_ttl_expired_router_sends_received_type11_reply(self):
         p=routed_reply_lab()
         before=copy.deepcopy(p)
