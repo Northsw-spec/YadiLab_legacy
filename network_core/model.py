@@ -339,6 +339,8 @@ def topology_trace(value: Any, start: str, target: str) -> dict:
     """
     project = validate_project(value)
     nodes = {n["id"]: n for n in project["nodes"]}
+    if not isinstance(start, str) or not isinstance(target, str):
+        raise ProjectValidationError("trace: source and target must be declared node ID strings")
     if start not in nodes or target not in nodes:
         raise ProjectValidationError("trace: source and destination must be declared node IDs")
     if start == target:

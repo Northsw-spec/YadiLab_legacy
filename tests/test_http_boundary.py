@@ -60,6 +60,28 @@ class LocalHTTPBoundaryTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertEqual(self.store.read("local")["project"], example())
 
+    def test_trace_rejects_non_string_node_ids_with_422(self):
+        headers = (("Host", self.host),)
+        project = example()
+        for source, target in (
+                ([], "pc-b"), ("pc-a", {}),
+                ({}, "pc-b"), ("pc-a", []),
+                (None, "pc-b"), ("pc-a", False)):
+            with self.subTest(source=source, target=target):
+                status, _, raw = self.request("POST", "/api/trace", headers, {
+                    "project": project, "source": source, "target": target,
+                })
+                self.assertEqual(status, 422)
+                response = json.loads(raw)
+                self.assertEqual(response["error"], "INVALID_PROJECT")
+                self.assertIn("node ID strings", response["message"])
+
+        status, _, raw = self.request("POST", "/api/trace", headers, {
+            "project": project, "source": "pc-a", "target": "pc-b",
+        })
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(raw)["status"], "PATH_PRESENT")
+
     def test_static_modules_are_explicitly_allowed_without_directory_access(self):
         headers = (("Host", self.host),)
         for path in ("/ui/dom.js", "/services/api.js",
