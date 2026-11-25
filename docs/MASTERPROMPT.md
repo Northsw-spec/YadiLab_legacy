@@ -32,7 +32,7 @@ Undervisningens **nio ordagranna rubriker**, tre hjälpnivåer, negativa tester 
 
 Använd `network_core/icmp_investigation.py`, `dhcp_investigation.py` och `troubleshooting.py` samt nuvarande webbsessioner som faktiska underlag för guidade och självständiga felsökningsövningar. Eleven får se observationer, själv formulera tolkningar och hypoteser, begära en mätning och därefter analysera motbevis. Dolt facit får inte läcka i API, UI eller animation. Reparation ska vara reversibel i övningsmodellen; användarens dokument och disk ändras inte implicit.
 
-Övningsfallet ”Echo Request når fram men Reply saknar returroute” är **planerat P1**, inte färdig ny kod. Visa inte orsak innan observationernas evidens räcker. Om mekaniken inte finns native, visa pedagogiskt märkt statisk referens eller `UNSUPPORTED` – ingen låtsassimulering.
+De guidade ICMP-fallen är **implementerade och täcks av regressionstester**: `echo-reply` undersöker saknad returroute (`NO_ROUTE`), medan `echo-reply-b` undersöker en matchande returroute med oåtkomligt nästa hopp (`ARP_FAILED`). Båda återanvänder den befintliga ICMP-simuleringsmotorn; se `network_core/icmp_investigation.py` och `tests/browser_icmp_lesson.py` för implementation respektive verkligt Chromium-test. Eleven får först ett neutralt Echo-symptom; rotorsaken ska styrkas av relevanta mätningar innan diagnos och reparation, och återställningen verifieras separat. Detta gäller simulerade övningar, inte observationer i verkliga nät.
 
 ## Utveckling och acceptans
 
