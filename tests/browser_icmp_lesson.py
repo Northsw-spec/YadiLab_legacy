@@ -87,6 +87,104 @@ def validate_disclosure(data):
     assert "expectedNextHop" not in str(data)
 
 
+def check_tool_cards(page):
+    """Read course material while the real ICMP session has earned its diagnosis."""
+    section = page.locator("#external-tool-cards")
+    outer = page.locator(".dropdown-card").filter(has=section).first.locator(":scope > summary")
+    cards = section.locator(":scope > details.external-tool-card")
+    expect(cards).to_have_count(4)
+
+    before = {
+        name: page.locator("#icmp-" + name).inner_text()
+        for name in ("investigation-status", "investigation-observations", "lesson-plan")
+    }
+    requests = []
+
+    def record_request(request):
+        requests.append(request.url)
+
+    sources = {
+        "wireshark": (
+            "4.6.0", "arp.opcode: 1 / 2", "icmp.type: 8 / 0",
+            "bevisar inte att inget svar sändes på en annan mätpunkt",
+            ["https://www.wireshark.org/docs/wsug_html_chunked/ChWorkDisplayFilterSection.html",
+             "https://www.wireshark.org/docs/dfref/a/arp.html",
+             "https://www.wireshark.org/docs/dfref/i/icmp.html",
+             "https://www.rfc-editor.org/rfc/rfc826", "https://www.rfc-editor.org/rfc/rfc792"],
+        ),
+        "suzieq": (
+            "v0.24.0", "prefix=192.0.2.0/24", "peerHostname=r2",
+            "En registrerad route bevisar inte lyckad paketleverans",
+            ["https://github.com/netenglabs/suzieq/blob/v0.24.0/docs/analyzer.md",
+             *["https://github.com/netenglabs/suzieq/blob/v0.24.0/suzieq/config/schema/" + f
+               for f in ("interfaces.avsc", "lldp.avsc", "routes.avsc")]],
+        ),
+        "netshot": (
+            "v0.25.2", "- Access-VLAN för klientport: 10", "+ Access-VLAN för klientport: 20",
+            "En konfigurationsskillnad bevisar inte driftorsaken",
+            ["https://github.com/netshot-net/Netshot/blob/v0.25.2/docs/content/user-guide/"
+             + f for f in ("devices.md#configuration-history", "administration.md#permission-levels")],
+        ),
+        "batfish": (
+            "v2026.08.27", "Reference_Traces: ACCEPTED", "Snapshot_Traces: NO_ROUTE",
+            "Den bevisar inte att trafik levererades på den faktiska utrustningen",
+            ["https://batfish.readthedocs.io/en/latest/notebooks/differentialQuestions.html",
+             "https://batfish.readthedocs.io/en/latest/notebooks/snapshot.html",
+             "https://github.com/batfish/batfish/blob/v2026.08.27/projects/question/src/main/java/"
+             "org/batfish/question/differentialreachability/DifferentialReachabilityAnswerer.java"],
+        ),
+    }
+    workflows = {
+        "wireshark": "arp || (icmp && (icmp.type == 8 || icmp.type == 0))",
+        "suzieq": "interface show, lldp show och route show",
+        "netshot": "Compare",
+        "batfish": "differentialReachability",
+    }
+    page.on("request", record_request)
+    try:
+        # The existing panel is open in this browser fixture. Reopen it using
+        # the same keyboard interaction available to the learner.
+        outer.press("Enter")
+        expect(section).to_be_hidden()
+        outer.press("Enter")
+        expect(section).to_be_visible()
+        for name, (version, field, comparison, boundary, urls) in sources.items():
+            card = section.locator("#tool-" + name)
+            card.locator(":scope > summary").press("Enter")
+            expect(section.locator(":scope > details[open]")).to_have_count(1)
+            expect(card.locator(".external-tool-label")).to_have_text(
+                "STATISKT ÖVNINGSEXEMPEL – EJ KÖRT I APPEN")
+            expect(card.locator(":scope > h4")).to_have_text(["Situation", "Verktyg"])
+            expect(card).to_contain_text(workflows[name])
+            expect(card.locator("pre")).to_be_hidden()
+            steps = card.locator(":scope > details")
+            expect(steps.locator("summary")).to_have_text(
+                ["Observation", "Tolkning", "Begränsning", "Nästa steg"])
+            for step in steps.all():
+                step.locator("summary").press("Enter")
+                expect(step.locator("p").first).to_be_visible()
+            expect(card.locator("pre")).to_contain_text(field)
+            expect(card.locator("pre")).to_contain_text(comparison)
+            expect(card).to_contain_text(boundary)
+            expect(card.locator(".external-tool-source")).to_contain_text(version)
+            expect(card.locator(".external-tool-source")).to_contain_text("NOT_VERIFIED")
+            assert all(label not in card.inner_text()
+                       for label in ("LIVE", "VERIFIED_NETWORK", "SIMULATED"))
+            links = card.get_by_role("link").all()
+            assert [link.get_attribute("href") for link in links] == urls
+            assert all(link.get_attribute("rel") == "noopener noreferrer" for link in links)
+        expect(section.locator("button, form, script, iframe, img, video, audio, object, embed")).to_have_count(0)
+        outer.press("Enter")
+        expect(section).to_be_hidden()
+        assert not requests, requests
+    finally:
+        page.remove_listener("request", record_request)
+
+    for name, previous in before.items():
+        assert page.locator("#icmp-" + name).inner_text() == previous
+    expect(page.locator("#icmp-investigation-diagnose")).to_be_enabled()
+
+
 def run_lesson(page, directory, lesson, filename):
     case_b = lesson == "echo-reply-b"
     reply_status = "ARP_FAILED" if case_b else "NO_ROUTE"
@@ -215,6 +313,9 @@ def run_lesson(page, directory, lesson, filename):
     assert route["observation"]["destinationIpv4"] == "192.0.2.10"
     expect(page.locator("#icmp-lesson-plan")).to_contain_text("Mätstatus: utförd i simuleringen")
     show_sections(panel, 6)
+    if not case_b:
+        check_tool_cards(page)
+        assert target.read_bytes() == original
     wrong = click_response(DIAGNOSE, "#icmp-investigation-diagnose")
     assert not wrong["correct"]
     validate_disclosure(wrong)
@@ -308,7 +409,8 @@ def main():
                 assert (directory / (filename + ".yadilab")).read_bytes() == original
             assert not errors, errors
         browser.close()
-        print("PASS real Chromium DIRECT_HTTP: both guided Echo cases, capability, stale reply, Save/Open after process restart")
+        print("PASS real Chromium DIRECT_HTTP: four static tool cards, both Echo cases, "
+              "capability, stale reply and Save/Open after process restart")
         print("Saved project SHA-256:", digest)
 
 

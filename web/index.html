@@ -572,6 +572,169 @@
           <button id="icmp-investigation-repair" type="button" class="btn btn-outline full" disabled>Återställ det dolda felet och verifiera Echo Reply</button>
           <div id="icmp-investigation-recovery" class="trace-result" aria-live="polite">Ingen reparation eller tvåvägskommunikation är ännu verifierad.</div>
         </section>
+        <section id="external-tool-cards" class="trace-panel external-tool-cards" aria-label="Verktygskort">
+          <h3>Verktygskort</h3>
+          <p class="muted tiny">Välj ett verktyg för att tolka ett syntetiskt felsökningsexempel. Källänkar öppnar verktygens dokumentation.</p>
+
+          <details id="tool-wireshark" class="external-tool-card" name="external-tool-card">
+            <summary>Wireshark · ARP och ICMP</summary>
+            <p class="external-tool-label">STATISKT ÖVNINGSEXEMPEL – EJ KÖRT I APPEN</p>
+            <h4>Situation</h4>
+            <p>En klient får inget Echo Reply. Som i ICMP-övningarna behöver du skilja ett ARP-problem från ett senare stopp i paketvägen.</p>
+            <h4>Verktyg</h4>
+            <p>Wireshark visar paket som fångats på ett valt gränssnitt under ett avgränsat tidsintervall. Använd en godkänd fångstfil som du har rätt att läsa. För en separat ny fångst krävs godkänd mätpunkt och fångstbehörighet.</p>
+            <p>Öppna filen i Wireshark och skriv <code>arp || (icmp &amp;&amp; (icmp.type == 8 || icmp.type == 0))</code> i visningsfiltret. Filtret visar ett urval ur den redan insamlade fångsten.</p>
+            <details>
+              <summary>Observation</summary>
+              <p>Syntetiskt utdrag av protokollfält från två tänkta försök på klientporten. Tiderna är relativa. I försök 1 syns bara frågan. Försök 2 visar hur båda svarsparen kan se ut.</p>
+              <pre>Försök 1 · 0.000 s
+arp.opcode: 1
+arp.src.proto_ipv4: 192.0.2.10
+arp.dst.proto_ipv4: 192.0.2.1
+
+Försök 2 · 0.000 s / 0.002 s
+arp.opcode: 1 / 2
+arp.src.proto_ipv4: 192.0.2.10 / 192.0.2.1
+arp.dst.proto_ipv4: 192.0.2.1 / 192.0.2.10
+
+Försök 2 · 0.004 s / 0.010 s
+IPv4: 192.0.2.10 → 203.0.113.20 / omvänd riktning
+icmp.type: 8 / 0
+icmp.code: 0 / 0
+icmp.ident: 0x0042 / 0x0042
+icmp.seq: 1 / 1</pre>
+            </details>
+            <details>
+              <summary>Tolkning</summary>
+              <p>ARP opcode 1 är Request och 2 är Reply. Avsändar- och mål-IP anger vilken IPv4-adress som efterfrågas och vem som svarar. ICMP typ 8 är Echo Request och 0 är Echo Reply. Jämför omvända IPv4-adresser, identifierare och sekvensnummer för att knyta svar till begäran i utdraget.</p>
+            </details>
+            <details>
+              <summary>Begränsning</summary>
+              <p>En utebliven ARP Reply på klientens fångstpunkt bevisar inte att inget svar sändes på en annan mätpunkt. Möjliga hypoteser är att gatewayen aldrig svarade eller att svaret sändes men uteblev i klientens fångst. Ett ARP-svar räcker heller inte som bevis för att ICMP fungerade.</p>
+              <p>Fångster kan innehålla nyttolast, adresser och autentiseringsdata. Avgränsa inspelning och åtkomst. Dela bara godkända, sanerade utdrag.</p>
+            </details>
+            <details>
+              <summary>Nästa steg</summary>
+              <p>Jämför samma ARP-fråga vid klienten och nära gatewayen under samma försök. Om frågan når gatewayen och ett svar syns där, faller hypotesen att gatewayen aldrig svarade. Om frågan syns hos gatewayen utan svar trots bekräftad fångst i båda riktningarna, undersök gatewayens adress och porttillstånd.</p>
+            </details>
+            <p class="external-tool-source">Wireshark 4.6.0. Visningsfilter och fält källgranskade. Körning av exemplet är <code>NOT_VERIFIED</code>.</p>
+            <ul class="external-tool-sources">
+              <li><a href="https://www.wireshark.org/docs/wsug_html_chunked/ChWorkDisplayFilterSection.html" target="_blank" rel="noopener noreferrer">Wiresharks guide till visningsfilter</a></li>
+              <li><a href="https://www.wireshark.org/docs/dfref/a/arp.html" target="_blank" rel="noopener noreferrer">Wiresharks ARP-fält</a></li>
+              <li><a href="https://www.wireshark.org/docs/dfref/i/icmp.html" target="_blank" rel="noopener noreferrer">Wiresharks ICMP-fält</a></li>
+              <li><a href="https://www.rfc-editor.org/rfc/rfc826" target="_blank" rel="noopener noreferrer">RFC 826 · ARP</a></li>
+              <li><a href="https://www.rfc-editor.org/rfc/rfc792" target="_blank" rel="noopener noreferrer">RFC 792 · ICMP</a></li>
+            </ul>
+          </details>
+
+          <details id="tool-suzieq" class="external-tool-card" name="external-tool-card">
+            <summary>SuzieQ · Portar, grannar och rutter</summary>
+            <p class="external-tool-label">STATISKT ÖVNINGSEXEMPEL – EJ KÖRT I APPEN</p>
+            <h4>Situation</h4>
+            <p>En dokumenterad returväg finns men ping misslyckas. Du vill veta vad nätverksenheten rapporterade om porten, grannen och returvägen vid insamlingen.</p>
+            <h4>Verktyg</h4>
+            <p>SuzieQ analyserar insamlat tillstånd. Läs ett redan insamlat, åtkomstgodkänt dataset från enheter som stöds. Kontrollera namnrymd, enhet, VRF och insamlingstid. Separat insamling kräver godkänd inventeringsåtkomst och läsbehörighet till utrustningen.</p>
+            <p>I SuzieQ:s analys-CLI använder du <code>interface show</code>, <code>lldp show</code> och <code>route show</code>. Jämför posterna för samma enhet och tidsintervall.</p>
+            <details>
+              <summary>Observation</summary>
+              <p>Syntetiska, utvalda schemafält från en insamling kl. 10.05 UTC. Fältordningen är förenklad.</p>
+              <pre>namespace=ovning · hostname=r1
+interfaces: ifname=eth1 · adminState=up · state=up
+lldp: ifname=eth1 · peerHostname=r2 · peerIfname=eth2
+routes: vrf=default · prefix=192.0.2.0/24
+        nexthopIps=[203.0.113.1] · oifs=[eth1]</pre>
+            </details>
+            <details>
+              <summary>Tolkning</summary>
+              <p><code>adminState</code> är administrativt tillstånd och <code>state</code> är rapporterat porttillstånd. LLDP-raden anger den granne och port som rapporterats. Routeposten anger prefix, nästa hopp och utgående gränssnitt i insamlad VRF. Det är en observation vid insamlingen som kan jämföras med dokumenterad konfiguration.</p>
+            </details>
+            <details>
+              <summary>Begränsning</summary>
+              <p>LLDP visar rapporterad granninformation. Den bevisar varken exakt fysisk kabeldragning, rätt VLAN eller att nyttotrafik passerar. En registrerad route bevisar inte lyckad paketleverans. Möjliga hypoteser är att routen har ändrats sedan insamlingen eller att den fortfarande matchar men nästa hopp inte går att lösa med ARP.</p>
+              <p>Inventering kan innehålla interna namn, adresser och topologi. Begränsa läsbehörighet och dela bara godkända, sanerade utdrag.</p>
+            </details>
+            <details>
+              <summary>Nästa steg</summary>
+              <p>Jämför en färsk, godkänd insamling av samma VRF med port- och ARP-tillstånd i samma tidsfönster. Saknas en tidigare route stöder det första hypotesen. Finns routen kvar och en riktad mätning visar obesvarad ARP till dess nästa hopp, stöder det den andra.</p>
+            </details>
+            <p class="external-tool-source">SuzieQ v0.24.0. Analysflöde och schemafält källgranskade. Körning av exemplet är <code>NOT_VERIFIED</code>.</p>
+            <ul class="external-tool-sources">
+              <li><a href="https://github.com/netenglabs/suzieq/blob/v0.24.0/docs/analyzer.md" target="_blank" rel="noopener noreferrer">SuzieQ:s analysguide</a></li>
+              <li><a href="https://github.com/netenglabs/suzieq/blob/v0.24.0/suzieq/config/schema/interfaces.avsc" target="_blank" rel="noopener noreferrer">Interfaces-schemat</a></li>
+              <li><a href="https://github.com/netenglabs/suzieq/blob/v0.24.0/suzieq/config/schema/lldp.avsc" target="_blank" rel="noopener noreferrer">LLDP-schemat</a></li>
+              <li><a href="https://github.com/netenglabs/suzieq/blob/v0.24.0/suzieq/config/schema/routes.avsc" target="_blank" rel="noopener noreferrer">Routes-schemat</a></li>
+            </ul>
+          </details>
+
+          <details id="tool-netshot" class="external-tool-card" name="external-tool-card">
+            <summary>Netshot · Konfigurationshistorik</summary>
+            <p class="external-tool-label">STATISKT ÖVNINGSEXEMPEL – EJ KÖRT I APPEN</p>
+            <h4>Situation</h4>
+            <p>Ett driftfel börjar efter ett servicefönster. Du vill reda ut vilken del av den sparade konfigurationen som ändrades.</p>
+            <h4>Verktyg</h4>
+            <p>Netshot jämför konfigurationer som dess enhetsdrivrutin har samlat in. Du behöver läsbehörighet och två sparade snapshots för samma enhet med ett jämförbart konfigurationsobjekt. I Netshot öppnar du enheten i <strong>Devices</strong>, går till <strong>Configurations</strong>, väljer datum och klickar <strong>Compare</strong> för att jämföra med föregående snapshot.</p>
+            <details>
+              <summary>Observation</summary>
+              <p>Syntetiskt, leverantörsneutralt utdrag av en textdiff. Raden visar ett jämförbart konfigurationsvärde för samma port.</p>
+              <pre>Före 09.00 UTC → efter 09.15 UTC
+- Access-VLAN för klientport: 10
++ Access-VLAN för klientport: 20</pre>
+            </details>
+            <details>
+              <summary>Tolkning</summary>
+              <p>Minusraden försvann och plusraden tillkom mellan de två insamlade versionerna. Det pekar ut en möjlig oavsiktlig ändring. Kontrollera om den finns i det godkända ändringsunderlaget.</p>
+            </details>
+            <details>
+              <summary>Begränsning</summary>
+              <p>En konfigurationsskillnad bevisar inte driftorsaken. VLAN-bytet kan ha isolerat klienten, eller så kan ändringen ha varit avsiktlig medan ett separat returvägsproblem orsakade felet. Insamlingstiderna säger när versionerna lästes, och drivrutinen avgör vad som över huvud taget jämförs.</p>
+              <p>Konfigurationer kan innehålla hemligheter och intern topologi. Sanera före delning. En återställning kräver separat riskbedömning, ändringsgodkännande och plan för verifiering.</p>
+            </details>
+            <details>
+              <summary>Nästa steg</summary>
+              <p>Kontrollera den aktuella portens VLAN och följ klientens ARP och ICMP. Om klienten hamnade i fel VLAN och ARP mot dess gateway uteblir stärks VLAN-hypotesen. Om klienten når gatewayen och Request når målet, undersök Reply-vägen innan du föreslår återställning.</p>
+            </details>
+            <p class="external-tool-source">Netshot v0.25.2. Jämförelseflöde och läsbehörighet källgranskade. Körning av exemplet är <code>NOT_VERIFIED</code>.</p>
+            <ul class="external-tool-sources">
+              <li><a href="https://github.com/netshot-net/Netshot/blob/v0.25.2/docs/content/user-guide/devices.md#configuration-history" target="_blank" rel="noopener noreferrer">Netshots konfigurationshistorik</a></li>
+              <li><a href="https://github.com/netshot-net/Netshot/blob/v0.25.2/docs/content/user-guide/administration.md#permission-levels" target="_blank" rel="noopener noreferrer">Netshots behörighetsnivåer</a></li>
+            </ul>
+          </details>
+
+          <details id="tool-batfish" class="external-tool-card" name="external-tool-card">
+            <summary>Batfish · Reachability i en konfigurationsmodell</summary>
+            <p class="external-tool-label">STATISKT ÖVNINGSEXEMPEL – EJ KÖRT I APPEN</p>
+            <h4>Situation</h4>
+            <p>Inför en ändring vill du veta om en viss trafikriktning kan påverkas. Du har en referenskonfiguration och en föreslagen version.</p>
+            <h4>Verktyg</h4>
+            <p>Batfish analyserar inlästa konfigurationer i en modell. I en separat analysmiljö behövs åtkomst till två godkända snapshots, stöd för relevanta format och ett avgränsat flöde. Läs in versionerna, kontrollera parsning och varningar, jämför med frågan <code>differentialReachability</code> och undersök spåren i båda riktningarna separat.</p>
+            <details>
+              <summary>Observation</summary>
+              <p>Syntetiskt utdrag. Spårkolumnerna har kortats till sina slutstatusar för ett valt flöde och en inmatningsplats.</p>
+              <pre>Flow: r1 · 192.0.2.10 → 203.0.113.20 · ICMP
+Reference_Traces: ACCEPTED
+Snapshot_Traces: NO_ROUTE</pre>
+            </details>
+            <details>
+              <summary>Tolkning</summary>
+              <p><code>Flow</code> identifierar modellfrågan. <code>Reference_Traces</code> gäller referensversionen och <code>Snapshot_Traces</code> den jämförda versionen. För det visade spåret accepterar referensmodellen flödet vid destinationen. Den jämförda modellen saknar en route på vägen.</p>
+            </details>
+            <details>
+              <summary>Begränsning</summary>
+              <p><code>ACCEPTED</code> är en slutsats i den inlästa modellen. Den bevisar inte att trafik levererades på den faktiska utrustningen eller att ett svar kan komma tillbaka. Skillnaden kan bero på en verklig routeändring i underlaget eller på en saknad eller feltolkad konfiguration i ett snapshot.</p>
+              <p>Använd godkända, sanerade konfigurationer och skydda dem som nätverksdokumentation. Kör analysen i en separat kontrollerad miljö.</p>
+            </details>
+            <details>
+              <summary>Nästa steg</summary>
+              <p>Kontrollera enhetslistor, parsning, varningar och relevant route i båda underlagen. Om skillnaden försvinner med jämförbara underlag talar det emot en konfigurationsändring som orsak. Om den kvarstår, pröva den mot ett godkänt routeuppslag och en riktad paketmätning på utrustningen.</p>
+            </details>
+            <p class="external-tool-source">Batfish v2026.08.27. Frågan och spårkolumnerna källgranskade. Körning av exemplet är <code>NOT_VERIFIED</code>.</p>
+            <ul class="external-tool-sources">
+              <li><a href="https://batfish.readthedocs.io/en/latest/notebooks/differentialQuestions.html" target="_blank" rel="noopener noreferrer">Batfishs guide till differentialfrågor</a></li>
+              <li><a href="https://batfish.readthedocs.io/en/latest/notebooks/snapshot.html" target="_blank" rel="noopener noreferrer">Batfishs guide till snapshots och parsning</a></li>
+              <li><a href="https://github.com/batfish/batfish/blob/v2026.08.27/projects/question/src/main/java/org/batfish/question/differentialreachability/DifferentialReachabilityAnswerer.java" target="_blank" rel="noopener noreferrer">Batfishs versionsmärkta analyskod</a></li>
+            </ul>
+          </details>
+        </section>
       </aside>
     </div>
     <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
