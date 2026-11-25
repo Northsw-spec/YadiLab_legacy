@@ -75,6 +75,40 @@ class RouterErrorWireTests(unittest.TestCase):
             with self.assertRaises(ProjectValidationError):
                 ICMPError.parse(wrong)
 
+    def test_rfc1122_special_address_quotes_rejected_even_with_valid_checksums(self):
+        # Independent wire oracle: construct a valid RFC 791 IPv4 header
+        # checksum and RFC 792 ICMP checksum around a forbidden IP address.
+        # This must reject the address, not accidentally fail the checksum.
+        import ipaddress
+
+        for offset in (12, 16):
+            for address in ("127.0.0.1", "127.20.30.40",
+                            "0.0.0.1", "0.1.2.3"):
+                with self.subTest(offset=offset, address=address):
+                    quote = bytearray(sample_quote())
+                    quote[offset:offset + 4] = ipaddress.IPv4Address(address).packed
+                    quote[10:12] = bytes(2)
+                    quote[10:12] = checksum(bytes(quote[:20])).to_bytes(2, "big")
+                    self.assertEqual(checksum(bytes(quote[:20])), 0)
+                    wire = bytes((ICMP_TIME_EXCEEDED, 0, 0, 0)) + bytes(4) + bytes(quote)
+                    wire = wire[:2] + checksum(wire).to_bytes(2, "big") + wire[4:]
+                    self.assertEqual(checksum(wire), 0)
+                    with self.assertRaisesRegex(ProjectValidationError, "unusable original IPv4"):
+                        ICMPError(ICMP_TIME_EXCEEDED, 0, bytes(quote))
+                    with self.assertRaisesRegex(ProjectValidationError, "unusable original IPv4"):
+                        ICMPError.parse(wire)
+                    with self.assertRaisesRegex(ProjectValidationError, "unusable original IPv4"):
+                        parse_icmp_message(wire)
+
+        # The restriction is only on special wire-invalid addresses, not on
+        # valid private or documentation networks commonly used by YadiLab.
+        good = bytearray(sample_quote())
+        good[12:16] = ipaddress.IPv4Address("192.168.50.10").packed
+        good[10:12] = bytes(2)
+        good[10:12] = checksum(bytes(good[:20])).to_bytes(2, "big")
+        valid = ICMPError(ICMP_TIME_EXCEEDED, 0, bytes(good))
+        self.assertEqual(ICMPError.parse(valid.serialize()), valid)
+
     def test_strict_types_codes_original_ipv4_and_nested_error_guard(self):
         q=sample_quote()
         for kind,code in ((0,0),(8,0),(3,1),(11,1),(11,True),(True,0),(-1,0)):
