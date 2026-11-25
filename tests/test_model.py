@@ -182,6 +182,28 @@ class CanonicalModelTests(unittest.TestCase):
         with self.assertRaisesRegex(ProjectValidationError,'true or false'):
             validate_project(p)
 
+    def test_huge_integer_coordinate_rejected_without_overflow(self):
+        # A 401-digit integer is legal JSON/Python but overflows during
+        # math.isfinite(int) -> float conversion in the old validator.
+        huge = 10 ** 400
+        original = example()
+        for axis in ("x", "y"):
+            for value in (huge, -huge):
+                with self.subTest(axis=axis, positive=value > 0):
+                    project = copy.deepcopy(original)
+                    project["nodes"][0][axis] = value
+                    with self.assertRaisesRegex(ProjectValidationError,
+                                                "finite coordinate"):
+                        validate_project(project)
+                    self.assertEqual(project["nodes"][0][axis], value)
+        self.assertEqual(original, example())
+
+        for bound in (-100000, 100000, -100000.0, 100000.0):
+            with self.subTest(bound=bound):
+                project = example()
+                project["nodes"][0]["x"] = bound
+                self.assertEqual(validate_project(project)["nodes"][0]["x"], bound)
+
     def test_bfs_chooses_actual_connected_hops(self):
         p = example()
         # Without actual new ports, the documented graph must remain unchanged.
