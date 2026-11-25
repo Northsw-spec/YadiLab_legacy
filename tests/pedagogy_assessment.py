@@ -9,6 +9,7 @@ from test_icmp_lesson import ARGS, FAULT, NEXT_HOP_FAULT, PORT, REVERSE, project
 from test_dhcp_investigation import scenario, probe as dhcp_probe
 from test_dhcp_port_vlan_fault import vlan_clients
 from network_core.icmp_investigation import IcmpInvestigation
+from network_core.dhcp_investigation import InvestigationSession
 from network_core.model import ProjectValidationError
 from network_core.troubleshooting import compare_fault
 
@@ -22,6 +23,8 @@ CASE_PHASES = {
     "dhcp-cable-engine": "P7",
     "dhcp-port-engine": "P7",
     "dhcp-vlan-engine": "P7",
+    "dhcp-t2-engine": "P7",
+    "dhcp-expired-engine": "P7",
     "icmp-route-browser": "P1/P2/P3",
     "icmp-arp-browser": "P2/P3",
     "same-opening-browser": "P3",
@@ -40,6 +43,7 @@ NATIVE_CASES = frozenset((
     "return-route-engine", "return-arp-engine", "shared-symptom",
     "unverified-repair", "insensitive-test",
     "dhcp-cable-engine", "dhcp-port-engine", "dhcp-vlan-engine",
+    "dhcp-t2-engine", "dhcp-expired-engine",
 ))
 METRICS = ("false_diagnosis", "insufficient_evidence", "answer_leak")
 
@@ -332,3 +336,126 @@ def check_dhcp_case(specification, signals):
     assert recovered["requestReachedServer"] and recovered["ackReachedClient"]
     assert recovered["cause"] == cause
     assert documented == original
+
+
+# Deterministic virtual-time paths complement the existing T1-only assessment.
+# Timing and protocol expectations are authored separately from the engine's
+# hidden fault. These are model-level assertions, not real DHCP observations.
+DHCP_TIMED_CASES = (
+    ("dhcp-t2-engine", "T2_REBIND", "RENEWAL", 53, 113),
+    ("dhcp-expired-engine", "EXPIRY_RECOVERY", "NEW_DORA", 60, 120),
+)
+
+
+def check_dhcp_timed_case(specification, signals):
+    _, difficulty, expected_method, restored_at, renewed_until = specification
+    project_data = vlan_clients()
+    original = deepcopy(project_data)
+    case = InvestigationSession(
+        project_data, "client", "eth0", "server", "eth0",
+        "192.0.2.70", "192.0.2.71", 60,
+        difficulty=difficulty, _test_choice="VLAN_MISMATCH")
+
+    def rejected(action, message):
+        try:
+            action()
+        except ProjectValidationError as error:
+            assert message in str(error), str(error)
+            return True
+        return False
+
+    opening = case.public_state()
+    signals["answer_leak"] = disclosed(opening) or "VLAN_MISMATCH" in json.dumps(opening)
+    assert not signals["answer_leak"]
+    assert opening["phase"] == "RENEWING"
+    assert opening["clockSeconds"] == 30
+    assert opening["t1AtSeconds"] == 30
+    assert opening["t2AtSeconds"] == 53
+    assert opening["expiresAtSeconds"] == 60
+    assert opening["nextClockTargetSeconds"] == 53
+    assert not opening["canAdvance"] and not opening["canDiagnose"]
+
+    # Clock motion is deliberate, never an implicit packet or lease renewal.
+    assert rejected(lambda: case.advance(23), "observe real T1")
+    assert case.public_state()["clockSeconds"] == 30
+    first = dhcp_probe(case, "renew")["observation"]
+    assert first["phase"] == "RENEWING"
+    assert first["status"] == "REQUEST_NOT_RECEIVED"
+    assert not first["requestReachedServer"] and not first["ackReachedClient"]
+    assert not first["leaseRenewed"]
+    assert case.public_state()["canAdvance"]
+    changed = case.advance(23)
+    assert changed["clockSeconds"] == 53 and changed["phase"] == "REBINDING"
+    assert not changed["canAdvance"]
+    assert changed["expiresAtSeconds"] == 60
+    assert case.lab.dhcp.leases()[0]["expiresAtSeconds"] == 60
+
+    # Even with the correct cause in hand, an unobserved T2 attempt cannot
+    # authorize repair or a claim that the lease has expired.
+    assert rejected(lambda: case.diagnose("VLAN_MISMATCH"),
+                    "real rebinding" if difficulty == "T2_REBIND" else "failed T2")
+    assert case.public_state()["diagnosisAttempts"] == 0
+    if difficulty == "EXPIRY_RECOVERY":
+        assert rejected(lambda: case.advance(7), "observe real T2")
+        assert case.public_state()["clockSeconds"] == 53
+    second = dhcp_probe(case, "renew")["observation"]
+    assert second["phase"] == "REBINDING"
+    assert second["status"] == "REQUEST_NOT_RECEIVED"
+    assert not second["requestReachedServer"] and not second["ackReachedClient"]
+    assert not second["leaseRenewed"]
+    assert case.lab.dhcp.leases()[0]["expiresAtSeconds"] == 60
+
+    # Distinguishing VLAN evidence alone is not enough in the expiry exercise
+    # until the renewal at T2 fails and the old lease actually expires.
+    dhcp_probe(case, "link", linkId="to-server")
+    observed = dhcp_probe(case, "vlan", nodeId="sw", portId="c")
+    assert observed["observation"]["documentedVlan"] == 10
+    assert observed["observation"]["observedVlan"] == 20
+    if difficulty == "EXPIRY_RECOVERY":
+        assert not case.public_state()["canDiagnose"]
+        signals["insufficient_evidence"] = rejected(
+            lambda: case.diagnose("VLAN_MISMATCH"), "expired lease")
+        expired = case.advance(7)
+        assert expired["clockSeconds"] == 60
+        assert expired["phase"] == "EXPIRED"
+        assert expired["remainingSeconds"] == 0
+        assert expired["requiredRecovery"] == "NEW_DORA"
+        assert expired["expiredLeases"] == [{
+            "ipv4": "192.0.2.70", "state": "EXPIRED", "expiresAtSeconds": 60,
+        }]
+        assert not expired["leaseActive"] and case.lab.dhcp.leases() == []
+        assert rejected(lambda: dhcp_probe(case, "renew"), "renewal impossible")
+    else:
+        assert rejected(lambda: case.advance(1), "exceeds")
+        signals["insufficient_evidence"] = True  # Unmeasured T2 blocked above.
+
+    assert case.public_state()["canDiagnose"]
+    denied = case.diagnose("PORT_SHUTDOWN")
+    signals["false_diagnosis"] = bool(denied["correct"] or denied["repairAvailable"])
+    signals["answer_leak"] |= "VLAN_MISMATCH" in json.dumps(denied) or disclosed(denied)
+    assert not signals["false_diagnosis"] and not signals["answer_leak"]
+    assert rejected(case.repair, "correct diagnosis")
+
+    accepted = case.diagnose("VLAN_MISMATCH")
+    assert accepted["correct"] and accepted["repairAvailable"]
+    restored = case.repair()
+    assert restored["status"] == "RECOVERED"
+    assert restored["verifiedProtocol"] == expected_method
+    assert restored["packetStatus"] == "ACK_RECEIVED"
+    assert restored["requestReachedServer"] and restored["ackReachedClient"]
+    assert restored["clockSeconds"] == restored_at
+    assert restored["expiresAtSeconds"] == renewed_until
+    assert restored["phase"] == "BOUND"
+    assert restored["leaseIpv4"] == "192.0.2.70"
+    if expected_method == "NEW_DORA":
+        assert restored["discoverReachedServer"] is True
+        assert restored["offerReachedClient"] is True
+        assert case.lab.dhcp.leases()[0]["renewalCount"] == 0
+    else:
+        assert restored["discoverReachedServer"] is None
+        assert restored["offerReachedClient"] is None
+        assert case.lab.dhcp.leases()[0]["renewalCount"] == 1
+    assert case.lab.state()["faultedLinks"] == []
+    assert case.lab.state()["faultedPorts"] == []
+    assert case.lab.state()["faultedAccessVlans"] == []
+    assert project_data == original
