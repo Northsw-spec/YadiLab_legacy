@@ -116,6 +116,20 @@ class MultiClientRegistryTests(unittest.TestCase):
             registry.start(p, "server", "nope", "192.0.2.70", "192.0.2.71")
         self.assertEqual(len(registry._sessions), 0)
 
+    def test_no_dhcp_session_created_for_non_wire_address_prefixes(self):
+        registry = DhcpSessionRegistry()
+        for server_address, pool in (
+                ("127.0.0.1/24", "127.0.0.70"),
+                ("0.0.0.1/24", "0.0.0.70")):
+            with self.subTest(server=server_address):
+                project = clients()
+                server = next(n for n in project["nodes"] if n["id"] == "server")
+                server["ports"][0]["ipv4"] = server_address
+                with self.assertRaisesRegex(ProjectValidationError,
+                                            "usable canonical unicast"):
+                    registry.start(project, "server", "eth0", pool, pool)
+        self.assertEqual(registry._sessions, {})
+
     def test_sessions_separated_and_racing_clients_get_distinct_ips(self):
         p = clients()
         registry = DhcpSessionRegistry()
