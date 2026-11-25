@@ -93,7 +93,13 @@ def relationships(z, name):
 
 def index(ref, row, where):
     match = COORD.fullmatch(ref or '')
-    if not match or int(match.group(2)) != row:
+    if not match:
+        fail(where, f'invalid cell coordinate {ref!r}')
+    try:
+        parsed_row = int(match.group(2))
+    except ValueError:
+        fail(where, f'invalid cell coordinate {ref!r}')
+    if parsed_row != row:
         fail(where, f'invalid cell coordinate {ref!r}')
     col = 0
     for letter in match.group(1):
@@ -269,9 +275,15 @@ def xlsx(data, from_row=1, row_limit=PREVIEW_ROWS):
 
 def count(element, attr, where, limit):
     raw = element.get(q(T, attr), '1')
-    if not raw.isascii() or not raw.isdecimal() or not 1 <= int(raw) <= limit:
+    if not raw.isascii() or not raw.isdecimal():
         fail(where, f'invalid {attr}')
-    return int(raw)
+    try:
+        value = int(raw)
+    except ValueError:
+        fail(where, f'invalid {attr}')
+    if not 1 <= value <= limit:
+        fail(where, f'invalid {attr}')
+    return value
 
 
 def odf_text(p, where):
@@ -293,9 +305,15 @@ def odf_text(p, where):
 
 def count_text_spaces(element, where):
     raw = element.get(q(S, 'c'), '1')
-    if set(element.attrib) - {q(S, 'c')} or not raw.isascii() or not raw.isdecimal() or not 1 <= int(raw) <= 1000:
+    if set(element.attrib) - {q(S, 'c')} or not raw.isascii() or not raw.isdecimal():
         fail(where, 'invalid text spaces')
-    return int(raw)
+    try:
+        value = int(raw)
+    except ValueError:
+        fail(where, 'invalid text spaces')
+    if not 1 <= value <= 1000:
+        fail(where, 'invalid text spaces')
+    return value
 
 
 def odf_cell(cell, where):
