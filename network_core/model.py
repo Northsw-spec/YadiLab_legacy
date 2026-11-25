@@ -76,7 +76,10 @@ def _bool(value: Any, where: str) -> bool:
 
 
 def _number(value: Any, where: str) -> float | int:
-    if type(value) not in (int, float) or not math.isfinite(value) or abs(value) > 100000:
+    # Bound arbitrary-size Python/JSON integers before math.isfinite converts
+    # them to float. Very large integers raise OverflowError during that
+    # conversion, which must not escape as a server-side 500 response.
+    if type(value) not in (int, float) or abs(value) > 100000 or not math.isfinite(value):
         _fail(where, "expected a finite coordinate between -100000 and 100000")
     return value
 

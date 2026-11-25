@@ -82,6 +82,31 @@ class LocalHTTPBoundaryTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertEqual(json.loads(raw)["status"], "PATH_PRESENT")
 
+    def test_huge_json_coordinate_returns_422_without_project_write(self):
+        headers = (("Host", self.host),)
+        for axis in ("x", "y"):
+            for value in (10 ** 400, -(10 ** 400)):
+                with self.subTest(axis=axis, negative=value < 0):
+                    project = example()
+                    project["nodes"][0][axis] = value
+                    status, _, raw = self.request("POST", "/api/trace", headers, {
+                        "project": project, "source": "pc-a", "target": "pc-b",
+                    })
+                    self.assertEqual(status, 422)
+                    response = json.loads(raw)
+                    self.assertEqual(response["error"], "INVALID_PROJECT")
+                    self.assertIn("finite coordinate", response["message"])
+        self.assertEqual(list(Path(self.tmp.name).glob("*.yadilab")), [])
+
+        project = example()
+        project["nodes"][0]["x"] = 10 ** 400
+        status, _, raw = self.request("POST", "/api/save", headers, {
+            "filename": "rejected", "project": project, "expectedSha256": None,
+        })
+        self.assertEqual(status, 422)
+        self.assertEqual(json.loads(raw)["error"], "INVALID_PROJECT")
+        self.assertEqual(list(Path(self.tmp.name).glob("*.yadilab")), [])
+
     def test_static_modules_are_explicitly_allowed_without_directory_access(self):
         headers = (("Host", self.host),)
         for path in ("/ui/dom.js", "/services/api.js",
