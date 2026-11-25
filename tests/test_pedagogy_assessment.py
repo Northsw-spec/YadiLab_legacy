@@ -3,7 +3,8 @@ from copy import deepcopy
 import unittest
 
 from pedagogy_assessment import (
-    Assessment, CASE_PHASES, RETURN_CASES, STATIC_BOUNDARIES, check_native_trace,
+    Assessment, CASE_PHASES, DHCP_CASES, RETURN_CASES, STATIC_BOUNDARIES,
+    check_dhcp_case, check_native_trace,
     disclosed, static_boundary_holds, wrong_answer_accepted,
 )
 from test_icmp_lesson import ARGS, project
@@ -11,6 +12,17 @@ from network_core.troubleshooting import compare_fault
 
 
 class PedagogyAssessmentTests(unittest.TestCase):
+    def test_dhcp_evidence_assessment_rejects_early_guess_and_recovers(self):
+        for specification in DHCP_CASES:
+            with self.subTest(cause=specification[1]):
+                signals = {}
+                check_dhcp_case(specification, signals)
+                self.assertEqual(signals, {
+                    "answer_leak": False,
+                    "insufficient_evidence": True,
+                    "false_diagnosis": False,
+                })
+
     def test_native_trace_oracle_rejects_wrong_endpoint_false_success_and_arp(self):
         for _, _, fault, status, *_ in RETURN_CASES:
             reference = compare_fault(project(), *ARGS, 80, 1, fault)
