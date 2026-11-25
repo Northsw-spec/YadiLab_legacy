@@ -74,6 +74,25 @@ class DhcpCodecTests(unittest.TestCase):
                 self.assertEqual(_decode_datagram(frame), (source, message))
                 self.assertEqual(int.from_bytes(wire[2:4], "big"), len(wire))
 
+    def test_dhcp_offer_and_ack_reject_loopback_and_this_network_addresses(self):
+        # RFC 1122: 127/8 stays inside a host; 0/8 is special for
+        # initialization. Neither is a usable leased address or server ID
+        # on the simulated Ethernet. DHCPDISCOVER's actual 0.0.0.0 source
+        # remains permitted by the separate bootstrap IPv4 codec.
+        for illegal in ("127.0.0.70", "0.0.0.70"):
+            with self.subTest(offered=illegal):
+                for kind in (2, 5):
+                    with self.assertRaisesRegex(ProjectValidationError,
+                                                "usable canonical unicast"):
+                        DhcpMessage(kind, 55, CLIENT_MAC, illegal,
+                                    "192.0.2.1", "255.255.255.0", 3600)
+            with self.subTest(server=illegal):
+                for kind in (2, 5):
+                    with self.assertRaisesRegex(ProjectValidationError,
+                                                "usable canonical unicast"):
+                        DhcpMessage(kind, 55, CLIENT_MAC, "192.0.2.70",
+                                    illegal, "255.255.255.0", 3600)
+
     def test_reject_corrupt_udp_and_ipv4_checksums(self):
         request = DhcpMessage(1, 1, CLIENT_MAC)
         wire = _datagram(request, "0.0.0.0")
