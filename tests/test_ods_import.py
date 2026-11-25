@@ -43,16 +43,19 @@ class OdsFunctionalTests(unittest.TestCase):
         huge = "9" * 5000  # Exceeds Python's decimal-int digit limit.
         specimens = (
             ("<table:table-row>",
-             f'<table:table-row table:number-rows-repeated="{huge}">'),
+             f'<table:table-row table:number-rows-repeated="{huge}">',
+             "invalid number-rows-repeated"),
             ("<table:table-cell office:value-type=\"string\">",
-             f'<table:table-cell table:number-columns-repeated="{huge}" office:value-type="string">'),
+             f'<table:table-cell table:number-columns-repeated="{huge}" office:value-type="string">',
+             "invalid number-columns-repeated"),
             ("<text:p>pc-a</text:p>",
-             f'<text:p>pc-a<text:s text:c="{huge}"/></text:p>'),
+             f'<text:p>pc-a<text:s text:c="{huge}"/></text:p>',
+             "invalid repeated spaces"),
         )
-        for before, after in specimens:
+        for before, after, expected_error in specimens:
             with self.subTest(field=before):
                 damaged = patch("content.xml", before, after)
-                with self.assertRaises(ProjectValidationError):
+                with self.assertRaisesRegex(ProjectValidationError, expected_error):
                     import_ods_workbook(body(damaged))
         self.assertEqual(import_ods_workbook(body(make_ods()))["schemaVersion"], "1.0")
 
@@ -284,6 +287,7 @@ class OdsHTTPTests(unittest.TestCase):
         status, response = self.post(body(damaged))
         self.assertEqual(status, 422)
         self.assertEqual(response["error"], "INVALID_PROJECT")
+        self.assertIn("invalid number-rows-repeated", response["message"])
         self.assertEqual(path.read_bytes(), before)
         self.assertEqual(list(self.root.glob("*.yadilab")), [path])
 
