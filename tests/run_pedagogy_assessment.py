@@ -1,5 +1,6 @@
 """Run the P6 assessment against the native engine and actual Chromium."""
 import argparse
+from contextlib import redirect_stdout
 import json
 from pathlib import Path
 import platform
@@ -43,7 +44,8 @@ def run_assessment():
     run("unverified-repair", check_unverified_repair)
 
     try:
-        run_browser(assessment)
+        with redirect_stdout(sys.stderr):
+            run_browser(assessment)
     except Exception as error:
         errors.append(f"{type(error).__name__}: {str(error)[:600]}")
 
