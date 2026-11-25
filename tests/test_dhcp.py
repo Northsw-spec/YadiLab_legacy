@@ -74,6 +74,25 @@ class DhcpCodecTests(unittest.TestCase):
                 self.assertEqual(_decode_datagram(frame), (source, message))
                 self.assertEqual(int.from_bytes(wire[2:4], "big"), len(wire))
 
+    def test_dhcp_offer_and_ack_reject_loopback_and_this_network_addresses(self):
+        # RFC 1122: 127/8 stays inside a host; 0/8 is special for
+        # initialization. Neither is a usable leased address or server ID
+        # on the simulated Ethernet. DHCPDISCOVER's actual 0.0.0.0 source
+        # remains permitted by the separate bootstrap IPv4 codec.
+        for illegal in ("127.0.0.70", "0.0.0.70"):
+            with self.subTest(offered=illegal):
+                for kind in (2, 5):
+                    with self.assertRaisesRegex(ProjectValidationError,
+                                                "usable canonical unicast"):
+                        DhcpMessage(kind, 55, CLIENT_MAC, illegal,
+                                    "192.0.2.1", "255.255.255.0", 3600)
+            with self.subTest(server=illegal):
+                for kind in (2, 5):
+                    with self.assertRaisesRegex(ProjectValidationError,
+                                                "usable canonical unicast"):
+                        DhcpMessage(kind, 55, CLIENT_MAC, "192.0.2.70",
+                                    illegal, "255.255.255.0", 3600)
+
     def test_reject_corrupt_udp_and_ipv4_checksums(self):
         request = DhcpMessage(1, 1, CLIENT_MAC)
         wire = _datagram(request, "0.0.0.0")
@@ -251,6 +270,25 @@ class DhcpRealHTTPTests(unittest.TestCase):
             self.assertEqual(hashlib.sha256(saved.read_bytes()).hexdigest(), digest)
             self.assertIsNone(ProjectStore(Path(self.tmp.name)).read("baseline")["project"]["nodes"][0]["ports"][0]["ipv4"])
         self.assertEqual(list(Path(self.tmp.name).glob("*.yadilab")), [saved])
+
+    def test_http_refuses_loopback_and_this_network_dhcp_offers(self):
+        baseline = topology()
+        self.store.save("baseline", baseline)
+        saved = Path(self.tmp.name) / "baseline.yadilab"
+        before = saved.read_bytes()
+        for server_address, offered in (
+                ("127.0.0.1/24", "127.0.0.70"),
+                ("0.0.0.1/24", "0.0.0.70")):
+            with self.subTest(server=server_address):
+                candidate = copy.deepcopy(baseline)
+                candidate["nodes"][2]["ports"][0]["ipv4"] = server_address
+                body = self.body(candidate)
+                body["proposedIpv4"] = offered
+                code, response = self.post(body)
+                self.assertEqual(code, 422)
+                self.assertEqual(response["error"], "INVALID_PROJECT")
+                self.assertIn("usable canonical unicast", response["message"])
+                self.assertEqual(saved.read_bytes(), before)
 
     def test_reject_incomplete_http_and_illegal_candidate_preserving_disk(self):
         p = topology()

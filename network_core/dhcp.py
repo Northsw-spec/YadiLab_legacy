@@ -25,6 +25,7 @@ _COOKIE = b"\x63\x82\x53\x63"
 _DISCOVER, _OFFER, _REQUEST, _ACK = 1, 2, 3, 5
 _UDP_PROTOCOL = 17
 _ETHER_IPV4 = 0x0800
+_THIS_NETWORK = ipaddress.IPv4Network("0.0.0.0/8")
 
 
 def _fail(reason: str):
@@ -38,8 +39,13 @@ def _address(value: str, field: str) -> str:
         parsed = ipaddress.IPv4Address(value)
     except ipaddress.AddressValueError:
         _fail(field + " must be a canonical IPv4 address")
+    # This validates bound/offered/server/client addresses, never the
+    # DHCPDISCOVER bootstrap source 0.0.0.0 (handled by _datagram).
+    # RFC 1122 excludes loopback and this-network addresses from ordinary
+    # Ethernet unicast, consistent with the IPv4 and ARP engines.
     if (str(parsed) != value or parsed.is_unspecified or parsed.is_multicast
-            or parsed.is_reserved or parsed == ipaddress.IPv4Address("255.255.255.255")):
+            or parsed.is_reserved or parsed.is_loopback or parsed in _THIS_NETWORK
+            or parsed == ipaddress.IPv4Address("255.255.255.255")):
         _fail(field + " must be a usable canonical unicast IPv4")
     return value
 
