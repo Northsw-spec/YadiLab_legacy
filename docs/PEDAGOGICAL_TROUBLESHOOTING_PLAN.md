@@ -200,7 +200,16 @@ Använd inte diagramposition, subnät, hostnamn, routerroll, ritade pilar eller 
 
 **P5 – OSPF/SNMP/ACL-bredd utan falsk motor:** Expertgranskade om–då-fall med korrekta undantag, motsägande observationer och valfria instruktioner till helt separata FRRouting/containerlab-labb. Inget påstående att applikationen simulerar OSPF, ACL eller SNMP.
 
-**P6 – effektmätning:** Låt oberoende nybörjare och nätverksexperter utföra definierade uppgifter. Mät begriplighet, diagnostisk precision, falskt säkra svar, tid till relevant test och förmågan att förklara motexempel. Rapportera faktiska resultat; inga påhittade procenttal.
+**P6 – automatiserad effekt- och kvalitetsmätning (Codex; inga mänskliga testpersoner):** Utveckla ett litet reproducerbart, automatiserat utvärderingspaket som använder befintliga P1–P5-fall, den faktiska simuleringsmotorn där den är stödd och separat granskade, statiska facit där native-protokoll saknas. **Ingen rekrytering, extern elevpanel, nätverksexpertpanel, användarstudie eller annan mänsklig testning krävs i P6.** Codex ska implementera och testa följande:
+
+- **Definierade fall och oberoende facit:** Reproducerbara positiva, negativa och alternativa diagnosfall med uttryckliga förutsättningar, motbevisande observationer och kontroll av samma ytsymptom med olika grundorsaker. Facit får inte härledas enbart från det resultat som ska kontrolleras.
+- **Diagnostisk precision:** Mät hur många definierade testfall som bedöms rätt eller fel mot facit. Avvisa otillräckligt stödda slutsatser, felklassificeringar och för tidigt avslöjat facit. Visa faktiska antal med tydlig nämnare, inte uppfunna elevresultat eller konfidensprocent.
+- **Testval och motexempel:** Kontrollera maskinellt att ett valt test kan skilja relevanta hypoteser åt, att alternativa utfall hanteras och att orsak, åtgärd och återställning förblir avgränsade till tillgänglig evidens.
+- **Tid och reproducerbarhet:** Mät bara faktiskt instrumenterad exekverings-/testtid eller registrerade händelser i automatiserade flöden. Kalla inte detta mänsklig tid till relevant test eller mänsklig begriplighet. Redovisa miljö, körning, antal och begränsningar.
+- **Codex-leverans:** Implementera minsta nödvändiga testharness/rapportering inom befintlig arkitektur, med positiva och negativa tester, riktig Chromium vid UI, bibehållna stale guards och projektintegritet, samt obligatorisk CI på exakt PR-HEAD. Ingen ny projektmodell, ingen dold telemetri, inga externa integrationer och ingen automatisk persistens.
+- **Rapportens sanningsgräns:** Rapportera enbart faktiskt körda testresultat, täckning, regressioner och identifierade brister. Automatiska tester kan ge evidens för teknisk korrekthet och undervisningslogik, **inte empiriskt fastställa inlärningseffekt hos människor**. Sådan effekt är `NOT_VERIFIED` och utgör **ingen leverans- eller mergegrind** i P6.
+
+**P6 är komplett när Codex levererat det reproducerbara automatiserade paketet, verifierat positiva/negativa utfall och passerat ordinarie CI-grindar.** Ingen extern mänsklig utvärdering behövs för att gå vidare till P7.
 
 **P7 – vidare kursbredd:** Endast efter faktiskt mätt behov. Fokusera på de vanligaste relevanta felsökningsuppgifterna och behåll tydliga begränsningar; ingen orealistisk helhetsgaranti.
 
