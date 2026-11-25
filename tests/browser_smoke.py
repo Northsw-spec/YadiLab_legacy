@@ -173,6 +173,7 @@ def browser_open(page, base, expand_panels=True):
     presenters = (ROOT / 'web/features/diagnostics/presenters.js').read_text(encoding='utf8').replace('export ', '')
     icmp_panel = (ROOT / 'web/features/diagnostics/icmp-investigation-panel.js').read_text(encoding='utf8')
     icmp_panel = icmp_panel.replace("import {$, el} from '../../ui/dom.js';", '').replace('export ', '')
+    protocol_lessons = (ROOT / 'web/features/diagnostics/protocol-lessons.js').read_text(encoding='utf8').replace('export ', '')
     investigation = (ROOT / 'web/features/sessions/dhcp-investigation.js').read_text(encoding='utf8')
     investigation = investigation.replace("import {api} from '../../services/api.js';", '').replace('export ', '')
     icmp_investigation = (ROOT / 'web/features/sessions/icmp-investigation.js').read_text(encoding='utf8')
@@ -195,8 +196,9 @@ def browser_open(page, base, expand_panels=True):
     app = app.replace("import {createDoraSessionController} from './features/sessions/dora-session.js';", '')
     app = app.replace("import {createSimulationSessionController} from './features/sessions/simulation-session.js';", '')
     app = app.replace("import {renderIcmpInvestigationPanel} from './features/diagnostics/icmp-investigation-panel.js';", '')
+    app = app.replace("import {setupProtocolLessons} from './features/diagnostics/protocol-lessons.js';", '')
     app = app.replace("import {createImportReview} from './features/projects/import-review.js';", '')
-    page.add_script_tag(content=model + '\n' + canvas + '\n' + dom + '\n' + api + '\n' + persistence + '\n' + transfer + '\n' + mapping_profiles + '\n' + import_review + '\n' + queries + '\n' + presenters + '\n' + icmp_panel + '\n' + investigation + '\n' + icmp_investigation + '\n' + dora_session + '\n' + simulation_session + '\n' + app)
+    page.add_script_tag(content=model + '\n' + canvas + '\n' + dom + '\n' + api + '\n' + persistence + '\n' + transfer + '\n' + mapping_profiles + '\n' + import_review + '\n' + queries + '\n' + presenters + '\n' + icmp_panel + '\n' + protocol_lessons + '\n' + investigation + '\n' + icmp_investigation + '\n' + dora_session + '\n' + simulation_session + '\n' + app)
     if expand_panels:
         page.evaluate("""() => document.querySelectorAll('[data-dropdown-card]').forEach(card => card.open = true)""")
     return 'BRIDGED_LOCAL_HTTP'
@@ -4268,6 +4270,7 @@ def run():
                            'features/diagnostics/queries.js',
                            'features/diagnostics/presenters.js',
                            'features/diagnostics/icmp-investigation-panel.js',
+                           'features/diagnostics/protocol-lessons.js',
                            'features/sessions/dhcp-investigation.js',
                            'features/sessions/icmp-investigation.js',
                            'features/sessions/dora-session.js',
@@ -4286,6 +4289,7 @@ def run():
                                'features/diagnostics/queries.js',
                                'features/diagnostics/presenters.js',
                                'features/diagnostics/icmp-investigation-panel.js',
+                               'features/diagnostics/protocol-lessons.js',
                                'features/sessions/dhcp-investigation.js',
                                'features/sessions/icmp-investigation.js',
                                'features/sessions/dora-session.js',

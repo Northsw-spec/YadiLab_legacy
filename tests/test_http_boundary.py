@@ -66,6 +66,7 @@ class LocalHTTPBoundaryTests(unittest.TestCase):
                      "/features/projects/persistence.js", "/features/projects/transfer.js",
                      "/features/diagnostics/queries.js", "/features/diagnostics/presenters.js",
                      "/features/diagnostics/icmp-investigation-panel.js",
+                     "/features/diagnostics/protocol-lessons.js",
                      "/features/sessions/dhcp-investigation.js",
                      "/features/sessions/icmp-investigation.js",
                      "/features/sessions/dora-session.js",
