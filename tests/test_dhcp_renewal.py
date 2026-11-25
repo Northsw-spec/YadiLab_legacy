@@ -6,6 +6,7 @@ import tempfile
 import threading
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
@@ -13,6 +14,7 @@ from network_core.dhcp import (
     DhcpMessage, DhcpSession, _checked_frame, _decode_datagram,
 )
 from network_core.dhcp_registry import DhcpSessionRegistry
+from network_core.ethernet import EthernetFabric
 from network_core.ethernet_frame import BROADCAST, EthernetFrame
 from network_core.model import ProjectValidationError
 from network_core.server import LabHTTPServer
@@ -43,16 +45,16 @@ class RenewalCodecTests(unittest.TestCase):
         self.assertEqual(_decode_datagram(EthernetFrame.parse(rebinding.serialize())),
                          ("192.0.2.70", request))
 
-    def test_renewal_ack_unicasts_to_ciaddr_no_yiaddr_and_valid_checksum(self):
+    def test_renewal_ack_unicasts_to_ciaddr_with_assigned_yiaddr_and_valid_checksum(self):
         reply = DhcpMessage(
-            5, 77, CLIENT_MAC,
+            5, 77, CLIENT_MAC, offered_address="192.0.2.70",
             server_identifier="192.0.2.1", subnet_mask="255.255.255.0",
             lease_seconds=3600, client_address="192.0.2.70")
         raw = reply.serialize()
         self.assertEqual(raw[0], 2)
         self.assertEqual(raw[10:12], b"\x00\x00")
         self.assertEqual(raw[12:16], bytes([192, 0, 2, 70]))
-        self.assertEqual(raw[16:20], b"\x00" * 4)
+        self.assertEqual(raw[16:20], bytes([192, 0, 2, 70]))
         self.assertEqual(DhcpMessage.parse(raw), reply)
         frame = _checked_frame(reply, SERVER_MAC, "192.0.2.1",
                                "192.0.2.70", CLIENT_MAC)
@@ -67,7 +69,7 @@ class RenewalCodecTests(unittest.TestCase):
             DhcpMessage(3, 77, CLIENT_MAC, requested_address="192.0.2.70",
                         server_identifier="192.0.2.1", client_address="192.0.2.70")
         with self.assertRaises(ProjectValidationError):
-            DhcpMessage(5, 77, CLIENT_MAC, "192.0.2.70", "192.0.2.1",
+            DhcpMessage(5, 77, CLIENT_MAC, "192.0.2.71", "192.0.2.1",
                         "255.255.255.0", 3600, client_address="192.0.2.70")
         with self.assertRaises(ProjectValidationError):
             DhcpMessage(2, 77, CLIENT_MAC, "192.0.2.70", "192.0.2.1",
@@ -82,11 +84,16 @@ class RenewalCodecTests(unittest.TestCase):
             altered[offset] = value
             with self.subTest(offset=offset), self.assertRaises(ProjectValidationError):
                 DhcpMessage.parse(bytes(altered))
-        msg = DhcpMessage(5, 77, CLIENT_MAC, server_identifier="192.0.2.1",
+        msg = DhcpMessage(5, 77, CLIENT_MAC, offered_address="192.0.2.70",
+                          server_identifier="192.0.2.1",
                           subnet_mask="255.255.255.0", lease_seconds=60,
                           client_address="192.0.2.70")
         valid = _checked_frame(msg, SERVER_MAC, "192.0.2.1",
                                "192.0.2.70", CLIENT_MAC)
+        raw = msg.serialize()
+        for invalid_yiaddr in (bytes(4), bytes((192, 0, 2, 71))):
+            with self.subTest(yiaddr=invalid_yiaddr), self.assertRaises(ProjectValidationError):
+                DhcpMessage.parse(raw[:16] + invalid_yiaddr + raw[20:])
         # IP destination does not equal client's ciaddr, even if checksum
         # is recomputed, cannot be accepted as renewal ACK.
         wrong = EthernetFrame(
@@ -96,6 +103,36 @@ class RenewalCodecTests(unittest.TestCase):
 
 
 class RenewalSessionTests(unittest.TestCase):
+    def test_t1_and_t2_ack_on_wire_name_the_assigned_address(self):
+        # RFC 2131 Table 3: ACK yiaddr is the assigned address. Section 4.1
+        # sends the response to the REQUEST's ciaddr when it is present.
+        address = bytes((192, 0, 2, 70))
+        for seconds, phase in ((30, "RENEWING"), (53, "REBINDING")):
+            with self.subTest(phase=phase):
+                project = clients()
+                registry = DhcpSessionRegistry()
+                sid = start(registry, project)["sessionId"]
+                self.assertEqual(registry.run(
+                    sid, project, "client", "eth0", 77, 60)["result"]["status"], "ACK_RECEIVED")
+                registry.advance(sid, project, seconds)
+                sent = []
+                inject = EthernetFabric.inject_frame
+
+                def capture(fabric, node, port, frame):
+                    sent.append((node, port, frame))
+                    return inject(fabric, node, port, frame)
+
+                with patch.object(EthernetFabric, "inject_frame", capture):
+                    renewed = registry.renew(sid, project, "client", "eth0", 78)["result"]
+                self.assertEqual(renewed["phase"], phase)
+                self.assertEqual([(node, port) for node, port, _ in sent],
+                                 [("client", "eth0"), ("server", "eth0")])
+                ack = sent[1][2]
+                self.assertEqual(ack.payload[16:20], address)  # IPv4 destination
+                self.assertEqual(ack.payload[44:48], address)  # BOOTP yiaddr
+                self.assertEqual(ack.payload[268:271], bytes((53, 1, 5)))
+                self.assertTrue(renewed["leaseRenewed"])
+
     def test_t1_threshold_and_success_restart_virtual_lease_deadlines(self):
         p = clients()
         baseline = copy.deepcopy(p)

@@ -567,7 +567,7 @@
             <option value="STATIC_NEXT_HOP_UNREACHABLE">Layer 3: fel statisk next-hop (ARP saknar svar)</option>
           </select>
           <button id="icmp-investigation-diagnose" type="button" class="btn btn-soft full" disabled>Pröva diagnos efter mätningar</button>
-          <div id="icmp-investigation-verdict" class="trace-result" aria-live="polite">Kräver riktig ping, route lookup och en ytterligare oberoende kontroll.</div>
+          <div id="icmp-investigation-verdict" class="trace-result" aria-live="polite">Kräver ett misslyckat Echo-utbyte och mätningar på den väg där det misslyckas.</div>
           <div class="eyebrow">3 · VERIFIERA ÅTERHÄMTNING</div>
           <button id="icmp-investigation-repair" type="button" class="btn btn-outline full" disabled>Återställ det dolda felet och verifiera Echo Reply</button>
           <div id="icmp-investigation-recovery" class="trace-result" aria-live="polite">Ingen reparation eller tvåvägskommunikation är ännu verifierad.</div>

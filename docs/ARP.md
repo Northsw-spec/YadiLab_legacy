@@ -28,6 +28,7 @@ Oberoende positiva/negativa regressioner: `tests/test_arp_special_addresses.py`,
 
 - `RESOLVED` betyder att denna **begränsade simulerade ARP-utväxling** fick ett svar över deklarerade Ethernetlänkar, inte att IP-paket eller ping kan nå destinationen.
 - `NO_ACTIVE_LINK` betyder att källportens deklarerade länk saknas eller är avstängd; ingen förfrågan sändes.
+- Nätadress och riktad broadcast enligt utgående gränssnitts prefix avvisas innan någon ram sänds. Båda adresserna i ett /31-prefix kan vara endpointadresser enligt RFC 3021.
 - `NO_REPLY` betyder att ingen i den **konfigurerade, nådda** broadcast-domänen svarade; det är inte ett påstående om ett verkligt nätverk.
 - `UNKNOWN` betyder att matchande IP-port nåddes men saknar explicit MAC-bindning; inget svar får hittas på.
 - Off-link IP, egen IP, odeklarerade källportar, saknad käll-IP/MAC och dubblerade deklarerade IP-adresser avvisas. Proxy ARP stöds inte.

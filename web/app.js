@@ -41,6 +41,7 @@ let editRevision = 0;
 let workspaceRevision = 0;
 let builderValidationGeneration = 0;
 let savePending = false;
+let openGeneration = 0;
 const diagnosticRuns = {arp: 0, route: 0, ipv4: 0, ping: 0};
 const diagnosticFields = {
   arp: ['arp-source', 'arp-target-ip'],
@@ -2030,6 +2031,7 @@ async function openProject() {
   const slug = $('saved-projects').value;
   if (!slug) return notify('Välj en sparad projektfil först.',true);
   if (!confirmDiscard()) return;
+  const generation = ++openGeneration;
   // User committed to Open. Cancel the prior ELK Worker before awaiting HTTP,
   // otherwise automatic import layout can change editRevision and reject Open.
   invalidateElk();
@@ -2038,11 +2040,13 @@ async function openProject() {
   const requestedEdit = editRevision;
   const requestedFilename = filename;
   const requestedSnapshot = JSON.stringify(project);
+  const sameWorkspace = () => workspaceRevision === requestedWorkspace
+    && editRevision === requestedEdit && filename === requestedFilename
+    && JSON.stringify(project) === requestedSnapshot && $('saved-projects').value === slug;
   try {
     const loaded = await readSavedProject(slug);
-    if (workspaceRevision !== requestedWorkspace || editRevision !== requestedEdit ||
-        filename !== requestedFilename || JSON.stringify(project) !== requestedSnapshot ||
-        $('saved-projects').value !== slug) {
+    if (generation !== openGeneration) return;
+    if (!sameWorkspace()) {
       notify('Öppningen avbröts: arbetsytan eller projektvalet ändrades under inläsningen.');
       return;
     }
@@ -2067,7 +2071,11 @@ async function openProject() {
     invalidateDoraSession();
     render(); canvas.fit();
     notify(`Öppnade verklig projektfil: ${loaded.filename}.yadilab · SHA-256 ${loaded.sha256.slice(0,14)}…`);
-  } catch (error) { notify(`Kunde inte öppna: ${error.message}`,true); }
+  } catch (error) {
+    if (generation === openGeneration && sameWorkspace()) {
+      notify(`Kunde inte öppna: ${error.message}`, true);
+    }
+  }
 }
 function transferContext() {
   return {workspaceRevision, editRevision, snapshot: JSON.stringify(project), filename};

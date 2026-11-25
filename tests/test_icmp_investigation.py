@@ -28,7 +28,47 @@ def scenario(kind):
         routed_reply_lab(), "a", "eth0", "203.0.113.20", 5, _test_kind=kind)
 
 
+def measure_routed_fault(case, kind):
+    # Fixed selections for the first proven candidate of each fixture category.
+    if kind == "IPV4_PREFIX_MISMATCH":
+        case.probe("route", {"nodeId": "r", "destinationIpv4": "192.0.2.10"})
+        return case.probe("port", {"nodeId": "r", "portId": "wan"})
+    route = case.probe("route", {"nodeId": "a", "destinationIpv4": "203.0.113.20"})
+    if kind == "CABLE_DOWN":
+        return case.probe("link", {"linkId": "la"})
+    if kind in ("PORT_SHUTDOWN", "VLAN_MISMATCH"):
+        return case.probe("port" if kind == "PORT_SHUTDOWN" else "vlan",
+                          {"nodeId": "sw-left", "portId": "a"})
+    if kind == "IPV4_HOST_ADDRESS_MISMATCH":
+        return case.probe("port", {"nodeId": "b", "portId": "eth0"})
+    return route
+
+
 class IcmpInvestigationTests(unittest.TestCase):
+    def test_return_route_diagnosis_requires_evidence_in_the_failed_direction(self):
+        project = routed_reply_lab()
+        # Select a deterministic return-side fault from the reversed node order.
+        project["nodes"].reverse()
+        case = IcmpInvestigation(project, "a", "eth0", "203.0.113.20", 5,
+                                 _test_kind="STATIC_ROUTE_MISSING")
+        ping = case.probe("ping", {})["observation"]
+        self.assertEqual((ping["requestStatus"], ping["replyStatus"]),
+                         ("DELIVERED", "NO_ROUTE"))
+        case.probe("address", {})
+        case.probe("route", {"nodeId": "a", "destinationIpv4": "203.0.113.20"})
+        case.probe("route", {"nodeId": "r", "destinationIpv4": "192.0.2.10"})
+        self.assertFalse(case.state()["canDiagnose"])
+        with self.assertRaisesRegex(ProjectValidationError, "relevant"):
+            case.diagnose("STATIC_ROUTE_MISSING")
+        self.assertEqual(case.state()["diagnosisAttempts"], 0)
+        with self.assertRaisesRegex(ProjectValidationError, "correct diagnosis"):
+            case.repair()
+        reverse = case.probe("route", {"nodeId": "b", "destinationIpv4": "192.0.2.10"})
+        self.assertEqual(reverse["observation"]["status"], "NO_ROUTE")
+        self.assertTrue(reverse["canDiagnose"])
+        self.assertTrue(case.diagnose("STATIC_ROUTE_MISSING")["correct"])
+        self.assertTrue(case.repair()["replyMatched"])
+
     def test_each_hidden_cause_proven_by_failure_and_restored_echo(self):
         for kind in KINDS:
             with self.subTest(kind=kind):
@@ -65,6 +105,7 @@ class IcmpInvestigationTests(unittest.TestCase):
                 vlan = case.probe("vlan", {"nodeId": "sw-left", "portId": "a"})["observation"]
                 self.assertEqual(vlan["documentedVlan"], {"mode": "access", "vlan": 10})
                 self.assertEqual(vlan["source"], "SIMULATED_CONFIG")
+                measure_routed_fault(case, kind)
                 self.assertTrue(case.state()["canDiagnose"])
                 wrong = next(x for x in KINDS if x != kind)
                 rejected = case.diagnose(wrong)
@@ -107,8 +148,7 @@ class IcmpInvestigationTests(unittest.TestCase):
                                          _test_kind=kind)
                 self.assertNotIn("report", case.state())
                 case.probe("ping", {})
-                case.probe("route", {"nodeId": "a", "destinationIpv4": "203.0.113.20"})
-                case.probe("address", {})
+                measure_routed_fault(case, kind)
                 self.assertFalse(case.diagnose(next(k for k in KINDS if k != kind))["correct"])
                 self.assertNotIn("report", case.state())
                 self.assertTrue(case.diagnose(kind)["correct"])
@@ -134,7 +174,7 @@ class IcmpInvestigationTests(unittest.TestCase):
         case = scenario("CABLE_DOWN")
         case.probe("ping", {})
         case.probe("route", {"nodeId": "a", "destinationIpv4": "203.0.113.20"})
-        case.probe("address", {})
+        case.probe("link", {"linkId": "la"})
         case.diagnose("CABLE_DOWN")
         real_ping = EchoExchange.ping
         calls = 0
@@ -196,6 +236,8 @@ class IcmpInvestigationTests(unittest.TestCase):
         self.assertNotEqual(failed["status"], "REPLIED")
         self.assertFalse(failed["replyMatched"])
         case.probe("route", {"nodeId": "r", "destinationIpv4": "203.0.113.20"})
+        self.assertFalse(case.state()["canDiagnose"])
+        case.probe("route", {"nodeId": "r", "destinationIpv4": "192.0.2.10"})
         self.assertTrue(case.state()["canDiagnose"])
         self.assertFalse(case.diagnose("STATIC_ROUTE_MISSING")["correct"])
         self.assertTrue(case.diagnose("IPV4_PREFIX_MISMATCH")["correct"])
@@ -318,22 +360,19 @@ class IcmpInvestigationTests(unittest.TestCase):
                             if route["id"] == fault["routeId"])
             self.assertNotEqual(fault["newNextHop"], original["nextHop"])
 
-    def test_lookup_reverse_route_proves_reply_failure_not_fake_ping_pass(self):
-        case = scenario("STATIC_ROUTE_MISSING")
-        fault = case._fault
-        self.assertEqual(fault["type"], "STATIC_ROUTE_REMOVED")
-        reply = case.probe("ping", {})["observation"]
-        self.assertNotEqual(reply["status"], "REPLIED")
-        self.assertFalse(reply["replyMatched"])
-        self.assertTrue(reply["requestStatus"])
-        dst = case.probe(
-            "route", {"nodeId": "b", "destinationIpv4": "192.0.2.10"}
-        )["observation"]
-        self.assertEqual(dst["destinationIpv4"], "192.0.2.10")
-        self.assertIn(dst["status"], ("MATCH", "NO_ROUTE"))
-        self.assertFalse(case.state()["canDiagnose"])
-        case.probe("address", {})
-        self.assertTrue(case.state()["canDiagnose"])
+    def test_cable_diagnosis_requires_measurement_of_the_affected_link(self):
+        case = scenario("CABLE_DOWN")
+        case.probe("ping", {})
+        case.probe("route", {"nodeId": "a", "destinationIpv4": "203.0.113.20"})
+        unrelated = case.probe("link", {"linkId": "lb"})
+        self.assertTrue(unrelated["observation"]["observedEnabled"])
+        self.assertFalse(unrelated["canDiagnose"])
+        with self.assertRaisesRegex(ProjectValidationError, "relevant"):
+            case.diagnose("CABLE_DOWN")
+        measured = case.probe("link", {"linkId": "la"})
+        self.assertFalse(measured["observation"]["observedEnabled"])
+        self.assertTrue(measured["canDiagnose"])
+        self.assertTrue(case.diagnose("CABLE_DOWN")["correct"])
 
     def test_invalid_inputs_no_probe_recorded_or_canonical_mutation(self):
         case = scenario("CABLE_DOWN")
@@ -367,7 +406,7 @@ class IcmpInvestigationTests(unittest.TestCase):
                 case.probe(kind, target)
             self.assertEqual(case.state(), original)
             self.assertEqual(case.project, original_project)
-        with self.assertRaisesRegex(ProjectValidationError, "real ping"):
+        with self.assertRaisesRegex(ProjectValidationError, "real failed ping"):
             case.diagnose("CABLE_DOWN")
         with self.assertRaisesRegex(ProjectValidationError, "correct diagnosis"):
             case.repair()
@@ -497,7 +536,15 @@ class IcmpInvestigationHttpTests(unittest.TestCase):
         self.assertEqual(router_ipv4["observation"]["documentedIpv4"],
                          "203.0.113.1/24")
         self.assertEqual(router_ipv4["observation"]["source"], "SIMULATED_CONFIG")
+        self.assertFalse(router_ipv4["canDiagnose"])
+        status, blocked = call("diagnose", diagnosis="CABLE_DOWN")
+        self.assertEqual(status, 422)
+        self.assertNotIn("CABLE_DOWN", json.dumps(blocked))
         self.assertEqual(call("repair")[0], 422)
+        status, measured = call("probe", probe="link", target={"linkId": "la"})
+        self.assertEqual(status, 200)
+        self.assertTrue(measured["canDiagnose"])
+        self.assertEqual(measured["diagnosisAttempts"], 0)
         self.assertEqual(call("diagnose", diagnosis="STATIC_ROUTE_MISSING")[1]["correct"],
                          False)
         status, confirmed = call("diagnose", diagnosis="CABLE_DOWN")

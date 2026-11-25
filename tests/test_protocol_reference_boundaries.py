@@ -13,6 +13,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from network_core.arp import ArpSession
 from network_core.dhcp_registry import DhcpSessionRegistry
 from network_core.icmp_ping import EchoExchange
 from network_core.ipv4 import IPv4Trace
@@ -26,6 +27,22 @@ from test_icmp_investigation_lan import lan_lab
 
 
 class IndependentPrefixBoundaryOracles(unittest.TestCase):
+    def test_outbound_subnet_boundary_is_not_unicast_with_an_asymmetric_prefix(self):
+        # Both destination addresses are valid hosts in the peer's /22.
+        # At the sender, /24 identifies a network address and directed broadcast.
+        for source, address in (("192.0.3.1/24", "192.0.3.0"),
+                                ("192.0.2.1/24", "192.0.2.255")):
+            with self.subTest(address=address):
+                project = lan_lab()
+                project["nodes"][0]["ports"][0]["ipv4"] = source
+                project["nodes"][2]["ports"][0]["ipv4"] = f"{address}/22"
+                arp = ArpSession(project)
+                with self.assertRaisesRegex(ProjectValidationError, "network or broadcast"):
+                    arp.resolve("a", "eth0", address)
+                self.assertEqual(arp.arp_table("a", "eth0"), {})
+                with self.assertRaisesRegex(ProjectValidationError, "network or broadcast"):
+                    EchoExchange(project).ping("a", "eth0", address, 5, 101, 1)
+
     def test_rfc30_31_two_endpoints_and_rejected_network_broadcast(self):
         # /30: network .0, usable .1 and .2, broadcast .3.
         # /31: both addresses are endpoints under the supported model.

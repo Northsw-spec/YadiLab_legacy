@@ -678,13 +678,18 @@ def icmp_panel_integration(context, network_mode, errors):
             expect(page.locator('#icmp-investigation-observations')).to_contain_text('giltig Echo Reply: nej')
             probe(page, 'route')
             page.locator('#icmp-investigation-probe').select_option('link')
+            page.locator('#icmp-investigation-link').select_option('lb')
+            assert probe(page, 'link')['canDiagnose'] is False
+            expect(page.locator('#icmp-investigation-diagnose')).to_be_disabled()
+            expect(page.locator('#icmp-investigation-repair')).to_be_disabled()
+            page.locator('#icmp-investigation-link').select_option('la')
             link = probe(page, 'link')['observation']
             assert link['linkId'] == 'la'
             page.locator('#icmp-investigation-link').select_option('lb')
             expect(page.locator('#icmp-investigation-observations')).to_contain_text('KABEL la')
             probe(page, 'link')
             expect(page.locator('#icmp-investigation-observations')).to_contain_text('KABEL lb')
-            assert server.icmp_investigations._sessions[sid].state()['observations'] == 4
+            assert server.icmp_investigations._sessions[sid].state()['observations'] == 5
 
             # U04: real diagnosis and repaired two-way Echo produce the
             # Swedish report. Repeated panel renders leave server state intact.
@@ -1558,8 +1563,10 @@ def icmp_investigation_races(context, network_mode, errors):
                 return sid
 
             def ready(page):
-                for kind in ('address', 'ping', 'route'):
+                for kind in ('ping', 'route', 'link'):
                     page.locator('#icmp-investigation-probe').select_option(kind)
+                    if kind == 'link':
+                        page.locator('#icmp-investigation-link').select_option('la')
                     with page.expect_response('**/api/icmp/investigation/probe') as measured:
                         page.locator('#icmp-investigation-measure').click()
                     assert measured.value.status == 200
@@ -2054,6 +2061,49 @@ def persistence_races(context, base, network_mode, store, errors):
     release_http_reply(page)
     expect(page.locator('#toast')).to_contain_text('Öppningen avbröts')
     expect(page.locator('#empty-state')).to_be_visible()
+    page.close()
+
+    # Only the latest confirmed Open may take effect, even for one filename.
+    # Hold two real versions returned by the server, then release the older first.
+    page = fresh()
+    slug = 'race-save-edit'
+    page.locator('#saved-projects').select_option(slug)
+    page.evaluate("""path => {
+      const original = window.fetch;
+      window.openResponses = [];
+      window.openReleases = [];
+      window.fetch = async (...args) => {
+        const response = await original(...args);
+        if (String(args[0]) === path) {
+          const json = response.json.bind(response);
+          response.json = async () => {
+            const body = await json();
+            window.openResponses.push(body);
+            return body;
+          };
+          await new Promise(resolve => window.openReleases.push(resolve));
+        }
+        return response;
+      };
+    }""", '/api/projects/' + slug)
+    page.locator('#open-project').click()
+    page.wait_for_function('window.openReleases.length === 1')
+    projects = ProjectStore(store)
+    previous = projects.read(slug)
+    project = previous['project']
+    project['nodes'][0]['label'] = 'Latest Open'
+    latest = projects.save(slug, project, previous['sha256'])
+    saved_bytes = projects.path(slug).read_bytes()
+    page.locator('#open-project').click()
+    page.wait_for_function('window.openReleases.length === 2')
+    page.evaluate('window.openReleases[0]()')
+    page.wait_for_function('window.openResponses.length === 1')
+    page.evaluate('window.openReleases[1]()')
+    expect(page.locator('[data-item-type="node"][data-item-id="node-1"]')).to_contain_text(
+        'Latest Open')
+    assert page.evaluate('window.openResponses.map(result => result.sha256)') == [
+        previous['sha256'], latest['sha256']]
+    assert projects.path(slug).read_bytes() == saved_bytes
     page.close()
 
 
