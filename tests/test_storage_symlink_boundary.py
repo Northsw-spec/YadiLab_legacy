@@ -78,6 +78,77 @@ class ProjectStorageBoundaryTests(unittest.TestCase):
                     self.store.save(slug, example())
         self.assertEqual(self.store.list(), [])
 
+    def test_nonregular_lock_file_rejected_before_existing_project_overwrite(self):
+        saved = self.store.save("locked", example())
+        project_path = self.root / "locked.yadilab"
+        before = project_path.read_bytes()
+        lock_path = self.root / ".lock-locked"
+        lock_path.unlink()  # Reproduce an externally substituted lock inode.
+        edited = example()
+        edited["nodes"][0]["label"] = "proposed replacement"
+        for kind in ("symlink", "directory", "fifo"):
+            with self.subTest(kind=kind):
+                if kind == "symlink":
+                    os.symlink(self.external_file, lock_path)
+                elif kind == "directory":
+                    lock_path.mkdir()
+                else:
+                    os.mkfifo(lock_path, mode=0o600)
+                try:
+                    with self.assertRaisesRegex(ProjectValidationError, "project lock"):
+                        self.store.save("locked", edited, saved["sha256"])
+                    self.assertEqual(project_path.read_bytes(), before)
+                    self.assertEqual(self.store.read("locked")["sha256"], saved["sha256"])
+                    self.assertEqual(self.external_file.read_bytes(), self.external_bytes)
+                    self.assertEqual([item["filename"] for item in self.store.list()], ["locked"])
+                    self.assertEqual(list(self.root.glob(".pending-*")), [])
+                finally:
+                    if kind == "directory":
+                        lock_path.rmdir()
+                    else:
+                        lock_path.unlink()
+        # A normal regular lock may be re-created and the same old SHA is valid.
+        updated = self.store.save("locked", edited, saved["sha256"])
+        self.assertEqual(self.store.read("locked")["project"], edited)
+        self.assertEqual(updated["sha256"], hashlib.sha256(project_path.read_bytes()).hexdigest())
+        self.assertNotEqual(updated["sha256"], saved["sha256"])
+        self.assertEqual(self.external_file.read_bytes(), self.external_bytes)
+
+    def test_http_special_lock_returns_422_and_preserves_saved_bytes(self):
+        saved = self.store.save("locked", example())
+        project_path = self.root / "locked.yadilab"
+        before = project_path.read_bytes()
+        lock_path = self.root / ".lock-locked"
+        lock_path.unlink()
+        os.symlink(self.external_file, lock_path)
+        server = LabHTTPServer(("127.0.0.1", 0), self.store)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        url = f"http://127.0.0.1:{server.server_port}/api/save"
+        edited = example()
+        edited["nodes"][0]["label"] = "should not be written"
+        body = json.dumps({"filename": "locked", "project": edited,
+                           "expectedSha256": saved["sha256"]}).encode("utf-8")
+        try:
+            with self.assertRaises(HTTPError) as failed:
+                urlopen(Request(url, data=body, headers={
+                    "Content-Type": "application/json",
+                }, method="POST"), timeout=5)
+            self.assertEqual(failed.exception.code, 422)
+            error = json.loads(failed.exception.read())
+            self.assertEqual(error["error"], "INVALID_PROJECT")
+            self.assertIn("project lock", error["message"])
+            self.assertEqual(project_path.read_bytes(), before)
+            self.assertEqual(self.store.read("locked")["sha256"], saved["sha256"])
+            self.assertEqual(self.external_file.read_bytes(), self.external_bytes)
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=4)
+            lock_path.unlink()
+        recovered = self.store.save("locked", edited, saved["sha256"])
+        self.assertEqual(recovered["sha256"], hashlib.sha256(project_path.read_bytes()).hexdigest())
+
     def test_loopback_http_refuses_symlink_without_leaking_external_file(self):
         os.symlink(self.external_file, self.root / "leaked.yadilab")
         server = LabHTTPServer(("127.0.0.1", 0), self.store)
