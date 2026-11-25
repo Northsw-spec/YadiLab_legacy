@@ -125,7 +125,7 @@ class WorkbookInspectionTests(unittest.TestCase):
         )
         for label, original, changed, expected in mutations:
             with self.subTest(field=label):
-                parts = workbook_parts({"Data": "ID\\n001\\n"}, shared_strings=True)
+                parts = workbook_parts({"Data": "ID\n001\n"}, shared_strings=True)
                 xml = parts["xl/worksheets/sheet1.xml"]
                 self.assertEqual(xml.count(original), 1)
                 parts["xl/worksheets/sheet1.xml"] = xml.replace(original, changed, 1)
@@ -133,7 +133,7 @@ class WorkbookInspectionTests(unittest.TestCase):
                 with self.assertRaisesRegex(ProjectValidationError, expected):
                     inspect_source(workbook_request("malformed.xlsx", raw))
 
-        good = xlsx_zip(workbook_parts({"Data": "ID\\n001\\n"}, shared_strings=True))
+        good = xlsx_zip(workbook_parts({"Data": "ID\n001\n"}, shared_strings=True))
         table = inspect_source(workbook_request("valid.xlsx", good))["tables"][0]
         self.assertEqual(table["rowCount"], 2)
         self.assertEqual([row["cells"][0]["value"] for row in table["previewRows"]],
@@ -378,7 +378,7 @@ class HTTPSourceInspectionTests(unittest.TestCase):
              "invalid shared-string index"),
         ):
             with self.subTest(field=name):
-                parts = workbook_parts({"Data": "ID\\n001\\n"}, shared_strings=True)
+                parts = workbook_parts({"Data": "ID\n001\n"}, shared_strings=True)
                 xml = parts["xl/worksheets/sheet1.xml"]
                 self.assertEqual(xml.count(before), 1)
                 parts["xl/worksheets/sheet1.xml"] = xml.replace(before, after, 1)
