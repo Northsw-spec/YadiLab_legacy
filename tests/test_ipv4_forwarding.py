@@ -331,6 +331,9 @@ class IPv4HTTPTests(unittest.TestCase):
         status,output=self.request(self.body(ttl=1))
         self.assertEqual(status,200)
         self.assertEqual(output["status"],"TTL_EXPIRED")
+        # A default protocol-253 datagram contains only the IPv4 header.
+        # The bounded 28-byte ICMP quote must not be invented over HTTP.
+        self.assertIsNone(output["routerErrorCandidate"])
         p=lab()
         getport(p,"sw-left","r")["vlan"]={"mode":"access","vlan":20}
         status,output=self.request(self.body(p))
