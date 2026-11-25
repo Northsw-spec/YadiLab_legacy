@@ -262,7 +262,8 @@ export function renderIcmpInvestigationPanel(project, session) {
   } else {
     verdict.textContent = lesson
       ? 'För diagnos behövs ICMP Echo, uppslag från b mot källan och kontroll av b/eth0.'
-      : 'Diagnosen kräver en verklig ICMP-mätning, route lookup och minst en annan oberoende kontroll.';
+      : 'Följ den riktning där Echo-utbytet misslyckas. Gör ett routeuppslag i den riktningen och jämför '
+        + 'dokumenterat och simulerat tillstånd för relevant route, kabel, port eller VLAN.';
   }
   const recovery = $('icmp-investigation-recovery');
   recovery.classList.remove('ok', 'fail');

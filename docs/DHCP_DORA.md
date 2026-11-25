@@ -234,7 +234,7 @@ enserverlabb svara. Detta är inte ett påstående om routad
 DHCP eller stöd för konkurrerande servrar.
 
 Vid faktisk mottagning på serverporten skapas en byte-kodad
-DHCPACK med `ciaddr` = den leasade adressen, `yiaddr=0`,
+DHCPACK med den leasade adressen i både `ciaddr` och `yiaddr` enligt RFC 2131 tabell 3,
 optioner 53/54/1/51, UDP 67→68 och **unicast till klientens
 IP och dokumenterade MAC**. EthernetFabric måste sedan faktiskt
 leverera denna ACK till den **ursprungliga** klientporten.

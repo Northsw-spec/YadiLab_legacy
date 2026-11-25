@@ -14,7 +14,7 @@ from collections.abc import Mapping
 
 from .ethernet import EthernetFabric
 from .ethernet_frame import BROADCAST, EthernetFrame, normalize_mac
-from .model import ProjectValidationError
+from .model import ProjectValidationError, _usable_ipv4_host
 
 ARP_ETHER_TYPE = 0x0806
 _ZERO_MAC = "00:00:00:00:00:00"
@@ -164,8 +164,11 @@ class ArpSession:
         iface = self._ips[endpoint]
         if target == str(iface.ip):
             raise ProjectValidationError("arp: target is the source interface's own IP")
-        if ipaddress.IPv4Address(target) not in iface.network:
+        address = ipaddress.IPv4Address(target)
+        if address not in iface.network:
             raise ProjectValidationError("arp: off-link resolution unsupported (no proxy ARP or routing)")
+        if not _usable_ipv4_host(address, iface.network):
+            raise ProjectValidationError("arp: target is the outgoing subnet's network or broadcast address")
         if target in self._cache.get(endpoint, {}):
             return {"status": "CACHE_HIT", "resolvedMac": self._cache[endpoint][target],
                     "requestTransmissions": [], "replyTransmissions": [],

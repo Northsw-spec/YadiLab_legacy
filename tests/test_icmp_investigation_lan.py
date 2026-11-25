@@ -69,7 +69,15 @@ class LanInvestigationTests(unittest.TestCase):
                 if kind != "IPV4_PREFIX_MISMATCH":
                     self.assertEqual(route["selectedRoute"]["type"], "CONNECTED")
                 self.assertEqual(route["documentedStaticRoutes"], [])
-                case.probe("address", {})
+                self.assertFalse(case.state()["canDiagnose"])
+                checks = {
+                    "CABLE_DOWN": ("link", {"linkId": "la"}),
+                    "PORT_SHUTDOWN": ("port", {"nodeId": "sw", "portId": "a"}),
+                    "VLAN_MISMATCH": ("vlan", {"nodeId": "sw", "portId": "a"}),
+                    "IPV4_HOST_ADDRESS_MISMATCH": ("port", {"nodeId": "b", "portId": "eth0"}),
+                    "IPV4_PREFIX_MISMATCH": ("port", {"nodeId": "a", "portId": "eth0"}),
+                }
+                self.assertTrue(case.probe(*checks[kind])["canDiagnose"])
                 self.assertFalse(case.diagnose(next(k for k in LAN_KINDS if k != kind))["correct"])
                 self.assertNotIn(kind, json.dumps(case.state()))
                 self.assertTrue(case.diagnose(kind)["correct"])

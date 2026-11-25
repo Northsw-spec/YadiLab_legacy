@@ -297,6 +297,12 @@ class IcmpInvestigation:
                 "replyMatched": broken["replyMatched"],
                 "source": "SIMULATED",
             }
+        else:
+            direction = "request" if broken["request"]["status"] != "DELIVERED" else "reply"
+            path = baseline[direction]
+            self._exercise_destination = path["destinationIpv4"]
+            self._exercise_routes = {step["node"]: step["route"] for step in path["steps"]}
+            self._exercise_evidence: set[str] = set()
         self._probes: list[str] = []
         self._guesses = 0
         self._diagnosed = False
@@ -304,7 +310,7 @@ class IcmpInvestigation:
         self._sequence = 2
         self._source_nodes = {
             node["id"] for node in self.project["nodes"]
-            if node["kind"] in ("host", "router")
+            if node["kind"] != "switch"
         }
 
     def _validate_lesson(self) -> None:
@@ -400,11 +406,52 @@ class IcmpInvestigation:
         if validate_project(project) != self.project:
             raise ProjectValidationError("icmp investigation: project changed since session start")
 
+    def _record_exercise_evidence(self, kind: str, target: dict, result: dict) -> None:
+        fault = self._fault
+        if kind == "ping":
+            if result["status"] != "REPLIED" and not result["replyMatched"]:
+                self._exercise_evidence.add("ping")
+            return
+        if kind == "route":
+            original = self._exercise_routes.get(target["nodeId"])
+            if original is None or target["destinationIpv4"] != self._exercise_destination:
+                return
+            if "routeId" in fault:
+                if target["nodeId"] != fault["nodeId"] or original.get("routeId") != fault["routeId"]:
+                    return
+                if fault["type"] == "STATIC_ROUTE_REMOVED":
+                    changed = not any(r.get("routeId") == fault["routeId"] for r in result["routes"])
+                else:
+                    selected = result["selectedRoute"]
+                    changed = (selected is not None and selected.get("routeId") == fault["routeId"]
+                               and selected["nextHop"] != original["nextHop"])
+                if changed:
+                    self._exercise_evidence.add("difference")
+            self._exercise_evidence.add("route")
+            return
+        if kind == "link" and fault["type"] == "LINK_DISABLED":
+            if target["linkId"] == fault["linkId"] and (
+                    result["documentedEnabled"] and not result["observedEnabled"]):
+                self._exercise_evidence.add("difference")
+            return
+        if kind not in ("port", "vlan") or (target["nodeId"], target["portId"]) != (
+                fault.get("nodeId"), fault.get("portId")):
+            return
+        if kind == "vlan":
+            changed = (fault["type"] == "ACCESS_VLAN_CHANGED"
+                       and result["documentedVlan"] != result["observedVlan"])
+        elif fault["type"] == "PORT_DISABLED":
+            changed = result["documentedEnabled"] and not result["observedEnabled"]
+        else:
+            changed = (fault["type"] in ("IPV4_PREFIX_CHANGED", "IPV4_HOST_ADDRESS_CHANGED")
+                       and result["documentedIpv4"] != result["observedIpv4"])
+        if changed:
+            self._exercise_evidence.add("difference")
+
     def state(self) -> dict:
-        kinds = set(self._probes)
         can_diagnose = (
             self._lesson_evidence == {"ping", "route", "port"} if self._lesson else
-            "ping" in kinds and "route" in kinds and bool(kinds & {"address", "link", "port", "vlan"})
+            self._exercise_evidence == {"ping", "route", "difference"}
         )
         state = {
             "sourceNode": self.source_node,
@@ -588,6 +635,8 @@ class IcmpInvestigation:
             if (result["observedEnabled"] and result["documentedEnabled"]
                     and result["observedIpv4"] == result["documentedIpv4"]):
                 self._lesson_evidence.add("port")
+        if not self._lesson:
+            self._record_exercise_evidence(kind, target, result)
         self._probes.append(kind)
         return {"probe": kind, "observation": result, **self.state()}
 
@@ -600,7 +649,7 @@ class IcmpInvestigation:
             raise ProjectValidationError(
                 "icmp investigation: lesson requires ping, reverse lookup and target port check"
                 if self._lesson else
-                "icmp investigation: real ping, route lookup and additional check required")
+                "icmp investigation: real failed ping and relevant observations on that path required")
         if self._guesses >= MAX_GUESSES:
             raise ProjectValidationError("icmp investigation: maximum guesses reached")
         self._guesses += 1

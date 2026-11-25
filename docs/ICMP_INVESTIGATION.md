@@ -161,10 +161,16 @@ kopplas inte implicit in i detta ICMP-felsökningsfall.
 `CABLE_DOWN`, `PORT_SHUTDOWN`, `VLAN_MISMATCH`,
 `STATIC_ROUTE_MISSING`, `IPV4_PREFIX_MISMATCH`,
 `STATIC_NEXT_HOP_UNREACHABLE`, `IPV4_HOST_ADDRESS_MISMATCH` är tillåtna.
-Före diagnos krävs riktiga mätningar av **ping**,
-**route** och minst en tredje kontrolltyp (**address**, **link**, **port**
-eller **vlan**). Fel gissning returnerar enbart `correct=false`
-och avslöjar inte feltypen. Högst 3 hypotesförsök accepteras.
+Den självständiga övningen kräver ett misslyckat Echo och ett
+routeuppslag på den dokumenterade väg och i den riktning där utbytet
+misslyckas. Mätningen måste dessutom visa en relevant avvikelse mellan
+dokumenterat och simulerat tillstånd. För kabel, port, VLAN och IPv4
+mäts motsvarande länk eller port. För statiska routefel visar
+routeuppslaget på berörd nod att routen saknas eller att det valda
+nästa hoppet har ändrats. De guidade lektionerna använder den
+fasta uppsättningen mätningar ovan. Otillräckliga mätningar ger
+HTTP 422 före hypotesförsöket. Fel gissning ger `correct=false`.
+Högst 3 hypotesförsök accepteras.
 Inga dolda feluppgifter skickas till webbläsaren förrän efter en
 verkligt verifierad reparation.
 

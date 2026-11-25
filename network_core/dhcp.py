@@ -63,7 +63,8 @@ class DhcpMessage:
 
     SELECTING requests include options 50+54 with ciaddr=0 and broadcast
     flags. RENEWING/REBINDING requests use ciaddr, no options 50/54 and
-    clear broadcast flag. Renewal ACKs have ciaddr, yiaddr=0 and option 54.
+    clear broadcast flag. Renewal ACKs echo ciaddr, carry the assigned
+    address in yiaddr (RFC 2131 Table 3) and include option 54.
     This intentionally excludes relay, option overload, NAK and real NIC writes.
     """
     message_type: int
@@ -110,16 +111,14 @@ class DhcpMessage:
             if (self.requested_address is not None
                     or self.message_type == _OFFER and self.client_address is not None):
                 _fail("OFFER/ACK incompatible requested IP or ciaddr")
-            if (self.message_type == _ACK and self.client_address is not None
-                    and self.offered_address is not None):
-                _fail("renewal ACK must not set yiaddr")
-            if (self.client_address is None and self.offered_address is None
-                    or self.server_identifier is None or self.subnet_mask is None
+            if (self.offered_address is None or self.server_identifier is None
+                    or self.subnet_mask is None
                     or self.lease_seconds is None):
                 _fail("OFFER/ACK require address, server identifier, subnet mask and lease")
-            if self.offered_address is not None:
-                object.__setattr__(self, "offered_address",
-                                   _address(self.offered_address, "offered IPv4"))
+            object.__setattr__(self, "offered_address",
+                               _address(self.offered_address, "offered IPv4"))
+            if self.client_address is not None and self.offered_address != self.client_address:
+                _fail("renewal ACK yiaddr must match the current lease address")
             object.__setattr__(self, "server_identifier",
                                _address(self.server_identifier, "server identifier"))
             object.__setattr__(self, "subnet_mask", _mask(self.subnet_mask))
@@ -203,12 +202,11 @@ class DhcpMessage:
                 _fail("only REQUEST/ACK may carry nonzero ciaddr")
             expected_options = {53} if kind == _REQUEST else {53, 54, 1, 51}
         if (op != expected_op or set(options) != expected_options or
-                (kind in (_DISCOVER, _REQUEST) and yi != _ZERO_IP) or
-                (renewal and yi != _ZERO_IP)):
+                (kind in (_DISCOVER, _REQUEST) and yi != _ZERO_IP)):
             _fail("BOOTP operation or DHCP options disagree")
         return cls(
             kind, xid, ch[:6].hex(":"),
-            str(ipaddress.IPv4Address(yi)) if kind in (_OFFER, _ACK) and not renewal else None,
+            str(ipaddress.IPv4Address(yi)) if kind in (_OFFER, _ACK) else None,
             str(ipaddress.IPv4Address(options[54])) if 54 in options else None,
             str(ipaddress.IPv4Address(options[1])) if 1 in options else None,
             int.from_bytes(options[51], "big") if 51 in options else None,
@@ -547,6 +545,7 @@ class DhcpSession:
             return result
         ack = DhcpMessage(
             _ACK, transaction_id, client_mac,
+            offered_address=assigned_ip,
             server_identifier=server_ip, subnet_mask=lease["subnetMask"],
             lease_seconds=lease["leaseSeconds"], client_address=assigned_ip)
         response_frame = _checked_frame(
@@ -554,6 +553,7 @@ class DhcpSession:
         if (ack.transaction_id != request.transaction_id or
                 ack.client_mac != request.client_mac or
                 ack.client_address != request.client_address or
+                ack.offered_address != assigned_ip or
                 ack.server_identifier != server_ip):
             _fail("renewal ACK does not match original REQUEST and selected server")
         response = self.fabric.inject_frame(*server, response_frame)
