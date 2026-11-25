@@ -143,7 +143,7 @@ export function createIcmpInvestigationController({getContext, onChange}) {
   };
   // The student's tentative theory is teaching-only state, never project or API data.
   const setLessonPlan = (hypothesis, diagnosticTest, counterEvidence) => {
-    if (!id || busy || state?.lesson !== 'echo-reply' || lessonPlan) return false;
+    if (!id || busy || !state?.openingObservation || lessonPlan) return false;
     if (!['route', 'arp', 'ipv4'].includes(hypothesis)
         || !['route', 'ping', 'port'].includes(diagnosticTest)
         || typeof counterEvidence !== 'string' || counterEvidence.length > 500) {

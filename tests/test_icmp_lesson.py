@@ -18,6 +18,7 @@ ARGS = ("a", "eth0", "203.0.113.20", 5)
 REVERSE = {"nodeId": "b", "destinationIpv4": "192.0.2.10"}
 PORT = {"nodeId": "b", "portId": "eth0"}
 FAULT = {"type": "STATIC_ROUTE_REMOVED", "nodeId": "b", "routeId": "return-to-a"}
+NEXT_HOP_FAULT = {**FAULT, "type": "STATIC_NEXT_HOP_CHANGED", "newNextHop": "203.0.113.254"}
 
 
 def project():
@@ -128,7 +129,52 @@ class GuidedIcmpLessonTests(unittest.TestCase):
         })
         self.assertEqual(recovered["verification"]["replyReceiver"], {"node": "a", "port": "eth0"})
 
+    def test_two_cases_share_the_opening_and_recover_from_distinct_native_failures(self):
+        baseline_project = project()
+        outcomes = []
+        for lesson, fault, expected, alternate in (
+            ("echo-reply", FAULT, "NO_ROUTE", "ARP_FAILED"),
+            ("echo-reply-b", NEXT_HOP_FAULT, "ARP_FAILED", "NO_ROUTE"),
+        ):
+            with self.subTest(lesson=lesson):
+                comparison = compare_fault(baseline_project, *ARGS, 20, 1, fault)
+                self.assertEqual(comparison["status"], "FAULT_CONFIRMED")
+                for stage in ("baseline", "restored"):
+                    self.assertEqual(comparison[stage]["status"], "REPLIED")
+                    self.assertTrue(comparison[stage]["replyMatched"])
+                    self.assertEqual(comparison[stage]["reply"]["receiver"], {"node": "a", "port": "eth0"})
+                failed = comparison["faulted"]
+                self.assertEqual(failed["request"]["status"], "DELIVERED")
+                self.assertEqual(failed["request"]["receiver"], {"node": "b", "port": "eth0"})
+                self.assertEqual(failed["status"], "REPLY_FAILED")
+                self.assertFalse(failed["replyMatched"])
+                self.assertEqual(failed["reply"]["status"], expected)
+                self.assertFalse(failed["reply"]["icmpSent"])
+                self.assertFalse(_lesson_echo(failed, matched=False, reply_status=alternate))
+                if lesson == "echo-reply-b":
+                    step, = failed["reply"]["steps"]
+                    self.assertEqual(step["arp"]["status"], "NO_REPLY")
+                    self.assertTrue(step["arp"]["requestTransmissions"])
+                    self.assertEqual(step["arp"]["replyTransmissions"], [])
+                    self.assertEqual(step["ipv4Transmissions"], [])
+                    self.assertEqual(step["nextHopIpv4"], "203.0.113.254")
+                else:
+                    self.assertEqual(failed["reply"]["steps"], [])
+                case = IcmpInvestigation(baseline_project, *ARGS, lesson=lesson)
+                self.assertEqual(case._fault, fault)
+                outcomes.append(case.state()["openingObservation"])
+        self.assertEqual(outcomes[0], outcomes[1])
+        self.assertEqual(baseline_project, project())
+
     def test_direction_port_and_no_spoilers_over_http(self):
+        for lesson in ("echo-reply", "echo-reply-b"):
+            with self.subTest(lesson=lesson):
+                self._assert_direction_port_and_no_spoilers(lesson)
+
+    def _assert_direction_port_and_no_spoilers(self, lesson):
+        case_b = lesson == "echo-reply-b"
+        right_diagnosis = "STATIC_NEXT_HOP_UNREACHABLE" if case_b else "STATIC_ROUTE_MISSING"
+        wrong_diagnosis = "STATIC_ROUTE_MISSING" if case_b else "STATIC_NEXT_HOP_UNREACHABLE"
         http = test_icmp_investigation.IcmpInvestigationHttpTests()
         http.setUp()
         self.addCleanup(http.tearDown)
@@ -137,24 +183,25 @@ class GuidedIcmpLessonTests(unittest.TestCase):
         path = http.root / "lesson.yadilab"
         original = path.read_bytes()
         query = dict(project=fixture, sourceNode=ARGS[0], sourcePort=ARGS[1],
-                     destinationIpv4=ARGS[2], ttl=ARGS[3], lesson="echo-reply")
+                     destinationIpv4=ARGS[2], ttl=ARGS[3], lesson=lesson)
 
         for bad in ({"lesson": None}, {"lesson": "unknown"}, {"fault": FAULT}, {"project": None}):
             self.assertEqual(http.post("start", {**query, **bad})[0], 422)
 
         def no_answer(payload):
             encoded = json.dumps(payload)
-            for value in ("return-to-a", "STATIC_ROUTE_MISSING", "RESTORE_STATIC_ROUTE"):
+            for value in ("return-to-a", "STATIC_ROUTE_MISSING", "RESTORE_STATIC_ROUTE",
+                          "STATIC_NEXT_HOP_UNREACHABLE", "RESTORE_NEXT_HOP", "expectedNextHop"):
                 self.assertNotIn(value, encoded)
 
         code, opening = http.post("start", query)
         self.assertEqual(code, 200)
         self.assertEqual(opening["openingObservation"], {
-            "requestStatus": "DELIVERED", "requestReceiver": {"node": "b", "port": "eth0"},
             "replyMatched": False, "source": "SIMULATED",
         })
         self.assertFalse(opening["canDiagnose"])
-        self.assertNotIn("NO_ROUTE", json.dumps(opening))
+        for marker in ("NO_ROUTE", "ARP_FAILED", "203.0.113.254", "requestReceiver"):
+            self.assertNotIn(marker, json.dumps(opening))
         no_answer(opening)
         fields = dict(sessionId=opening["sessionId"], project=fixture)
 
@@ -168,7 +215,9 @@ class GuidedIcmpLessonTests(unittest.TestCase):
         changed = deepcopy(fixture)
         changed["name"] += "!"
         no_answer(call("probe", 422, project=changed, probe="ping", target={}))
-        no_answer(call("probe", probe="ping", target={}))
+        ping = call("probe", probe="ping", target={})
+        self.assertEqual(ping["observation"]["replyStatus"], "ARP_FAILED" if case_b else "NO_ROUTE")
+        no_answer(ping)
         for wrong in ({"nodeId": "a", "destinationIpv4": "192.0.2.10"},
                       {"nodeId": "b", "destinationIpv4": "203.0.113.20"}):
             probe = call("probe", probe="route", target=wrong)
@@ -180,15 +229,18 @@ class GuidedIcmpLessonTests(unittest.TestCase):
         no_answer(call("diagnose", 422, diagnosis="STATIC_ROUTE_MISSING"))
         lookup = call("probe", probe="route", target=REVERSE)
         self.assertTrue(lookup["canDiagnose"])
-        self.assertEqual(lookup["observation"]["status"], "NO_ROUTE")
-        self.assertIsNone(lookup["observation"]["selectedRoute"])
+        self.assertEqual(lookup["observation"]["status"], "MATCH" if case_b else "NO_ROUTE")
+        if case_b:
+            self.assertEqual(lookup["observation"]["selectedRoute"]["nextHop"], "203.0.113.254")
+        else:
+            self.assertIsNone(lookup["observation"]["selectedRoute"])
         self.assertEqual(lookup["observation"]["source"], "SIMULATED_CONFIG")
         no_answer(lookup)
-        wrong = call("diagnose", diagnosis="STATIC_NEXT_HOP_UNREACHABLE")
+        wrong = call("diagnose", diagnosis=wrong_diagnosis)
         self.assertFalse(wrong["correct"])
         no_answer(wrong)
         no_answer(call("repair", 422))
-        correct = call("diagnose", diagnosis="STATIC_ROUTE_MISSING")
+        correct = call("diagnose", diagnosis=right_diagnosis)
         self.assertTrue(correct["correct"])
         no_answer(correct)
         recovered = call("repair")
@@ -196,6 +248,11 @@ class GuidedIcmpLessonTests(unittest.TestCase):
                           recovered["restoredEchoStatus"], recovered["replyMatched"]),
                          ("RECOVERED", "REPLY_FAILED", "REPLIED", True))
         self.assertEqual(recovered["repair"]["scope"], "PREVIEW_ONLY")
+        if case_b:
+            self.assertEqual(recovered["repair"]["action"], "RESTORE_NEXT_HOP")
+            self.assertEqual(recovered["repair"]["expectedNextHop"], "203.0.113.1")
+        else:
+            self.assertEqual(recovered["repair"]["action"], "RESTORE_STATIC_ROUTE")
         self.assertEqual(path.read_bytes(), original)
         self.assertEqual(http.store.read("lesson")["sha256"], saved["sha256"])
         self.assertEqual(http.store.read("lesson")["project"], fixture)

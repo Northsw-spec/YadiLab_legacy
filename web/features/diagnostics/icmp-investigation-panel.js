@@ -82,10 +82,7 @@ function renderLesson(session) {
   const endpoint = value => value.node + '/' + value.port;
   panel.hidden = !opening;
   $('icmp-lesson-symptom').textContent = opening
-    ? 'Vid övningsstart (' + opening.source + ') nådde Echo Request från '
-      + session.state.sourceNode + '/' + session.state.sourcePort + ' '
-      + endpoint(opening.requestReceiver) + ' (' + opening.requestStatus + '). '
-      + 'Källan fick inget giltigt Echo Reply.'
+    ? 'Källan fick inget giltigt Echo Reply vid övningsstart (' + opening.source + ').'
     : '';
   const selectedHypothesis = panel.querySelector('input[name="icmp-lesson-hypothesis"]:checked');
   const selectedTest = panel.querySelector('input[name="icmp-lesson-test"]:checked');
@@ -128,11 +125,14 @@ function renderLesson(session) {
   $('icmp-lesson-measurements').hidden = !reviewed;
   $('icmp-lesson-interpretation').hidden = !measured;
   $('icmp-lesson-action').hidden = !diagnosed;
+  const restoredRoute = verified && recovery.repair.expectedRoute;
   $('icmp-lesson-action-text').textContent = verified
     ? recovery.report.rootCause + ' ' + recovery.report.action
-      + ' På ' + recovery.repair.nodeId + ' återställdes ' + recovery.repair.expectedRoute.destination
-      + ' via ' + recovery.repair.expectedRoute.nextHop + ' på ' + recovery.repair.expectedRoute.outPort
-      + '. Åtgärden gäller bara den tillfälliga övningen.'
+      + (restoredRoute
+        ? ' På ' + recovery.repair.nodeId + ' återställdes ' + restoredRoute.destination
+          + ' via ' + restoredRoute.nextHop + ' på ' + restoredRoute.outPort + '.'
+        : '')
+      + ' Åtgärden gäller bara den tillfälliga övningen.'
     : diagnosed ? 'Diagnosen stöds av mätningarna. Välj återställning för att verifiera den med ett nytt Echo-utbyte.' : '';
   $('icmp-lesson-verification').hidden = !verified;
   $('icmp-lesson-verification-text').textContent = verified
@@ -140,7 +140,8 @@ function renderLesson(session) {
       + recovery.failedEchoStatus + '. Efter återställning: ' + recovery.restoredEchoStatus
       + '. Request nådde ' + endpoint(recovery.verification.requestReceiver)
       + ' (' + recovery.verification.destinationIpv4 + '). Matchande Reply kom tillbaka till '
-      + endpoint(recovery.verification.replyReceiver) + ' (' + recovery.verification.sourceIpv4 + ').'
+      + endpoint(recovery.verification.replyReceiver) + ' (' + recovery.verification.sourceIpv4 + '). '
+      + recovery.report.evidence
     : '';
   return Boolean(opening && !reviewed);
 }
@@ -155,6 +156,7 @@ export function renderIcmpInvestigationPanel(project, session) {
   const lesson = Boolean(icmpInvestigationState?.lesson);
   const beforeMeasurements = renderLesson(session);
   $('icmp-lesson-start').disabled = active || busy || !project.nodes.length;
+  $('icmp-lesson-case').disabled = active || busy;
   const diagnosis = $('icmp-investigation-diagnosis');
   const lessonDiagnoses = ['STATIC_ROUTE_MISSING', 'IPV4_PREFIX_MISMATCH',
     'IPV4_HOST_ADDRESS_MISMATCH', 'STATIC_NEXT_HOP_UNREACHABLE'];

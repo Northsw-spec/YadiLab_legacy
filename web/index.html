@@ -458,6 +458,11 @@
           <div class="eyebrow">FELSÖKNINGSLABB · ROUTING ELLER LAYER 2?</div>
           <h3>Varför fungerar inte ping mellan två hosts?</h3>
           <p class="muted tiny">Välj en källa och en destination som redan har bevisats nå varandra via verkligt simulerade ICMP Echo Request/Reply. Labbet injicerar ett dolt, separat verifierat fel i dokumenterad kabel, avstängd switchport, VLAN, IPv4-adress eller nätmask; i routade nät även statisk route eller next-hop. Undersök först IP-uppgifter, routingtabeller och faktiska paket. DHCP-adressens ursprung är inte lagrat i projektet och markeras därför som EJ VERIFIERAT – aldrig automatiskt friskförklarat. Allt sker i minnet.</p>
+          <label for="icmp-lesson-case">Övningsfall i kursbanken</label>
+          <select id="icmp-lesson-case" class="control">
+            <option value="echo-reply">Fall A</option>
+            <option value="echo-reply-b">Fall B</option>
+          </select>
           <div class="session-actions">
             <button id="icmp-lesson-load" type="button" class="btn btn-outline">Läs in övningsprojektet</button>
             <button id="icmp-lesson-start" type="button" class="btn btn-soft" disabled>Starta guidad Om–Då-övning</button>
@@ -466,7 +471,7 @@
             <h4>Om [observerat]:</h4>
             <p id="icmp-lesson-symptom"></p>
             <h4>Då [vad det faktiskt betyder]:</h4>
-            <p>Framvägen fungerade för det simulerade paketet. Pingutbytet saknar verifierad returleverans.</p>
+            <p>Pingutbytet är ännu inte verifierat. Mät Echo Request och Echo Reply för att se var paketspåret stannar.</p>
             <h4>Möjliga orsaker [inte fastställda/hypoteser]:</h4>
             <fieldset>
               <legend>Välj en hypotes att pröva</legend>
@@ -492,7 +497,7 @@
             </div>
             <div id="icmp-lesson-interpretation" hidden>
               <h4>Förväntat resultat och tolkning:</h4>
-              <p>Jämför den valda hypotesen med returuppslaget och portmätningen. En fungerande framväg och oförändrad portkonfiguration räcker inte för att identifiera vilken route som används på returen.</p>
+              <p>Jämför den valda hypotesen med returuppslaget och portmätningen. Kontrollera om tabellen saknar en matchande route eller om paketspåret visar att adressupplösningen till valt nästa hopp misslyckas.</p>
               <ul>
                 <li><code>NO_ROUTE</code> betyder att ingen aktiv route matchar måladressen i uppslaget.</li>
                 <li><code>MATCH</code> tillsammans med <code>ARP_FAILED</code> i paketspåret betyder att uppslaget lyckades och adressupplösningen misslyckades.</li>
