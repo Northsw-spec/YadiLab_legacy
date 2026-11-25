@@ -1,9 +1,13 @@
 """Independent P6 case expectations and counters for the existing test harness."""
 from contextlib import contextmanager
+from copy import deepcopy
+import json
 from dataclasses import dataclass, field
 from unittest.mock import patch
 
 from test_icmp_lesson import ARGS, FAULT, NEXT_HOP_FAULT, PORT, REVERSE, project
+from test_dhcp_investigation import scenario, probe as dhcp_probe
+from test_dhcp_port_vlan_fault import vlan_clients
 from network_core.icmp_investigation import IcmpInvestigation
 from network_core.model import ProjectValidationError
 from network_core.troubleshooting import compare_fault
@@ -15,6 +19,9 @@ CASE_PHASES = {
     "shared-symptom": "P3",
     "unverified-repair": "P1/P3",
     "insensitive-test": "P2",
+    "dhcp-cable-engine": "P7",
+    "dhcp-port-engine": "P7",
+    "dhcp-vlan-engine": "P7",
     "icmp-route-browser": "P1/P2/P3",
     "icmp-arp-browser": "P2/P3",
     "same-opening-browser": "P3",
@@ -32,6 +39,7 @@ CASE_PHASES = {
 NATIVE_CASES = frozenset((
     "return-route-engine", "return-arp-engine", "shared-symptom",
     "unverified-repair", "insensitive-test",
+    "dhcp-cable-engine", "dhcp-port-engine", "dhcp-vlan-engine",
 ))
 METRICS = ("false_diagnosis", "insufficient_evidence", "answer_leak")
 
@@ -248,3 +256,79 @@ def check_unverified_repair(signals):
     signals["answer_leak"] = disclosed(outcome)
     assert signals["insufficient_evidence"] and not signals["answer_leak"]
     assert not outcome["replyMatched"] and not outcome["repaired"]
+
+
+# The P6 coverage report identifies DHCP as absent from its assessment even
+# though the existing P7 exercise guard supports three independently testable
+# faults. Expected carrier/admin/VLAN evidence is specified here, not read
+# from the session's hidden answer.
+DHCP_CASES = (
+    ("dhcp-cable-engine", "CABLE_DOWN", "DOWN", "UP", 10),
+    ("dhcp-port-engine", "PORT_SHUTDOWN", "DOWN", "DOWN", 10),
+    ("dhcp-vlan-engine", "VLAN_MISMATCH", "UP", "UP", 20),
+)
+
+
+def check_dhcp_case(specification, signals):
+    _, cause, expected_carrier, expected_admin, expected_vlan = specification
+    documented = vlan_clients()
+    original = deepcopy(documented)
+    case = scenario(documented, cause)
+    opening = case.public_state()
+    signals["answer_leak"] = cause in json.dumps(opening) or disclosed(opening)
+    assert not signals["answer_leak"]
+    assert not opening["canDiagnose"] and not opening["diagnosed"]
+
+    renewal = dhcp_probe(case, "renew")
+    assert renewal["observation"]["status"] == "REQUEST_NOT_RECEIVED"
+    assert not renewal["observation"]["requestReachedServer"]
+    assert not renewal["observation"]["ackReachedClient"]
+    dhcp_probe(case, "lease")
+    dhcp_probe(case, "link", linkId="to-client")
+    dhcp_probe(case, "port", nodeId="sw", portId="c")
+    dhcp_probe(case, "vlan", nodeId="sw", portId="s")
+    assert not case.public_state()["canDiagnose"]
+
+    # A known hidden answer must not bypass insufficient distinguishing data.
+    rejected = False
+    try:
+        case.diagnose(cause)
+    except ProjectValidationError as error:
+        rejected = "distinguishing" in str(error)
+    signals["insufficient_evidence"] = rejected
+    assert rejected and case.public_state()["diagnosisAttempts"] == 0
+
+    carrier = dhcp_probe(case, "link", linkId="to-server")
+    assert carrier["observation"]["observedCarrier"] == expected_carrier
+    assert not carrier["canDiagnose"]
+    if cause == "VLAN_MISMATCH":
+        distinguishing = dhcp_probe(case, "vlan", nodeId="sw", portId="c")
+        assert distinguishing["observation"]["observedVlan"] == expected_vlan
+    else:
+        distinguishing = dhcp_probe(case, "port", nodeId="sw", portId="s")
+        assert distinguishing["observation"]["observedAdmin"] == expected_admin
+    assert distinguishing["canDiagnose"]
+
+    wrong = {
+        "CABLE_DOWN": "PORT_SHUTDOWN",
+        "PORT_SHUTDOWN": "VLAN_MISMATCH",
+        "VLAN_MISMATCH": "CABLE_DOWN",
+    }[cause]
+    denied = case.diagnose(wrong)
+    signals["false_diagnosis"] = bool(denied["correct"] or denied["repairAvailable"])
+    signals["answer_leak"] |= cause in json.dumps(denied) or disclosed(denied)
+    assert not signals["false_diagnosis"] and not signals["answer_leak"]
+    blocked = False
+    try:
+        case.repair()
+    except ProjectValidationError as error:
+        blocked = "correct diagnosis" in str(error)
+    assert blocked
+
+    accepted = case.diagnose(cause)
+    assert accepted["correct"] and accepted["repairAvailable"]
+    recovered = case.repair()
+    assert recovered["status"] == "RECOVERED"
+    assert recovered["requestReachedServer"] and recovered["ackReachedClient"]
+    assert recovered["cause"] == cause
+    assert documented == original
