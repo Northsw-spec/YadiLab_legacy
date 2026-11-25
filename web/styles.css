@@ -156,3 +156,16 @@
 .icmp-lesson input[type=radio]{accent-color:var(--accent)}
 .icmp-lesson textarea{width:100%;margin:4px 0 8px;resize:vertical;font:inherit}
 .icmp-lesson button{white-space:normal}
+
+.external-tool-cards{min-width:0}
+.external-tool-card{border:1px solid var(--line);border-radius:8px;padding:10px;font-size:12px;line-height:1.55}
+.external-tool-card summary{cursor:pointer;color:var(--text);font-weight:700;overflow-wrap:anywhere}
+.external-tool-card summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.external-tool-card > details{margin-top:8px;border-top:1px solid var(--line);padding-top:8px}
+.external-tool-card h4{margin:10px 0 4px}
+.external-tool-card p{margin:6px 0;overflow-wrap:anywhere}
+.external-tool-card .external-tool-label{color:#ffd391;font-size:11px;letter-spacing:.02em;font-weight:800;margin-top:10px}
+.external-tool-card pre{background:#102132;border:1px solid var(--line);border-radius:6px;padding:8px;white-space:pre-wrap;overflow-wrap:anywhere}
+.external-tool-card .external-tool-source{margin-top:12px}
+.external-tool-sources{margin:4px 0 0;padding-left:16px}
+.external-tool-sources a{color:#adcfed}
