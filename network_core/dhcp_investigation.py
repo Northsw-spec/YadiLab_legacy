@@ -81,6 +81,13 @@ class InvestigationSession:
         candidates = _fault_candidates(
             self.lab.project, self.lab.dhcp.fabric,
             client_node, client_port, server_node, server_port)
+        self._diagnostic_targets = {
+            candidate["kind"]: {
+                key: value for key, value in candidate.items()
+                if key in ("linkId", "nodeId", "portId")
+            }
+            for candidate in candidates
+        }
         if _test_choice is None:
             selected = candidates[secrets.randbelow(len(candidates))]
         else:
@@ -145,15 +152,41 @@ class InvestigationSession:
             return lease["expiresAtSeconds"]
         return None
 
-    def _can_diagnose(self, phase: str) -> bool:
-        observed = {p["probe"] for p in self._probes}
-        if "renew" not in observed or len(observed - {"renew"}) < 2:
-            return False
-        if self.difficulty == "T2_REBIND":
-            return "REBINDING" in self._renewed_phases
-        if self.difficulty == "EXPIRY_RECOVERY":
-            return phase == "EXPIRED" and "REBINDING" in self._renewed_phases
-        return True
+    def _observed_cause(self) -> str | None:
+        """Distinguish the declared alternatives using only actual probe results."""
+        def observation(probe: str, candidate: str) -> dict:
+            target = self._diagnostic_targets.get(candidate)
+            return next((item["result"] for item in reversed(self._probes)
+                         if item["probe"] == probe and item["target"] == target), {})
+
+        carrier = observation("link", "CABLE_DOWN").get("observedCarrier")
+        if carrier == "DOWN":
+            if "PORT_SHUTDOWN" not in self._diagnostic_targets:
+                return "CABLE_DOWN"
+            admin = observation("port", "PORT_SHUTDOWN").get("observedAdmin")
+            if admin == "UP":
+                return "CABLE_DOWN"
+            if admin == "DOWN":
+                return "PORT_SHUTDOWN"
+        if carrier == "UP":
+            vlan = observation("vlan", "VLAN_MISMATCH")
+            if vlan and vlan["documentedVlan"] != vlan["observedVlan"]:
+                return "VLAN_MISMATCH"
+        return None
+
+    def _renewal_evidence_blocker(self, phase: str) -> str | None:
+        failed_phases = {
+            item["result"]["phase"] for item in self._probes
+            if item["probe"] == "renew" and item["result"]["status"] == "REQUEST_NOT_RECEIVED"
+        }
+        if "RENEWING" not in failed_phases:
+            return "investigation: observe real renewal that fails at T1"
+        if self.difficulty == "T2_REBIND" and "REBINDING" not in failed_phases:
+            return "investigation: T2 scenario requires a real rebinding DHCPREQUEST that fails"
+        if self.difficulty == "EXPIRY_RECOVERY" and (
+                phase != "EXPIRED" or "REBINDING" not in failed_phases):
+            return "investigation: advanced scenario requires failed T2 and expired lease"
+        return None
 
     def public_state(self) -> dict:
         lease = self._active_lease()
@@ -185,7 +218,10 @@ class InvestigationSession:
                                  "NEW_DORA" if lease is None else "RENEWAL"),
             "nextClockTargetSeconds": target,
             "canAdvance": can_advance,
-            "canDiagnose": self._can_diagnose(phase),
+            "canDiagnose": (
+                self._renewal_evidence_blocker(phase) is None
+                and self._observed_cause() is not None
+            ),
             "renewedPhases": sorted(self._renewed_phases),
             "observations": len(self._probes),
             "probesPerformed": [p["probe"] for p in self._probes],
@@ -304,28 +340,23 @@ class InvestigationSession:
             raise ProjectValidationError("investigation: exercise already repaired")
         if type(diagnosis) is not str or diagnosis not in DIAGNOSES:
             raise ProjectValidationError("investigation: choose a defined diagnosis")
-        observed = {p["probe"] for p in self._probes}
-        if "renew" not in observed or len(observed - {"renew"}) < 2:
+        blocker = self._renewal_evidence_blocker(self._phase(self._active_lease()))
+        if blocker is not None:
+            raise ProjectValidationError(blocker)
+        cause = self._observed_cause()
+        if cause is None:
             raise ProjectValidationError(
-                "investigation: observe real renewal and at least two other distinct checks before diagnosis")
-        if self.difficulty == "T2_REBIND" and "REBINDING" not in self._renewed_phases:
-            raise ProjectValidationError(
-                "investigation: T2 scenario requires a real rebinding DHCPREQUEST")
-        if self.difficulty == "EXPIRY_RECOVERY" and (
-                self._active_lease() is not None
-                or "REBINDING" not in self._renewed_phases):
-            raise ProjectValidationError(
-                "investigation: advanced scenario requires observed T2 and expired lease")
+                "investigation: distinguishing observations are required on the DHCP path")
         if self._attempts >= 3:
             raise ProjectValidationError("investigation: maximum three diagnostic attempts")
         self._attempts += 1
-        correct = diagnosis == self._fault["kind"]
+        correct = diagnosis == cause == self._fault["kind"]
         if correct:
             self._diagnosed = True
         return {
             "correct": correct, "repairAvailable": self._diagnosed,
             "feedback": "Observationerna stöder diagnosen." if correct
-            else "Hypotesen stämmer inte med det dolda simulerade felet. Jämför mätningarna.",
+            else "Mätningarna stöder inte hypotesen. Jämför länkstatus, portläge och VLAN.",
             **self.public_state(),
         }
 

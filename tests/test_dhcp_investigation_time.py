@@ -30,6 +30,7 @@ def evidence(case):
     for kind, target in (
         ("lease", {}), ("link", {"linkId": "to-server"}),
         ("port", {"nodeId": "sw", "portId": "s"}),
+        ("vlan", {"nodeId": "sw", "portId": "c"}),
     ):
         case.probe(kind, target)
 
@@ -78,6 +79,7 @@ class StagedEngineTests(unittest.TestCase):
                 self.assertFalse(t2["leaseRenewed"])
                 self.assertTrue(case.public_state()["canAdvance"])
                 evidence(case)
+                self.assertFalse(case.public_state()["canDiagnose"])
                 with self.assertRaisesRegex(ProjectValidationError, "expired lease"):
                     case.diagnose(kind)
                 expired = case.advance(7)
@@ -128,6 +130,7 @@ class StagedEngineTests(unittest.TestCase):
         with self.assertRaisesRegex(ProjectValidationError, "exceeds"):
             case.advance(1)
         evidence(case)
+        self.assertFalse(case.public_state()["canDiagnose"])
         with self.assertRaisesRegex(ProjectValidationError, "real rebinding"):
             case.diagnose("VLAN_MISMATCH")
         t2 = case.probe("renew", {})["observation"]
@@ -263,6 +266,8 @@ class StagedHttpTests(unittest.TestCase):
         self.assertEqual(call("probe", probe="link", target={"linkId": "to-server"})[0], 200)
         self.assertEqual(call("probe", probe="port", target={
             "nodeId": "sw", "portId": "s"})[0], 200)
+        self.assertEqual(call("probe", probe="vlan", target={
+            "nodeId": "sw", "portId": "c"})[0], 200)
         status, expired = call("advance", seconds=7)
         self.assertEqual(status, 200)
         self.assertEqual(expired["phase"], "EXPIRED")

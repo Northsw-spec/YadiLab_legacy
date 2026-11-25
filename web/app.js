@@ -930,7 +930,6 @@ function renderInvestigation() {
     || (needsLink && !linkSelector.value) || (needsPort && !portSelector.value)
     || Boolean(investigationState?.repaired)
     || (selectedProbe === 'renew' && !investigationState?.leaseActive);
-  const observed = new Set(investigationState?.probesPerformed ?? []);
   $('investigation-submit').disabled = !active || busy
     || Boolean(investigationState?.repaired) || Boolean(investigationState?.diagnosed)
     || !investigationState?.canDiagnose;
@@ -974,8 +973,12 @@ function renderInvestigation() {
       : 'HYPOTES AVVISAD. ' + investigationVerdict.feedback
         + ' Det verkliga felet avslöjas inte.';
   } else {
-    verdict.textContent = 'Pröva en hypotes först efter ett faktiskt DHCPREQUEST och '
-      + 'minst två andra olika slags observationer.';
+    verdict.textContent = investigationState?.canDiagnose
+      ? 'Mätningarna räcker för att pröva en hypotes.'
+      : 'Observera ett misslyckat DHCPREQUEST vid T1 och följ den valda nivån. '
+        + 'Mät länken till DHCP-servern. Om länken är nere, kontrollera portläget '
+        + 'på den anslutna switchporten om det finns en. Om länken är uppe, '
+        + 'jämför dokumenterat och observerat access-VLAN på klientens switchport.';
   }
   const recovery = $('investigation-recovery');
   recovery.classList.remove('ok', 'fail');

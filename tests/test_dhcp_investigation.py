@@ -18,8 +18,10 @@ from network_core.dhcp_investigation import (
 from network_core.model import ProjectValidationError
 from network_core.server import LabHTTPServer
 from network_core.storage import ProjectStore
+from test_dhcp import topology
 from test_dhcp_registry import clients
 from test_dhcp_port_vlan_fault import vlan_clients
+from test_ethernet import link
 
 
 def scenario(project, choice):
@@ -33,6 +35,33 @@ def probe(session, kind, **target):
 
 
 class InvestigationEngineTests(unittest.TestCase):
+    def test_correct_guess_on_unrelated_measurements_does_not_unlock_repair(self):
+        for cause in DIAGNOSES:
+            with self.subTest(cause=cause):
+                case = scenario(vlan_clients(), cause)
+                self.assertEqual(probe(case, "renew")["observation"]["status"],
+                                 "REQUEST_NOT_RECEIVED")
+                probe(case, "lease")
+                probe(case, "link", linkId="to-client")
+                probe(case, "port", nodeId="sw", portId="c")
+                probe(case, "vlan", nodeId="sw", portId="s")
+                self.assertFalse(case.public_state()["canDiagnose"])
+                with self.assertRaisesRegex(ProjectValidationError, "distinguishing"):
+                    case.diagnose(cause)
+                self.assertEqual(case.public_state()["diagnosisAttempts"], 0)
+                with self.assertRaisesRegex(ProjectValidationError, "correct diagnosis"):
+                    case.repair()
+
+                carrier = probe(case, "link", linkId="to-server")
+                self.assertFalse(carrier["canDiagnose"])
+                if cause == "VLAN_MISMATCH":
+                    measured = probe(case, "vlan", nodeId="sw", portId="c")
+                else:
+                    measured = probe(case, "port", nodeId="sw", portId="s")
+                self.assertTrue(measured["canDiagnose"])
+                self.assertTrue(case.diagnose(cause)["correct"])
+                self.assertTrue(case.repair()["ackReachedClient"])
+
     def test_each_hidden_cause_is_revealed_only_by_measured_observations(self):
         for kind in DIAGNOSES:
             p = vlan_clients()
@@ -96,27 +125,26 @@ class InvestigationEngineTests(unittest.TestCase):
                 with self.assertRaisesRegex(ProjectValidationError, "already repaired"):
                     probe(session, "lease")
 
-    def test_diagnosis_requires_real_renewal_and_two_independent_checks(self):
-        p = vlan_clients()
-        case = scenario(p, "VLAN_MISMATCH")
+    def test_direct_cable_needs_failed_renewal_and_no_nonexistent_switch_probe(self):
+        project = topology()
+        project["nodes"] = [project["nodes"][0], project["nodes"][2]]
+        project["links"] = [link("direct", "client", "eth0", "server", "eth0")]
+        case = scenario(project, "CABLE_DOWN")
+        carrier = probe(case, "link", linkId="direct")
+        self.assertEqual(carrier["observation"]["observedCarrier"], "DOWN")
+        self.assertFalse(carrier["canDiagnose"])
         with self.assertRaisesRegex(ProjectValidationError, "observe real renewal"):
-            case.diagnose("VLAN_MISMATCH")
-        probe(case, "renew")
-        probe(case, "lease")
-        with self.assertRaisesRegex(ProjectValidationError, "two other"):
-            case.diagnose("VLAN_MISMATCH")
-        probe(case, "lease")
-        with self.assertRaisesRegex(ProjectValidationError, "two other"):
-            case.diagnose("VLAN_MISMATCH")
-        probe(case, "vlan", nodeId="sw", portId="c")
-        self.assertTrue(case.diagnose("VLAN_MISMATCH")["correct"])
+            case.diagnose("CABLE_DOWN")
+        self.assertTrue(probe(case, "renew")["canDiagnose"])
+        self.assertTrue(case.diagnose("CABLE_DOWN")["correct"])
+        self.assertTrue(case.repair()["ackReachedClient"])
 
     def test_wrong_guesses_capped_and_never_leak_hidden_cause(self):
         p = vlan_clients()
         case = scenario(p, "PORT_SHUTDOWN")
         probe(case, "renew")
-        probe(case, "lease")
         probe(case, "link", linkId="to-server")
+        probe(case, "port", nodeId="sw", portId="s")
         for _ in range(3):
             r = case.diagnose("CABLE_DOWN")
             self.assertFalse(r["correct"])
@@ -278,6 +306,14 @@ class InvestigationHttpTests(unittest.TestCase):
         self.assertFalse(attempt["observation"]["requestReachedServer"])
         self.assertEqual(attempt["observation"]["status"], "REQUEST_NOT_RECEIVED")
         self.assertEqual(call("probe", probe="lease", target={})[1]["observation"]["remainingSeconds"], 30)
+        status, unrelated = call("probe", probe="link", target={"linkId": "to-client"})
+        self.assertEqual(status, 200)
+        self.assertFalse(unrelated["canDiagnose"])
+        status, blocked = call("diagnose", diagnosis="VLAN_MISMATCH")
+        self.assertEqual(status, 422)
+        self.assertIn("distinguishing", json.dumps(blocked))
+        self.assertNotIn("VLAN_MISMATCH", json.dumps(blocked))
+        self.assertEqual(call("repair")[0], 422)
         self.assertEqual(call("probe", probe="link", target={"linkId": "to-server"})[1]
                          ["observation"]["observedCarrier"], "UP")
         self.assertEqual(call("probe", probe="port", target={"nodeId": "sw", "portId": "s"})[1]
@@ -287,6 +323,7 @@ class InvestigationHttpTests(unittest.TestCase):
         code, wrong = call("diagnose", diagnosis="CABLE_DOWN")
         self.assertEqual(code, 200)
         self.assertFalse(wrong["correct"])
+        self.assertEqual(wrong["diagnosisAttempts"], 1)
         self.assertNotIn("VLAN_MISMATCH", json.dumps(wrong))
         self.assertEqual(call("repair")[0], 422)
         code, right = call("diagnose", diagnosis="VLAN_MISMATCH")
