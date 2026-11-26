@@ -1,6 +1,6 @@
 # Tekniskt importkontrakt – källtrogen dokumentationshantering
 
-**2026-11-24:** Detta är ett **tekniskt kontrakt**, inte en plan eller automatisk beställning av ny importerare. Den **enda aktiva utvecklingsplanen** är [PEDAGOGICAL_TROUBLESHOOTING_PLAN.md](PEDAGOGICAL_TROUBLESHOOTING_PLAN.md). Faktiskt stöd bestäms av aktuell kod, test och CI på exakt commit, inte av denna text.
+**2026-11-24:** Detta är ett **tekniskt kontrakt**, inte en plan eller automatisk beställning av ny importerare. Den **enda aktiva utvecklingsplanen** är [REMEDIATION_PLAN_2026-11-26.md](REMEDIATION_PLAN_2026-11-26.md); [PEDAGOGICAL_TROUBLESHOOTING_PLAN.md](PEDAGOGICAL_TROUBLESHOOTING_PLAN.md) (P0–P7) är **CLOSED** och historisk (dess pedagogiska kvalitetskrav kvarstår). Codex arbete styrs operativt av [CODEX_EXECUTION_POLICY.md](CODEX_EXECUTION_POLICY.md). Faktiskt stöd bestäms av aktuell kod, test och CI på exakt commit, inte av denna text.
 
 ## Ägarskap och format
 

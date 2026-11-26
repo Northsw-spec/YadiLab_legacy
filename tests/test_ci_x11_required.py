@@ -17,7 +17,7 @@ COMMAND = "xvfb-run -a python3 tests/browser_primary_selection_x11.py"
 class RequiredX11CITests(unittest.TestCase):
     def test_primary_selection_is_part_of_required_pr_and_main_job(self):
         workflow = CI.read_text(encoding="utf-8")
-        self.assertRegex(workflow, r"(?m)^on:\n  push:\n  pull_request:\n")
+        self.assertRegex(workflow, r"(?m)^on:\n  push:\n    branches:\n      - main\n  pull_request:\n")
         self.assertIn("\n  unit-tests:\n", workflow)
         body = workflow.split("\n  unit-tests:\n", 1)[1]
         # A future independent job is not automatically protected by the
@@ -31,7 +31,12 @@ class RequiredX11CITests(unittest.TestCase):
         self.assertEqual(len(x11), 1, "X11 must be one required unit-tests step")
         step = x11[0]
         self.assertIn("        run: " + COMMAND, step)
-        self.assertNotRegex(step, r"(?m)^        (?:if|continue-on-error):")
+        self.assertIn("        if: steps.scope.outputs.docs_only != 'true'", step)
+        self.assertNotIn("continue-on-error:", step)
+        self.assertIn("python3 tools/ci_change_scope.py", workflow)
+        # Only a machine-proven doc-only diff may skip actual X11 acceptance.
+        classifier = (ROOT / "tools" / "ci_change_scope.py").read_text("utf-8")
+        self.assertIn('status in ("A", "M")', classifier)
         self.assertIn("sudo apt-get install -y xvfb xauth xclip", body)
         self.assertIn("python3 -m playwright install --with-deps chromium", body)
         self.assertLess(body.index("python3 -m playwright install --with-deps chromium"),

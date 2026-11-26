@@ -52,8 +52,32 @@ class WorkflowSupplyChainTests(unittest.TestCase):
 
         separate = (ROOT / ".github" / "workflows" /
                     "architecture_guard.yml").read_text("utf-8")
-        self.assertRegex(separate, r"(?m)^on:\n  push:\n  pull_request:")
+        self.assertRegex(separate, r"(?m)^on:\n  push:\n    branches:\n      - main\n  pull_request:")
         self.assertIn("\n  architecture-guard:\n", separate)
+        # Required PR checks run once per HEAD; protected main still runs on push.
+        self.assertIn("    branches:\n      - main\n  pull_request:", ci)
+        self.assertIn("cancel-in-progress: ${{ github.event_name == 'pull_request' }}", ci)
+        self.assertIn("cancel-in-progress: ${{ github.event_name == 'pull_request' }}", separate)
+        self.assertIn("python3 tools/ci_change_scope.py", ci)
+        self.assertIn("if: steps.scope.outputs.docs_only == 'true'", ci)
+        self.assertIn("python3 -m unittest discover -s tests -p 'test_codex_governance.py' -v", ci)
+        for step in ("Model, storage and HTTP functional tests",
+                     "Full JavaScript syntax and functional tests",
+                     "Browser acceptance prerequisites",
+                     "Real Chromium interaction and durable Save/Open",
+                     "P6 pedagogy assessment with real Chromium and durable Save/Open",
+                     "Real Chromium protected local API capability and Save/Open",
+                     "Real X11 PRIMARY prerequisites",
+                     "Real X11 PRIMARY middle-pan and clipboard regression",
+                     "Real Chromium ELK preview, cancellation and durable Save/Open",
+                     "Automatic imported ELK layout in Chromium",
+                     "Large ELK layout zoom and viewport regression in Chromium"):
+            self.assertIn("      - name: " + step + "\n"
+                          "        if: steps.scope.outputs.docs_only != 'true'\n", ci)
+        # Architecture backup is never behind the conditional documentation fast path.
+        architecture_step = ci.split("      - name: Required architecture anti-regression backup gate\n", 1)[1]
+        architecture_step = architecture_step.split("      - name: Model, storage and HTTP functional tests\n", 1)[0]
+        self.assertNotIn("        if:", architecture_step)
         self.assertIn("python3 -m unittest discover -s tests -p 'test_architecture_guard.py' -v",
                       separate)
         self.assertNotIn("continue-on-error: true", separate)

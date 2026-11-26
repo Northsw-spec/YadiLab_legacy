@@ -1,7 +1,12 @@
 name: Functional correctness
 on:
   push:
+    branches:
+      - main
   pull_request:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 permissions:
   contents: read
 jobs:
@@ -21,6 +26,16 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7 (tag resolved 2026-11-24)
         with:
           node-version: '22'
+      - name: Prove changed-file scope (fail closed to full acceptance)
+        id: scope
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: python3 tools/ci_change_scope.py
+      - name: Bounded documentation-only governance and supply-chain tests
+        if: steps.scope.outputs.docs_only == 'true'
+        run: |
+          python3 -m unittest discover -s tests -p 'test_ci_integrity.py' -v
+          python3 -m unittest discover -s tests -p 'test_codex_governance.py' -v
       # Defense in depth until (and after) the independent architecture-guard
       # check is explicitly marked Required in the active main ruleset.
       # The existing unit-tests context is already Required: a bad module
@@ -36,31 +51,42 @@ jobs:
             python3 tools/architecture_guard.py
           fi
       - name: Model, storage and HTTP functional tests
+        if: steps.scope.outputs.docs_only != 'true'
         run: python3 -m unittest discover -s tests -p 'test_*.py' -v
       - name: Full JavaScript syntax and functional tests
+        if: steps.scope.outputs.docs_only != 'true'
         run: npm run check
       - name: Browser acceptance prerequisites
+        if: steps.scope.outputs.docs_only != 'true'
         run: |
           python3 -m pip install playwright==1.57.0
           python3 -m playwright install --with-deps chromium
       - name: Real Chromium interaction and durable Save/Open
+        if: steps.scope.outputs.docs_only != 'true'
         run: python3 tests/browser_smoke.py
       - name: P6 pedagogy assessment with real Chromium and durable Save/Open
+        if: steps.scope.outputs.docs_only != 'true'
         run: python3 tests/run_pedagogy_assessment.py
       - name: Real Chromium protected local API capability and Save/Open
+        if: steps.scope.outputs.docs_only != 'true'
         run: python3 tests/browser_api_capability.py
       # X11 PRIMARY is distinct from the normal clipboard and cannot be
       # verified by headless Chromium. Keep this inside the required unit-tests
       # job: if the real X11 regression fails, the PR and main CI must fail.
       - name: Real X11 PRIMARY prerequisites
+        if: steps.scope.outputs.docs_only != 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y xvfb xauth xclip
       - name: Real X11 PRIMARY middle-pan and clipboard regression
+        if: steps.scope.outputs.docs_only != 'true'
         run: xvfb-run -a python3 tests/browser_primary_selection_x11.py
       - name: Real Chromium ELK preview, cancellation and durable Save/Open
+        if: steps.scope.outputs.docs_only != 'true'
         run: python3 tests/browser_elk_layout.py
       - name: Automatic imported ELK layout in Chromium
+        if: steps.scope.outputs.docs_only != 'true'
         run: python3 tests/browser_elk_import.py
       - name: Large ELK layout zoom and viewport regression in Chromium
+        if: steps.scope.outputs.docs_only != 'true'
         run: python3 tests/browser_canvas_large_zoom.py

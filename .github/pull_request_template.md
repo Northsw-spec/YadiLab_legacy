@@ -12,6 +12,15 @@
 - Oberoende förväntat resultat och negativa/motsägande fall:
 - Varje C-ID:s status/evidenslänk efter detta arbete:
 
+## Codex-arbetsform – kredit- och CI-effektivitet
+
+Följ [obligatorisk produktivitets-/CI-policy](../docs/CODEX_EXECUTION_POLICY.md).
+- [ ] Fastställ faktisk main SHA, enda öppna PR, scope och minsta oberoende positiva/negativa tester före tung körning.
+- [ ] Riktad billig preflight före allomfattande browser; ingen duplicerad full CI på PR-branchpush.
+- [ ] Vid PENDING: ingen passiv Actions-polling, sleep-loop eller statusspamming; arbeta säkert inom samma PR eller lämna exakt HEAD/status/handoff.
+- [ ] Docs-only påstås endast om `tools/ci_change_scope.py` verifierat ren Markdown-diff; annars full Required-matris.
+- [ ] Endast faktiska korrigeringar ger ny commit/full körning. Ingen falsk auto-merge eller bakgrundskörning.
+
 ## Verifiering och säker ändring
 - [ ] En PR åt gången; inget nytt projektschema, andra motorer eller oannonserade protokoll
 - [ ] `python3 -m unittest discover -s tests -p 'test_*.py' -v`
@@ -26,4 +35,4 @@
 - [ ] Alla required checks på **exakt slutlig PR-HEAD** = SUCCESS; förväntad main oförändrad
 - [ ] Inga blockerande reviews; squash-merge utan kringgånget branchskydd
 
-**Aktuell realitet:** `architecture-guard` och dess branchskydd ska införas i A1; denna mall är inte bevis att spärren redan finns. A8-studie och A9-protokollutökning kräver nytt uttryckligt användargodkännande.
+**Aktuell realitet:** Main-ruleset #27419615 kräver **både** `unit-tests` och `architecture-guard` (GitHub Actions app 15368, strict); separat blockering verifierades i ej mergad PR #173. Att Codex inte väntar passivt innebär **aldrig** bypass eller påstådd merge före exakta Required-checks SUCCESS. A8-studie och A9-protokollutökning kräver nytt uttryckligt användargodkännande.

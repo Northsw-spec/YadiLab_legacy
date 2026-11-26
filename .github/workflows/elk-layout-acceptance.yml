@@ -8,6 +8,9 @@ on:
       - 'tests/browser_elk_layout.py'
       - 'tests/browser_canvas_large_zoom.py'
       - 'tests/canvas_zoom_bounds_test.mjs'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 permissions:
   contents: read
 jobs:

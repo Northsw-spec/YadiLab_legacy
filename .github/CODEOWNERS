@@ -8,6 +8,12 @@
 /.github/ @Northsw-spec
 /architecture/ @Northsw-spec
 /tools/architecture_guard.py @Northsw-spec
+/tools/ci_change_scope.py @Northsw-spec
+/tests/test_ci_integrity.py @Northsw-spec
+/tests/test_ci_x11_required.py @Northsw-spec
+/tests/test_ci_change_scope.py @Northsw-spec
+/tests/test_codex_governance.py @Northsw-spec
+/docs/CODEX_EXECUTION_POLICY.md @Northsw-spec
 /docs/REMEDIATION_PLAN_2026-11-26.md @Northsw-spec
 /web/app.js @Northsw-spec
 /web/features/ @Northsw-spec

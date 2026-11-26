@@ -462,8 +462,10 @@
     "tests/test_arp.py",
     "tests/test_arp_diagnostics_http.py",
     "tests/test_arp_special_addresses.py",
+    "tests/test_ci_change_scope.py",
     "tests/test_ci_integrity.py",
     "tests/test_ci_x11_required.py",
+    "tests/test_codex_governance.py",
     "tests/test_connected_routing.py",
     "tests/test_csv_import.py",
     "tests/test_dhcp.py",
@@ -537,18 +539,21 @@
     "tests/xlsx_fixture.py"
   ],
   "critical_files": [
-    ".github/workflows/architecture_guard.yml",
     ".github/CODEOWNERS",
+    ".github/workflows/architecture_guard.yml",
     "AGENTS.md",
-    "architecture/baseline.json",
     "architecture/a0_baseline.json",
     "architecture/a0_frontend_imports.json",
+    "architecture/baseline.json",
+    "docs/CODEX_EXECUTION_POLICY.md",
     "docs/REMEDIATION_PLAN_2026-11-26.md",
     "docs/architecture/A1_GUARD_CONTRACT_2026-11-26.md",
-    "tests/test_architecture_guard.py",
     "tests/test_a0_forensic_manifest.py",
+    "tests/test_architecture_guard.py",
+    "tests/test_codex_governance.py",
     "tests/test_web_import_graph.py",
-    "tools/architecture_guard.py"
+    "tools/architecture_guard.py",
+    "tools/ci_change_scope.py"
   ],
   "backend_single_truth": {
     "network_core/model.py": "validate_project",

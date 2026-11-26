@@ -1,7 +1,7 @@
 # A0 – Forensisk modul- och regressionsbaslinje
 
 **Datum:** 2026-11-26  
-**Status:** A0-evidens inför avgränsad PR; slutligt DONE endast efter verifierad required CI och squash-merge.  
+**Historisk nollpunkt – A0 DONE:** [PR #169](https://github.com/Northsw-spec/YadiLab/pull/169) är verifierat squash-mergad. Nedanstående mått beskriver dåtidens källversion. Framtida Codex-arbete följer [CODEX_EXECUTION_POLICY.md](../CODEX_EXECUTION_POLICY.md) (ingen passiv CI-väntan, oförändrad Required-mergegrind).  
 **Granskad main:** `f36435dd7b108756bdac6e3919c1cb1c61cf58d7` (PR #168 redan mergad; inga öppna PR:er vid A0-start).  
 **Historisk jämförelse:** 3E, [PR #59](https://github.com/Northsw-spec/YadiLab/pull/59), squash `17acb51c8c64c3b4b7a1026514cb8b0a2177a127`.  
 **Koppling:** [Godkänd åtgärdsplan A0–A10](../REMEDIATION_PLAN_2026-11-26.md); främst **C02–C05** och beredning för C06–C09.  

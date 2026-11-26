@@ -3,7 +3,7 @@
 **Datum:** 2026-11-26  
 **Leverans:** [PR #176](https://github.com/Northsw-spec/YadiLab/pull/176)  
 **Aktiv roadmap:** [A0–A10](../REMEDIATION_PLAN_2026-11-26.md), C03–C05  
-**Status:** A3 **IN_PROGRESS**. Del-PR:n är levererad och blir accepterad först efter att båda Required CI-checks är SUCCESS på exakt sista PR-HEAD och squash-merge verifierats. A3 är **inte DONE** efter denna del.
+**Status:** **Del 1 DONE** efter [PR #176](https://github.com/Northsw-spec/YadiLab/pull/176), squash `35ed34bd76551849ca79ebc5ca75813f2540e5d1` med två Required `unit-tests`, två Required `architecture-guard` och fokuserad ELK SUCCESS. **Hela A3 är fortfarande IN_PROGRESS**. Framtida Codex-arbeten följer [CODEX_EXECUTION_POLICY.md](../CODEX_EXECUTION_POLICY.md).
 
 ## Avgränsning
 
@@ -38,6 +38,6 @@ Dessa värden är statiska mått, inte semantisk eller runtimecertifiering. \`ar
 
 ## Kvarstående A3
 
-Detta är **inte** ett försök att avsluta hela A3 med endast 51 färre rader. Fortsatt arbete i separata, granskade PR:er: en enda explicit ägare av workspace-/edit-revisioner och invalidering; Builder-/inspector-presentation, diagnosorkestrering, import-/mapping-/Save/Open-UI samt tillhörande stale-response-/session- och layoutparitet. Ingen andra simulator, ingen duplicerad app-state, inga ospecificerade nätverksfakta.
+Detta är **inte** ett försök att avsluta hela A3 med endast 51 färre rader. Den efterföljande del 2 (PR #177) har redan samlat workspace-/edit-revisioner hos en ägare. Kvarvarande arbete i separata PR:er: UI-invalideringens sidoeffekter och sena `finally`, Builder-/inspector-presentation, diagnosorkestrering, import-/mapping-/Save/Open-UI samt tillhörande stale-/session- och layoutparitet. Ingen andra simulator, ingen duplicerad app-state, inga ospecificerade nätverksfakta.
 
 **Slutvillkor för del-PR:** Required \`unit-tests\` och \`architecture-guard\` SUCCESS på exakt HEAD, inga blockerande reviews, main oförändrad, squash-merge och därefter kontroll av ny main/CI. Om något av detta saknas: del-PR **NOT_ACCEPTED**, A3 fortsatt IN_PROGRESS. Återställning genom revert av enbart del-PR #176.
