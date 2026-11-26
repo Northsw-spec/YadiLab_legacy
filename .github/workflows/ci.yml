@@ -18,6 +18,20 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7 (tag resolved 2026-11-24)
         with:
           node-version: '22'
+      # Defense in depth until (and after) the independent architecture-guard
+      # check is explicitly marked Required in the active main ruleset.
+      # The existing unit-tests context is already Required: a bad module
+      # graph or raised budget must fail it as well, never merely an optional job.
+      - name: Required architecture anti-regression backup gate
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.sha }}
+        shell: bash
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            python3 tools/architecture_guard.py --base-ref "$BASE_REF"
+          else
+            python3 tools/architecture_guard.py
+          fi
       - name: Model, storage and HTTP functional tests
         run: python3 -m unittest discover -s tests -p 'test_*.py' -v
       - name: Full JavaScript syntax and functional tests
