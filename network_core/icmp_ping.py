@@ -1,7 +1,11 @@
 """RFC 792 Echo Request/Reply over one shared real simulated IPv4/ARP/L2 state.
 
 PING_REPLY requires TWO actual datagram deliveries, not a connected graph or
-single outbound path. No synthetic RTT, ICMP Time Exceeded, or default route.
+single outbound path. No synthetic RTT or inferred default route. Only explicitly configured
+routes are used, including explicit default routes. On verified transit
+router TTL expiry or missing routes, bounded ICMP Time Exceeded (11/0)
+or Network Unreachable (3/0) error packets may be generated and are
+reported as received only if their simulated return path actually succeeds.
 """
 from __future__ import annotations
 
