@@ -13,7 +13,7 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 from network_core.icmp_investigation import (
-    IcmpInvestigation, IcmpInvestigationRegistry, KINDS, _candidates,
+    IcmpInvestigation, IcmpInvestigationRegistry, KINDS, MAX_PROBES, _candidates,
 )
 from network_core.icmp_ping import EchoExchange
 from network_core.model import ProjectValidationError
@@ -464,6 +464,27 @@ class IcmpInvestigationTests(unittest.TestCase):
         restored = case.repair()
         self.assertEqual(restored["status"], "RECOVERED")
         self.assertTrue(restored["replyMatched"])
+
+    def test_probe_limit_keeps_diagnosis_available_and_repair_is_verified(self):
+        case = scenario("STATIC_ROUTE_MISSING")
+        baseline = deepcopy(case.project)
+        case.probe("ping", {})
+        case.probe("route", {"nodeId": "a", "destinationIpv4": "203.0.113.20"})
+        for _ in range(MAX_PROBES - 2):
+            case.probe("address", {})
+        state = case.state()
+        self.assertEqual(state["observations"], MAX_PROBES)
+        self.assertEqual(state["maxProbes"], MAX_PROBES)
+        self.assertTrue(state["canDiagnose"])
+        self.assertTrue(state["canSubmitDiagnosis"])
+        with self.assertRaisesRegex(ProjectValidationError, "observation limit"):
+            case.probe("ping", {})
+        self.assertEqual(case.state()["observations"], MAX_PROBES)
+        self.assertTrue(case.diagnose("STATIC_ROUTE_MISSING")["correct"])
+        recovery = case.repair()
+        self.assertEqual(recovery["status"], "RECOVERED")
+        self.assertTrue(recovery["replyMatched"])
+        self.assertEqual(case.project, baseline)
 
     def test_numeric_equivalent_json_projects_fail_exact_session_snapshot(self):
         from network_core.simulation import _signature

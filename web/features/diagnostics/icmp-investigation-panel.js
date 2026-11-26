@@ -217,6 +217,7 @@ export function renderIcmpInvestigationPanel(project, session) {
     || !$('icmp-investigation-destination').value.trim();
   $('icmp-investigation-stop').disabled = !active;
   $('icmp-investigation-measure').disabled = !active || busy || beforeMeasurements
+    || icmpInvestigationState?.observations >= icmpInvestigationState?.maxProbes
     || icmpInvestigationState?.repaired
     || (kind === 'link' && !linkSelector.value)
     || (kind === 'port' && !portSelector.value)
@@ -241,6 +242,11 @@ export function renderIcmpInvestigationPanel(project, session) {
         + '/' + icmpInvestigationState.sourcePort
         + ' → ' + icmpInvestigationState.destinationIpv4
         + ' · ' + icmpInvestigationState.observations + ' mätningar'
+        + (icmpInvestigationState.observations >= icmpInvestigationState.maxProbes
+          ? ' · ' + icmpInvestigationState.observations + ' av '
+            + icmpInvestigationState.maxProbes
+            + ' mätningar använda – inga fler mätningar kan göras'
+          : '')
         + (lesson ? '' : ' · DHCP-ursprung: ' + icmpInvestigationState.dhcpCheck)
         + (!icmpInvestigationState.diagnosed
             && icmpInvestigationState.diagnosisAttempts >= icmpInvestigationState.maxDiagnosisAttempts
