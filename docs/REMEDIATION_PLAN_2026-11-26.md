@@ -159,7 +159,7 @@ Föreslagna *förvaltningsmål*, inte bevis för korrekt kod: `app.js` under **1
 
 ### A1. Arkitekturspärrar före ny extraktion
 
-**Aktiv leveransevidens:** [A1-kontrollkontrakt](architecture/A1_GUARD_CONTRACT_2026-11-26.md), `architecture/baseline.json`, `tools/architecture_guard.py`, `tests/test_architecture_guard.py`, `.github/workflows/architecture_guard.yml` och `.github/CODEOWNERS`. Implementerad grön CI i PR:n och **obligatorisk** kontroll i [main-ruleset](https://github.com/Northsw-spec/YadiLab/rules/27419615) är två skilda krav. **Status för branchregelen: ÄNNU EJ VERIFIED/REQUIRED; arbetet får inte kallas DONE utan verifiering.**
+**Aktiv leveransevidens:** [A1-kontrollkontrakt](architecture/A1_GUARD_CONTRACT_2026-11-26.md), `architecture/baseline.json`, `tools/architecture_guard.py`, `tests/test_architecture_guard.py`, `.github/workflows/architecture_guard.yml` och `.github/CODEOWNERS`. **Som mellanliggande skydd körs kontrollen även inom redan Required `unit-tests`**, med ett regressionstest för att kontrollsteget inte lossnar. Separat grön CI och **obligatorisk** kontroll i [main-ruleset](https://github.com/Northsw-spec/YadiLab/rules/27419615) är två skilda krav. **Status för branchregelen: ÄNNU EJ VERIFIED/REQUIRED; arbetet får inte kallas DONE utan verifiering.**
 
 **Utför:** Implementera G1–G7. Lägg till automatiserat test för `architecture/baseline.json`, förbjudna beroenden, svällande entrypoint, modulförsvinnande och kopierad sessionsstate. Skapa kompatibel uppdateringsprocess: budget får sänkas automatiskt men höjning kräver separat, granskad ändring. Gör den obligatoriska checken *required* i GitHub branch rules innan A3.
 
