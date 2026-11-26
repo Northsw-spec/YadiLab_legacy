@@ -571,6 +571,30 @@ def investigation_lifecycle_races(context, base, network_mode, errors):
         expect(page.locator('#investigation-submit')).to_be_enabled()
         return cause
 
+    # P7: actual 48th HTTP observation closes the measurement button while
+    # the session still permits Stop. The 49th request must not be offered.
+    page = fresh()
+    start(page)
+    page.locator('#investigation-probe').select_option('lease')
+    for count in range(1, 49):
+        with page.expect_response('**/api/dhcp/investigation/probe') as measured:
+            page.locator('#investigation-run-probe').click()
+        response = measured.value
+        assert response.status == 200
+        observed = response.json()
+        assert observed['observations'] == count
+        assert observed['maxProbes'] == 48
+        if count < 48:
+            expect(page.locator('#investigation-run-probe')).to_be_enabled()
+    expect(page.locator('#investigation-run-probe')).to_be_disabled()
+    expect(page.locator('#investigation-status')).to_contain_text(
+        '48 av 48 mätningar använda')
+    expect(page.locator('#investigation-stop')).to_be_enabled()
+    with page.expect_response('**/api/dhcp/investigation/stop') as released:
+        page.locator('#investigation-stop').click()
+    assert released.value.status == 200
+    page.close()
+
     # P7: exhaustion is a genuine server-side gate, not just stale UI
     # evidence. Three wrong guesses leave measurements available but prevent
     # a fourth attempt; no hidden cause or repair is revealed.
