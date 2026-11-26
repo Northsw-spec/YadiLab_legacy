@@ -1,0 +1,16 @@
+# YadiLab architecture ownership (A1)
+# This repository belongs to the Northsw-spec user account.
+# Named responsibility does not imply that GitHub currently requires an approval.
+* @Northsw-spec
+
+/AGENTS.md @Northsw-spec
+/README.md @Northsw-spec
+/.github/ @Northsw-spec
+/architecture/ @Northsw-spec
+/tools/architecture_guard.py @Northsw-spec
+/docs/REMEDIATION_PLAN_2026-11-26.md @Northsw-spec
+/web/app.js @Northsw-spec
+/web/features/ @Northsw-spec
+/network_core/import_*.py @Northsw-spec
+/network_core/icmp_investigation.py @Northsw-spec
+/tests/test_architecture_guard.py @Northsw-spec
