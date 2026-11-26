@@ -28,6 +28,12 @@ jobs:
           else
             python3 tools/architecture_guard.py --report architecture-report.json
           fi
+      # TEMPORARY A1 NEGATIVE TEST. This branch must NEVER be merged.
+      # Run after valid architecture checks so only the independent job fails.
+      - name: A1 deliberate independent required-check failure (DO NOT MERGE)
+        run: |
+          echo "INTENTIONAL_A1_NEGATIVE_PROBE: independent architecture-guard must block merge"
+          exit 17
       - name: Publish per-run architecture report even on failure
         if: always()
         shell: bash
