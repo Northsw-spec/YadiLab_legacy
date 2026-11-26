@@ -1,5 +1,8 @@
 # Repository-wide coding-agent instructions
 
+**LATEST MANDATORY ENGINE DECISION:** [ADR-0002](../docs/architecture/ADR_0002_FRESH_ENGINE_2026-11-26.md) supersedes selective migration of old network engine internals. Build a clean independent in-process DES engine, no imports from old EthernetFabric, ArpSession, IPv4Trace or DhcpSession. Preserve only independently tested external product and data contracts; retire legacy only after verified single cutover. No artificial full-S0/A3/A4/A5/A7 prerequisites for isolated S1-POC0. Retirement receipts allow replacing noncritical modules without weakening Required CI.
+
+
 **NON-NEGOTIABLE SCOPE – 2026-11-26:** [PT-FULL-001](../docs/FULL_PACKET_TRACER_PARITY_CONTRACT.md) is the mandatory complete Cisco Packet Tracer parity contract. YadiLab MUST implement every documented and verified PT protocol, device, device CLI/GUI function, module, physical/logical workspace, realtime/simulation/PDU, all IoT/OT, Activity Wizard/auto-scoring/scripting, multiuser, ExApps/API, import/export/project formats and ALL other PT capabilities on Linux, then outperform PT in objectively validated correctness, precision, capabilities and pedagogy. **Only exclusions:** Windows/macOS, and additional accessibility/keyboard-only parity goals. NO other permanent gaps; OPEN/BLOCKED means no full-parity release. Preserve existing tests. The current implementation is PARTIAL. The sole A0–A10+S0–S12 roadmap must implement every PT-F01–F29 subfeature before S12; do not use phase labels to silently de-scope. This does not authorize VMs, IOS emulation or unsandboxed scripts.
 
 

@@ -1,5 +1,8 @@
 # A1 – Architecture guard, contracts and required-check installation
 
+**GODKÄND ÄNDRING:** [ADR-0002](ADR_0002_FRESH_ENGINE_2026-11-26.md) avskaffar permanent filnamnslåsning på gamla icke-kritiska motor-/testmoduler. En fil får pensioneras genom `retirement_receipts` (levande ersättare, registrerat acceptanstest, beslutsdokument), behållen Required architecture-guard och oberoende tester. Nya `network_core/engine/`-moduler inventeras rekursivt. Kritiska säkerhets- och styrfiler får inte tyst avvecklas.
+
+
 **Date:** 2026-11-26  
 **Active plan:** [A0–A10 remediation roadmap](../REMEDIATION_PLAN_2026-11-26.md)  
 **Status:** **DONE / ACCEPTED (2026-11-26).** [PR #170](https://github.com/Northsw-spec/YadiLab/pull/170) is merged; [PR #173](https://github.com/Northsw-spec/YadiLab/pull/173) independently demonstrated that a failing Required `architecture-guard` blocks merge although `unit-tests` succeeds. No probe was merged.  

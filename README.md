@@ -1,5 +1,8 @@
 # YadiLab – Linuxbaserad nätverkssimulator och pedagogiskt felsökningslabb
 
+**Motorkontrakt:** [ADR-0002](docs/architecture/ADR_0002_FRESH_ENGINE_2026-11-26.md) kräver en HELT NY egen händelsestyrd nätverksmotor. Legacy Ethernet/ARP/IPv4/ICMP/DHCP-runtimen utgör inte framtida kodgrund utan behålls endast tills en säker, verifierad cutover. Data-/UI-/import-/säkerhetskontrakt ska bevaras med oberoende tester. Detta är en plan, ännu ingen färdig ny engine.
+
+
 **Bindande slutmål – HEL Cisco Packet Tracer-paritet:** [PT-FULL-001](docs/FULL_PACKET_TRACER_PARITY_CONTRACT.md) kräver ALLT Packet Tracer kan göra i YadiLab på Linux, inklusive alla protokoll, enheter/moduler, fysisk/logisk workspace, GUI/CLI, full simulering och PDU, Activity Wizard/bedömning/scripting, IoT/OT, multiuser, extensions och filformat. Alla verkliga underfall ska bevisas. Därefter ska YadiLab objektivt överträffa Packet Tracer i korrekthet, precision, omfattning och pedagogik. Detta är ännu **inte dagens implementerade stöd**. Endast Linux-only och att nya accessibility/keyboard-only-krav saknas är explicita undantag.
 
 

@@ -1,5 +1,8 @@
 # Deterministisk simuleringskärna – tekniskt arkitekturkontrakt
 
+**NYTT BINDANDE FÖRETRÄDE:** [ADR-0002](ADR_0002_FRESH_ENGINE_2026-11-26.md). Ny motorn är självständig och får aldrig importera gamla Ethernet-/ARP-/IPv4-/ICMP-/DHCP-runtimeklasser. Text nedan om att återanvända gammal engine avser endast historiska externa regressioner och är upphävd som implementationsregel. S1-POC0 startar efter guard/ADR utan färdig hela S0. Endast EN produktionsmotor per scenario före/efter cutover.
+
+
 **INTEGRATIONSSCOPE:** [PT-FULL-001](../FULL_PACKET_TRACER_PARITY_CONTRACT.md) kräver ALL Packet Tracer-kompatibel funktionalitet. Den gemensamma DES-kärnan måste därför stödja riktiga packets, timers, fysiska länk- och enhetstillstånd, multiuser/federering när användaren aktiverar det, isolerat IoT/OT/scripting och fulla device-/CLI-scenarier utan att en parallell motor skapas. Inget generellt förbud mot all autentiserad peer-kommunikation får reducera Multiuser till OPTIONAL. Enbart Linux; accessibility/keyboard-only inte mål.
 
 
@@ -10,7 +13,7 @@
 
 ## Kärninvariant och gränser
 
-Det finns en **auktoritativ explicit projektkonfiguration**, en final validator och ett exekverings-/sessionslager av runtime state. Nuvarande model.py::validate_project och pålitliga Ethernet/ARP/IPv4/ICMP/DHCP-funktioner återanvänds bakom kompatibilitetsadaptrar och migreras gradvis. Förbjud två oberoende dataplan som ger olika nätverkssvar för samma scenario. Inga VM:ar, gästande OS, Cisco IOS-images, GNS3/EVE-NG, containers, FRRouting- eller ns-3-runtimeprocesser, nätverkspaketsändning på host NIC eller verkliga nätverkskontakter.
+Det finns en **auktoritativ explicit projektkonfiguration**, en final validator och ett exekverings-/sessionslager av runtime state. Nuvarande `model.py::validate_project` kan initialt bevara gamla projektfilers externa valideringskontrakt. Nya Ethernet/ARP/IPv4/ICMP/DHCP-funktioner implementeras självständigt från standard-orakel; gamla motorklasser återanvänds inte. Förbjud två oberoende dataplan som ger olika nätverkssvar för samma scenario. Inga VM:ar, gästande OS, Cisco IOS-images, GNS3/EVE-NG, containers, FRRouting- eller ns-3-runtimeprocesser, nätverkspaketsändning på host NIC eller verkliga nätverkskontakter.
 
 En **discrete-event kernel** kör protokoll/state transitions i en process, gärna med en prioriterad stabil kö med (simulated_time_ns, monotonically_increasing_event_id), heltalsnanosekunder och en seedad PRNG. Odefinierad/slumpmässig ordning, väggklockstid, DOM-animationshastighet och fysisk nätverkstid får aldrig påverka semantiska resultat. Ett aktivt event får schemalägga nya events. Explicit max events/time/memory, watchdog för zero-time livelock, ev.cancel samt resursgränser krävs.
 
@@ -37,7 +40,7 @@ En isolerad, testbar scheduler måste uppfylla alla dessa kontroller:
 1. Samma konfiguration + seed + eventschema ger **exakt samma ordnade eventbytes och state-hash** över minst två separata processstarter. Om osorterad mapordning ger avvikelse = FAIL.
 2. Lika tidsstämpel avgörs strikt av event-ID; avbrutna timers körs aldrig; omplanering och återstart av simulation-session läcker ingen gammal callback.
 3. Event- och simulerad tidsbudget är fail-closed; zero-time-loop, negativ tid, overflow, okänt event/target och extrema payloads stoppas reproducerbart med maskinläsbar orsak.
-4. Konkret positivt Ethernet/ARP/IPv4/ICMP-trafikspår återanvänder nuvarande engine utan andra sanningsvägar, och en VLAN-isolerad negativ motfixtur förblir avvisad.
+4. Konkret positivt Ethernet/ARP/IPv4/ICMP-trafikspår måste beräknas av NY engine med verkliga tidsordnade events, och en VLAN-isolerad negativ motfixtur förblir avvisad. Gammal engine är separat legacy-comparator i test, aldrig ett schedulerberoende.
 5. Kausalkedjan kan granskas: parent_event, packet_id, in-/utport, header, tabellbeslut, drop reason, timers, time_ns. Dolda UI-filter påverkar **inte** simuleringsresultat.
 6. Riktig webbläsare kan pausa/steppa/återspela ett exakt scenario; att ändra en aktiv arbetsytesnapshot invaliderar gammal session, och Save/Open/SHA förblir oförändrade.
 7. Arkitektur- och modulägargrind förhindrar ny monolit, duplikat validator och andra simulation engine; Required CI på exakt PR-HEAD PASS, plus oberoende benchmark/negativa tester.

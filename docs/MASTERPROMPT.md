@@ -1,5 +1,8 @@
 # MASTERPROMPT – YadiLab: fullständig simulator bortom Cisco Packet Tracer
 
+**SENASTE MOTORBESLUT:** [ADR-0002](architecture/ADR_0002_FRESH_ENGINE_2026-11-26.md) ersätter ADR-0001:s antagande om gammal motoråteranvändning. Bygg ny DES-nätverksruntime från grunden i `network_core/engine/`, utan import av gamla Ethernet/ARP/IPv4/ICMP/DHCP-motorer. Endast bevisat externa dataintegritets-/import-/UI-/API-kontrakt ska bevaras. POC0 startar efter ADR/guard utan att invänta hela S0/A3/A4/A5/A7. Gammal motor ligger kvar enbart tills en verifierad cutover; därefter får legacy-filer/tester tas bort med substitutionskvitto och Required CI. Absolut Packet Tracer-plus-mål oförändrat.
+
+
 
 ## ABSOLUT KRAV – FÅR ALDRIG FÖRENKLAS ELLER BORTPRIORITERAS
 
