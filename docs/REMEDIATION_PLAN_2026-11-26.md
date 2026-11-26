@@ -1,7 +1,7 @@
 # YadiLab – åtgärdsplan för granskningsbrister och hållbar modularisering
 
 **Datum:** 2026-11-26  
-**Status:** GODKÄND / AKTIV PLAN – **A0 DONE** ([PR #169](https://github.com/Northsw-spec/YadiLab/pull/169)); **A1 DONE** ([PR #170](https://github.com/Northsw-spec/YadiLab/pull/170) merged, [fristående negativt Required-test i PR #173](https://github.com/Northsw-spec/YadiLab/pull/173) blockerad och stängd utan merge). **A2 NEXT / NOT_STARTED**.  
+**Status:** GODKÄND / AKTIV PLAN – **A0 DONE** ([PR #169](https://github.com/Northsw-spec/YadiLab/pull/169)); **A1 DONE** ([PR #170](https://github.com/Northsw-spec/YadiLab/pull/170), oberoende Required-test [#173](https://github.com/Northsw-spec/YadiLab/pull/173), stängd ommergad); **A2 implementerad i [PR #175](https://github.com/Northsw-spec/YadiLab/pull/175) – DONE först efter verifierad squash-merge med båda Required CI SUCCESS på exakt sista HEAD**. Därefter A3 NEXT.  
 **Utgångspunkt:** Granskningsrapporten *Teknisk granskning av YadiLab – 2026-11-26* (hela avsnitt 1–6), användarens observation om försvunnen modularisering samt en separat kodinventering på `main@82fca139cc43e12ff8c21bbb3427ab4f87588fd5`.  
 **Syfte:** Åtgärda påvisade fel och underhållsbrister; verifiera kvarstående osäkerheter; ge dokumenterade simulatorbegränsningar ett explicit beslut; återvinna och skydda modulariseringen.  
 **Styrning:** P0–P7 är formellt avslutat. **Den här A0–A10-planen är nu ensam aktiv utvecklingsplan** genom uttryckligt användarbeslut 2026-11-26, inte en återaktivering av P7. A0–A7 och A10 omfattas av beslutet enligt beroenden och acceptanskrav. **A8 och A9 är villkorade och kräver separata uttryckliga godkännanden**; ingen ny native-protokollmotor, empirisk studie eller annan utökning är automatiskt beställd.
@@ -21,8 +21,8 @@
 |---|---|---|
 | **A0** | **DONE – PR #169 / main@fcf8171** | C02–C05: arkitekturhistorik, ägarskap, data- och regressionsmanifest; all required CI SUCCESS på PR-HEAD |
 | **A1** | **DONE – PR #170 + negativt Required-test #173** | C03–C05: [G1–G7-kontrakt](architecture/A1_GUARD_CONTRACT_2026-11-26.md); två Required-checks API-verifierade; `unit-tests=SUCCESS` och `architecture-guard=FAILURE` gav `mergeable_state=blocked` i ej mergad #173 |
-| **A2** | **NEXT / NOT_STARTED** | HTTP-disconnect/`BrokenPipeError`; börja endast separat avgränsad ändrings-PR efter verifierad A1-closeout |
-| A3 | NOT_STARTED | Frontend-modularisering skyddad av A1 |
+| **A2** | **DONE efter verifierad squash-merge av PR #175; annars IN_PROGRESS** | C06: [HTTP-robusthetskontrakt](architecture/A2_HTTP_DISCONNECT_2026-11-26.md), 10 positiva/negativa tester med riktiga TCP RST och brutna svar, 200/4xx/500-paritet, ingen dubbel Save och återläst SHA; ingen ändrad nätverksmotor |
+| A3 | NEXT efter verifierad A2-merge; annars NOT_STARTED | Frontend-modularisering, ratchet- och sessionparitet under A1:s båda Required-checks |
 | A4 | NOT_STARTED | Backend-import/ICMP-modularisering skyddad av A1 |
 | A5 | NOT_STARTED | Oberoende referenser och komplexa topologier |
 | A6 | NOT_STARTED | Pedagogisk funktion och testad elevresa |
@@ -169,6 +169,8 @@ Föreslagna *förvaltningsmål*, inte bevis för korrekt kod: `app.js` under **1
 
 ### A2. HTTP-resiliens vid klientavbrott
 
+**Leverans-/acceptansevidens (C06):** [PR #175](https://github.com/Northsw-spec/YadiLab/pull/175), [detaljerad teknisk rapport](architecture/A2_HTTP_DISCONNECT_2026-11-26.md), `network_core/server.py` och 10 fall i `tests/test_http_disconnect.py` registrerade i den obligatoriska arkitekturtestinventeringen. Riktiga TCP-RST före svar och under JSON/statisk/XLSX-body, aborterat men atomiskt utfört Save (exakt ett anrop och stabil SHA), felaktig JSON 422, oväntad intern exception 500 och `OSError(EIO)` verifierar att endast frånkopplingar undertrycks. **Status: IN_PROGRESS tills exakt sista PR-HEAD passerat både Required `unit-tests` och `architecture-guard`, PR kan mergas, bas-main är oförändrad och #175 faktiskt squash-mergats; efter samtliga grindar är A2 DONE och A3 NEXT.** Ingen kod för nätverkssimulering eller projektformat ändras. Vid tappad kvittens efter utförd Save krävs explicit återläsning av SHA, aldrig automatisk retry.
+
 **Utför:** Reproducera serverns `ConnectionResetError`/`BrokenPipeError` i en isolerad HTTP-integration med klient som stänger socket före/under svar. Hantera fel vid både `end_headers`, `wfile.write` och relevanta statiska svarsvägar; avbryt fortsatt skrivning på samma stängda socket. Undvik att en exceptionshanterare försöker skriva JSON-fel på en redan bruten anslutning. Klassificera förväntad frånkoppling utan att dölja verkliga serverfel.
 
 **Negativa fall:** icke-bruten klient får fortsatt exakt samma HTTP-status/body; felaktig JSON får korrekt 4xx; oväntad serverexception syns som avvikelse; avbruten klient orsakar inte retried Save eller dubbla mutationer. Jämför sparade SHA före/efter.
@@ -283,4 +285,4 @@ Föreslagna *förvaltningsmål*, inte bevis för korrekt kod: `app.js` under **1
 
 **Direktlänkar:** https://github.com/Northsw-spec/YadiLab ; https://github.com/Northsw-spec/YadiLab/commit/17acb51c8c64c3b4b7a1026514cb8b0a2177a127 ; https://github.com/Northsw-spec/YadiLab/blob/82fca139cc43e12ff8c21bbb3427ab4f87588fd5/tests/test_web_import_graph.py ; https://github.com/Northsw-spec/YadiLab/blob/82fca139cc43e12ff8c21bbb3427ab4f87588fd5/network_core/server.py .
 
-**Statusnot (2026-11-26):** Planen är godkänd och aktiv. **A0 DONE** via PR #169. **A1 DONE** via PR #170 och reproducerad separat Required-spärr i negativ PR #173 (stängd utan merge); ruleset #27419615 har båda kontrollerna som Required. **A2 NEXT / NOT_STARTED**, HTTP-resiliens vid klientavbrott. Övriga A-kort enligt beroenden. Ingen ny roadmap eller obeställda A8/A9-steg.
+**Statusnot (2026-11-26):** A0 DONE (#169), A1 DONE (#170; verklig separat Required-gate bevisad i ej mergad negativ #173, blockering #171 stängd). **A2 – C06: [PR #175](https://github.com/Northsw-spec/YadiLab/pull/175) levererar servertransport-fix och riktiga TCP-aborttester; status blir DONE endast efter verifierad merge med Required CI på exakt HEAD.** Då är A3 nästa godkända arbetskort. A8 och A9 kvarstår DECISION_REQUIRED/OPTIONAL; P0–P7 förblir CLOSED.
