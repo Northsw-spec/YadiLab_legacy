@@ -1,0 +1,45 @@
+name: Architecture integrity
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  architecture-guard:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: '3.13'
+      - name: Required negative and positive architecture regression fixtures
+        run: python3 -m unittest discover -s tests -p 'test_architecture_guard.py' -v
+      - name: Validate architecture and monotonic ratchets
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.sha }}
+        shell: bash
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            python3 tools/architecture_guard.py --base-ref "$BASE_REF" --report architecture-report.json
+          else
+            python3 tools/architecture_guard.py --report architecture-report.json
+          fi
+      - name: Publish per-run architecture report even on failure
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "### Architecture integrity and ratchet report"
+            echo "Report describes source/static policy, not runtime correctness."
+            echo '~~~json'
+            if [[ -f architecture-report.json ]]; then
+              cat architecture-report.json
+            else
+              echo '{"issues": ["ARCHITECTURE_REPORT_NOT_GENERATED"]}'
+            fi
+            echo '~~~'
+          } >> "$GITHUB_STEP_SUMMARY"
