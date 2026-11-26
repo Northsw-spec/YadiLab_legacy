@@ -227,6 +227,11 @@ class Handler(BaseHTTPRequestHandler):
                 raise
             self.close_connection = True
             raise ClientDisconnected() from None
+        if len(raw) != size:
+            # EOF before the declared body length is a lost peer, not a
+            # complete JSON document to diagnose or persist.
+            self.close_connection = True
+            raise ClientDisconnected()
         return decode_json_document(raw, context="request")
 
     def _respond_error(self, error: Exception) -> None:
