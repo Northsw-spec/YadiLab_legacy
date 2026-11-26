@@ -6702,7 +6702,7 @@ def run():
             assert unresolved.value.json()['status'] == 'REQUEST_FAILED'
             assert unresolved.value.json()['request']['status'] == 'ARP_FAILED'
             expect(page.locator('#ping-result')).to_contain_text('Ping-status: REQUEST_FAILED')
-            expect(page.locator('#ping-result')).to_contain_text('Reply: ingen faktisk datagramöverföring')
+            expect(page.locator('#ping-result')).to_contain_text('Reply: ingen simulerad datagramöverföring')
             page.locator('#ping-destination').fill('2001:db8::20')
             with page.expect_response('**/api/icmp/echo') as invalid_ip:
                 page.locator('#run-ping').click()
