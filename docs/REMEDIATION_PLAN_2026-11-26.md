@@ -1,5 +1,8 @@
 # YadiLab – enda masterplan: arkitekturstabilisering A0–A10 och komplett nätverkssimulator S0–S12
 
+**ABSOLUT UPPDRAG 2026-11-26: INGEN SAKNAD CISCO PACKET TRACER-FUNKTION VID SLUTLEVERANS.** YadiLab ska göra ALLT Packet Tracer gör på Linux: varje protokoll, protokollvariant, enhet/modul, CLI/GUI, fysiskt/logiskt nät, simulation/realtime/PDU, IoT, OT, Activity Wizard, automatiserad rättning/scripting, multiuser, extension/API, projekt-/aktivitetsformat och övriga användarflöden; därefter verifierat överträffa Packet Tracer i alla relevanta kvalitetsområden. **Exakt två användarbeslutade undantag: inget krav på Windows/macOS och inget nytt produktkrav på tillgänglighet/keyboard-only-tjänster.** Inga andra luckor eller permanenta "out-of-scope" tillåtna. Se [PT-FULL-001: bindande 29-familjers fullständighetskontrakt](FULL_PACKET_TRACER_PARITY_CONTRACT.md). Äldre etapptext om begränsad paritet, frivilligt multiuser, smal protokollbredd eller godtagbara slutluckor är upphävd för S12. En juridisk/teknisk blockerare står kvar som blockerad, aldrig som godkänd fullständighet.
+
+
 **Datum:** 2026-11-26  
 **Status:** GODKÄND / AKTIV PLAN – **NYTT UTTRYCKLIGT PRODUKTBESLUT 2026-11-26:** Fullständig, exakt, in-process nätverkssimulator utan VM/emulering, med objektiv ambition att överträffa Cisco Packet Tracer. **A9 PROTOKOLLUTBYGGNAD ÄR GODKÄND SOM S0–S12-OMFÅNG; A8 MÄNSKLIG STUDIE KRÄVER FORTFARANDE SEPARAT BESLUT.** S0 strategi/arkitektur IN_PROGRESS, ingen ny protokollmotor levererad av denna plan-PR.
 
@@ -312,7 +315,7 @@ Föreslagna *förvaltningsmål*, inte bevis för korrekt kod: `app.js` under **1
 
 | Kort | Status | Leverans | Blockerande föregångare |
 |---|---|---|---|
-| S0 | IN_PROGRESS – masterdesign / docs | Källbelagd konkurrentmatris, standardlista, design- och sanningskontrakt | A1 och användarbeslut |
+| S0 | IN_PROGRESS – masterdesign / docs | Fullständig PT 9.0.1-inventering: PT-F01–PT-F29, alla enheter, protokoll, kommandon, medier, appar, IoT/OT, multiuser, script, format, källor och testfall | A1 och användarbeslut |
 | S1 | NOT_STARTED | Isolerad scheduler-POC0 → paket/ARP-POC1 → go/no-go → selektiv produktionscutover | POC: S0+A1+orakel. Cutover: POC PASS + relevanta A3/A4/A5/A7-grindar |
 | S2 | NOT_STARTED | Full L2/VLAN, FDB aging, STP/RSTP, LACP/EtherChannel, kontrollerade loopar | S1 |
 | S3 | NOT_STARTED | IPv4/v6, ICMPv6, ND/SLAAC/DAD, MTU/fragment, RIB/FIB/SVI | S1/S2 |
@@ -322,9 +325,9 @@ Föreslagna *förvaltningsmål*, inte bevis för korrekt kod: `app.js` under **1
 | S7 | NOT_STARTED | Bandbredd, fördröjning, jitter, köer/QoS, WAN/fiber/wireless | S1–S4 |
 | S8 | NOT_STARTED | HSRP/VRRP, LLDP/CDP, SPAN/RSPAN/NetFlow, REP/PRP/PTP | S1–S5/S7 |
 | S9 | NOT_STARTED | Industriellt nätverk: Modbus TCP, PROFINET, CIP, OPC UA, IEC 61850, PLC/HMI | S4/S7/S8 |
-| S10 | NOT_STARTED | Komplett logical/physical UI, korrekt CLI, PDU/OSI inspector, labbförfattande och pedagogik | S1 och berörda protokoll |
-| S11 | NOT_STARTED | RFC-/IEEE-/IEC-orakel, differentialtest, skala/robusthet, jämförbar PT-körning | implementerade S2–S10 |
-| S12 | NOT_STARTED | Oberoende full kod-/arkitektur-/precision-/pedagogikgranskning, releasebeslut | S0–S11 |
+| S10 | NOT_STARTED | ALL produktparitet: logical/physical, device/moduler, power, GUI/CLI, OSI/PDU/scenarios, Activity Wizard/scoring/scripts, IoT-programmering, multiuser, extensions/API, PKT/PKZ/PKA och fulla användarflöden | S1, S2–S9, PT-F01–PT-F29 |
+| S11 | NOT_STARTED | FULLT PT-F01–PT-F29-provregister med varje underfall, oberoende RFC-/IEEE-/IEC-orakel och verklig versionerad PT-labbjämförelse, inklusive filer/CLI/UI/OT/IoT/multiuser | S2–S10; PT-FULL-001 G0–G3 |
+| S12 | NOT_STARTED | NOLL öppna Cisco PT-protokoll-/funktionsluckor, verifierad full paritet och därutöver verifierad överlägsenhet, ingen kompromiss-etikett COMPLETE | S0–S11; PT-FULL-001 G0–G5 |
 
 ### S0. Källbaserad design och sanningsmatris
 
@@ -370,7 +373,7 @@ VRRP/HSRP med unik aktiv gateway, LLDP/CDP, SPAN/RSPAN, NetFlow, NTP/PTP och REP
 
 Packet Tracer 9.0 stöder förenklade [Modbus TCP, PROFINET, CIP, IEC 61850, OPC-UA, PTP/PRP och PLC/HMI](https://tutorials.ptnetacad.net/help/default/industrial_otFeatures.htm). YadiLab ska erbjuda egna standardspecifika, versionsmärkta in-process delmodeller, korrekta exception-/register-/sequence-/timerfall och pedagogiska cyberobservatörer. Ingen kontakt med verklig PLC, inga host scripts, inga falska realtidsgarantier. IEC/ODVA/licenser granskas innan ny implementation.
 
-### S10. Komplett nätverks-UI och undervisning som slår konkurrenten
+### S10. ALL Packet Tracer-produktfunktionalitet: UI, enheter, format, scripting, multiuser och undervisning
 
 Logisk och fysisk workspace, enhetspalett/profil och explicit kablage, riktig konfigurations-CLI som anropar samma backendmotor, device tables, OSI/PDU/header/timeline med exakta orsaksförklaringar, filter/step/pause/replay, importproveniens, labb-/övningsförfattande, automatisk bedömning, konkurrerande hypoteser, fördröjt facit och stöd för samma elevresa som konkurrenten. CLI-kommandon utan native semantik ska ge synligt UNSUPPORTED, aldrig tyst godkännande. Inga animerade eller fejkade leveransbevis.
 
@@ -378,7 +381,7 @@ Logisk och fysisk workspace, enhetspalett/profil och explicit kablage, riktig ko
 
 Fristående RFC/IEEE/IEC-orakel med råbytesfacit, state-/timergränser, positiva/negativa/motsägande fall, property/fuzz/metamorphic tests och reproducerade multi-hop, failover, race, loop och stora topologier. Referensimplementationer och isolerade jämförbara Packet Tracer-labb får användas **test-only**, aldrig runtime. Spåra SHA, seed, versionsnummer, maskin, PASS/FAIL/NOT_RUN och orakelproveniens. Föreslagna RELEASEMÅL (ej uppmätta): noll kända falskt positiva packet deliveries i låst negativ corpus, samtliga deklarerat stödda referensfall PASS, inga öppna P0/P1, deterministisk reproducerbarhet och minst ett end-to-end-scenario för varje deklarerad PT-paritetsfunktion. Skalmål beslutas först efter mätning, inte efter gissning.
 
-### S12. Oberoende produktbedömning och 10/10-gate
+### S12. Absolut slutgrind: alla PT-funktioner och protokoll samt verifierad överlägsenhet
 
 Kräv helt ny oberoende code/architecture/security/protocol review; jämför samma versionslåsta labb i Packet Tracer och YadiLab där laglig körning finns; redovisa korrekta/inkorrekta/unsupported scenarier, faktisk teknisk precision, pedagogisk mätning och resurskostnad. En mänsklig lärstudie ingår bara om separat A8-godkännande. **Ingen "bättre än Cisco", 10/10, 100 % RFC-kompatibel eller COMPLETE** förrän relevant evidens är både mätt och publicerad. Brister klassas BUG/MODEL_LIMITATION/NOT_VERIFIED/UNSUPPORTED.
 
@@ -391,3 +394,9 @@ Kräv helt ny oberoende code/architecture/security/protocol review; jämför sam
 5. Uppdatera **denna** A-/S-status och [protokollmatrisen](PROTOCOL_COVERAGE_MATRIX.md) utifrån faktiskt utförd evidens, inte vad en plan lovar. Läs inte gamla A9-förbud som veto mot användarens nya, uttryckliga S-godkännande. Markera okänt NOT_VERIFIED.
 
 **Tolkningsföreträde:** De äldre A0–A10-avsnitten beskriver den ursprungliga reparationsplanens begränsade omfång och bevaras för revisionsspår. För nya protokoll och ny produktvision gäller användarens uttryckliga beslut och avsnitt 10–11. A8 separat godkännande, A9 beslutad utbyggnad; inga redan godkända Required-kontroller får försvagas.
+
+## 13. Nytt entydigt slutkriterium – NO FEATURE LEFT BEHIND
+
+**S12 får endast stängas när [PT-FULL-001](FULL_PACKET_TRACER_PARITY_CONTRACT.md) G0–G5 är verifierade och alla PT-F01–PT-F29-underfall är PASS.** Inte enbart nätverksprotokoll: protokollvarianter, enhetsprofiler, anslutningar, CLI/GUI, fysisk/logisk arbetsyta, power, realtime/simulation, PDU, IoT, OT, Multiuser, scripting, Activity Wizard, scoring, extensions och PT-filformat är obligatoriska. Enstaka exempel räcker inte. En legal/specifika blockerare förblir blockerad slutgrind, inte accepterat undantag. Linux-only och ingen särskild keyboard/accessibility-nyutveckling är de enda uttryckliga undantagen; befintliga fungerande beteenden får inte slås sönder. Att S1–S11 kan ha delvis stöd är endast tillfälligt och ingen rätt att leverera mindre än Packet Tracer.
+
+**Fortsatt teknisk väg:** bevara YadiLab som produkt, nybygg DES-exekveringen selektivt enligt [ADR-0001](architecture/ADR_0001_CORE_REPLACEMENT_2026-11-26.md), börja med isolerad S1-POC0/POC1 efter S0 och bygg varje vidare lager utan parallella motorer. Ingen total omskrivning av UI/lagring som rutin. S0 måste utöka sin funktionsinventering tills varje faktiskt PT-underfall och lagligt verifierbar firmware-/filformatkompatibilitet har individuellt spårbart bevis. 
