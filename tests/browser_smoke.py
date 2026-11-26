@@ -842,6 +842,8 @@ def icmp_panel_integration(context, network_mode, errors):
             assert seen['routerError']['deliveryStatus'] == 'RECEIVED'
             assert seen['routerError']['receivedAtSource'] is True
             assert seen['routerError']['returnTraceStatus'] == 'DELIVERED'
+            expect(page.locator('#icmp-investigation-observations')).to_contain_text(
+                'Echo Reply: ej skickad')
             assert 'STATIC_ROUTE_MISSING' not in json.dumps(seen)
             expect(page.locator('#icmp-investigation-observations')).to_contain_text(
                 'Router-ICMP i simuleringen: typ 3/kod 0 (Destination Unreachable)')
