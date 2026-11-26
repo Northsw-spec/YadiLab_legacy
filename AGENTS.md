@@ -1,6 +1,6 @@
 # YadiLab – utvecklingskontrakt
 
-**Beslut 2026-11-26:** [Pedagogisk felsökningsarkitektur](docs/PEDAGOGICAL_TROUBLESHOOTING_PLAN.md) med steg **P0–P7 är formellt avslutad genom användarbeslut**. **Ingen aktiv utvecklingsetapp finns.** Inga äldre QUALITY-, ELK-, import- eller fasroadmaps får återaktiveras som nästa PR utan nytt uttryckligt användarbeslut. Detta dokument är en **operativ regeluppsättning**, inte en parallell plan. [MASTERPROMPT](docs/MASTERPROMPT.md) anger produktmålet.
+**Beslut 2026-11-26:** [Pedagogisk felsökningsarkitektur](docs/PEDAGOGICAL_TROUBLESHOOTING_PLAN.md) med stegen P0–P7 är **formellt avslutad genom användarbeslut**. **Ingen aktiv utvecklingsetapp finns.** Inga äldre QUALITY-, ELK-, import- eller fasroadmaps får återaktiveras som nästa PR utan nytt uttryckligt användarbeslut. Detta dokument är en **operativ regeluppsättning**, inte en parallell plan. [MASTERPROMPT](docs/MASTERPROMPT.md) anger produktmålet.
 
 **Sanningsföreträde:** Senaste uttryckliga användarbeslutet och aktuell kod/test/CI på exakt SHA avgör vad som faktiskt är beslutat respektive implementerat. Dokumentation och gammal PR-historik är aldrig bevis för ett nytt runtimebeteende. Vid konflikt eller saknade fakta: redovisa `UNKNOWN`, `NOT_VERIFIED` eller `UNSUPPORTED`, och avstå från gissningar.
 
