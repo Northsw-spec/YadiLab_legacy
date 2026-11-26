@@ -1,0 +1,895 @@
+{
+  "schema": "yadilab.a0.forensic-baseline.v1",
+  "status": "BASELINE_NOT_ENFORCEMENT",
+  "repo": "Northsw-spec/YadiLab",
+  "baseline_main_sha": "f36435dd7b108756bdac6e3919c1cb1c61cf58d7",
+  "historical_3e_sha": "17acb51c8c64c3b4b7a1026514cb8b0a2177a127",
+  "methodology": {
+    "lines": "display_lines counts text.split('\\n') including a possible virtual trailing line; physical_lines excludes it",
+    "bytes": "Git blob byte size",
+    "blob_sha": "Git tree blob SHA from requested commit",
+    "dom_heuristic": "Regex count of selected DOM references and mutations; no AST-level semantic claims",
+    "history": "PR #59 merge SHA is the comparison point; these results do not identify every PR that changed a function",
+    "test_inventory": "Every tests/** and web/fixtures/** path/size/Git blob; not individual unittest test-method counts"
+  },
+  "historical_3e": {
+    "app": {
+      "path": "web/app.js",
+      "sha": "070c523ce23f5de8a9f24f4c131fa8ee150c18c5",
+      "bytes": 110148,
+      "display_lines": 2238,
+      "physical_lines": 2237
+    },
+    "top_level_named_functions": 85,
+    "event_listeners": 70,
+    "dom_heuristic": 76,
+    "frontend_module_paths": [
+      "web/app.js",
+      "web/canvas.js",
+      "web/features/diagnostics/icmp-investigation-panel.js",
+      "web/features/diagnostics/presenters.js",
+      "web/features/diagnostics/queries.js",
+      "web/features/projects/persistence.js",
+      "web/features/projects/transfer.js",
+      "web/features/sessions/dhcp-investigation.js",
+      "web/features/sessions/dora-session.js",
+      "web/features/sessions/icmp-investigation.js",
+      "web/features/sessions/simulation-session.js",
+      "web/model.js",
+      "web/services/api.js",
+      "web/ui/dom.js"
+    ]
+  },
+  "current": {
+    "app": {
+      "path": "web/app.js",
+      "blob_sha": "29b2607e92e20b8317f2250e530108113579f83d",
+      "bytes": 142243,
+      "display_lines": 2978,
+      "physical_lines": 2977
+    },
+    "import_plan": {
+      "path": "network_core/import_plan.py",
+      "blob_sha": "b4f7c7df347817794ff39248f7dc86f8d58948d3",
+      "bytes": 58046,
+      "display_lines": 967,
+      "physical_lines": 966
+    },
+    "icmp_investigation": {
+      "path": "network_core/icmp_investigation.py",
+      "blob_sha": "e95f50c4efc89827e501dad6658de12f248d119e",
+      "bytes": 44101,
+      "display_lines": 844,
+      "physical_lines": 843
+    },
+    "top_level_named_functions": 116,
+    "event_listeners": 96,
+    "dom_heuristic": 104,
+    "top_level_app_imports": [
+      "./model.js",
+      "./canvas.js",
+      "./ui/dom.js",
+      "./services/api.js",
+      "./features/projects/persistence.js",
+      "./features/projects/transfer.js",
+      "./features/diagnostics/presenters.js",
+      "./features/diagnostics/queries.js",
+      "./features/sessions/dhcp-investigation.js",
+      "./features/sessions/icmp-investigation.js",
+      "./features/sessions/dora-session.js",
+      "./features/sessions/simulation-session.js",
+      "./features/diagnostics/icmp-investigation-panel.js",
+      "./features/diagnostics/protocol-lessons.js",
+      "./features/projects/import-review.js",
+      "./features/layout/elk.js"
+    ],
+    "frontend_module_paths": [
+      "web/app.js",
+      "web/canvas.js",
+      "web/features/diagnostics/icmp-investigation-panel.js",
+      "web/features/diagnostics/presenters.js",
+      "web/features/diagnostics/protocol-lessons.js",
+      "web/features/diagnostics/queries.js",
+      "web/features/layout/elk.js",
+      "web/features/projects/import-review.js",
+      "web/features/projects/mapping-profiles.js",
+      "web/features/projects/persistence.js",
+      "web/features/projects/transfer.js",
+      "web/features/sessions/dhcp-investigation.js",
+      "web/features/sessions/dora-session.js",
+      "web/features/sessions/icmp-investigation.js",
+      "web/features/sessions/simulation-session.js",
+      "web/model.js",
+      "web/services/api.js",
+      "web/ui/dom.js"
+    ],
+    "new_named_functions_since_3e": [
+      "panelCard",
+      "dropdownCards",
+      "syncDropdownButton",
+      "setupWorkspacePanels",
+      "hostIpv4",
+      "topologyIpv4Choices",
+      "portForAddressValue",
+      "normalizedAddress",
+      "sameAddress",
+      "updateBoundAddress",
+      "syncBoundAddresses",
+      "requireBoundAddresses",
+      "arrangeFromToRows",
+      "setupAddressBindings",
+      "hideTopologyMenu",
+      "copyIpv4",
+      "setupTopologyContextMenu",
+      "layoutStatus",
+      "invalidateElk",
+      "startElkPreview",
+      "applyElkPreview",
+      "cancelElkPreview",
+      "networkWithoutCoordinates",
+      "layoutImportedProject",
+      "forgetJourney",
+      "replayJourney",
+      "presentJourney",
+      "validateBuilderAttempt",
+      "loadIcmpLesson",
+      "startIcmpLesson",
+      "previewCurrent"
+    ],
+    "missing_3e_module_paths": [],
+    "new_module_paths_since_3e": [
+      "web/features/diagnostics/protocol-lessons.js",
+      "web/features/layout/elk.js",
+      "web/features/projects/import-review.js",
+      "web/features/projects/mapping-profiles.js"
+    ]
+  },
+  "inventories": {
+    "modules": [
+      {
+        "path": "network_core/__init__.py",
+        "blob_sha": "ffb77cd08fea0379b664ef71a768d58853b2fa3a",
+        "bytes": 93
+      },
+      {
+        "path": "network_core/__main__.py",
+        "blob_sha": "bc40eef6293f9e47f6e1d41462e67ca49e3eaec5",
+        "bytes": 33
+      },
+      {
+        "path": "network_core/arp.py",
+        "blob_sha": "7f448dd5843a5c3554b6082689d5836b1d49b007",
+        "bytes": 12656
+      },
+      {
+        "path": "network_core/config.py",
+        "blob_sha": "47e558e0d3a6a7dafb39d4887210a532747aa54a",
+        "bytes": 243
+      },
+      {
+        "path": "network_core/csv_import.py",
+        "blob_sha": "8c414c13cfc98066b283fccb05001766c4320214",
+        "bytes": 7122
+      },
+      {
+        "path": "network_core/dhcp_investigation.py",
+        "blob_sha": "c8f4cf61b0aa47f58e044e9bde6bc2b72e84a688",
+        "bytes": 23587
+      },
+      {
+        "path": "network_core/dhcp_registry.py",
+        "blob_sha": "bea7637ac63e570670becf81fa5ea7159ef69b32",
+        "bytes": 12087
+      },
+      {
+        "path": "network_core/dhcp.py",
+        "blob_sha": "65d13896bbd5256e1eb915fee8e7e98886a08a43",
+        "bytes": 39397
+      },
+      {
+        "path": "network_core/ethernet_frame.py",
+        "blob_sha": "7483ad88ade3110529fa65d369718c18c83a5720",
+        "bytes": 4499
+      },
+      {
+        "path": "network_core/ethernet.py",
+        "blob_sha": "9973a4e3266df61bb61e1bbc432a981f000aeab9",
+        "bytes": 27997
+      },
+      {
+        "path": "network_core/icmp_errors.py",
+        "blob_sha": "44661a57efa6f6725112d0d0392f39d1adda0a7d",
+        "bytes": 4157
+      },
+      {
+        "path": "network_core/icmp_investigation.py",
+        "blob_sha": "e95f50c4efc89827e501dad6658de12f248d119e",
+        "bytes": 44101
+      },
+      {
+        "path": "network_core/icmp_ping.py",
+        "blob_sha": "97f7398b303a5fed915a585c3ffa39733560c6e7",
+        "bytes": 9160
+      },
+      {
+        "path": "network_core/icmp.py",
+        "blob_sha": "6a1f1e509d9a9dba2764469a6b9e259a68bd99cf",
+        "bytes": 2355
+      },
+      {
+        "path": "network_core/import_evidence.py",
+        "blob_sha": "577a8cee0710248294203782ef8915519ba8568f",
+        "bytes": 27139
+      },
+      {
+        "path": "network_core/import_inspection.py",
+        "blob_sha": "1ad249ed45d0ac904bd44fd6df2b14b44a749a0e",
+        "bytes": 6816
+      },
+      {
+        "path": "network_core/import_plan.py",
+        "blob_sha": "b4f7c7df347817794ff39248f7dc86f8d58948d3",
+        "bytes": 58046
+      },
+      {
+        "path": "network_core/import_verification.py",
+        "blob_sha": "51f9f238da57347974963233e71e86e6ddf5b27c",
+        "bytes": 3575
+      },
+      {
+        "path": "network_core/import_workbooks.py",
+        "blob_sha": "7e056bb54056d41147a995f3901353041655c1de",
+        "bytes": 22038
+      },
+      {
+        "path": "network_core/ipv4_packet.py",
+        "blob_sha": "c3e39e077a27c9dd5dd6d5850ee54d54c9f3f8f5",
+        "bytes": 4382
+      },
+      {
+        "path": "network_core/ipv4.py",
+        "blob_sha": "d6f85fd08e9c77b24b79d6edee00729f84642dd1",
+        "bytes": 11993
+      },
+      {
+        "path": "network_core/json_boundary.py",
+        "blob_sha": "12136cfadfd67a3d8fd9b2890afa1aca13cece32",
+        "bytes": 2669
+      },
+      {
+        "path": "network_core/model.py",
+        "blob_sha": "6da50ac3aa354a22b22ef365f928d41b603a643b",
+        "bytes": 18434
+      },
+      {
+        "path": "network_core/ods_import.py",
+        "blob_sha": "c8baff9ae4ec24691e48ba428710ca5dda32d52e",
+        "bytes": 16291
+      },
+      {
+        "path": "network_core/routing.py",
+        "blob_sha": "6e923f38bc23980aa88c5e763e433abcb22a2d61",
+        "bytes": 4826
+      },
+      {
+        "path": "network_core/server.py",
+        "blob_sha": "fb42fabda26dd44e76f4573c660b27f5cfa27e7d",
+        "bytes": 39178
+      },
+      {
+        "path": "network_core/session_idle.py",
+        "blob_sha": "38d84e9b7cf64cb9e7a49c9c607c54e0c930bdf3",
+        "bytes": 1867
+      },
+      {
+        "path": "network_core/simulation.py",
+        "blob_sha": "2b86fd9215884f5cbb66c057eb4ccb3cd1146d24",
+        "bytes": 5158
+      },
+      {
+        "path": "network_core/spreadsheet_export.py",
+        "blob_sha": "bfa8d5fcf9d097978dcb1360cd15065fdb2a6da0",
+        "bytes": 6068
+      },
+      {
+        "path": "network_core/spreadsheet_schema.py",
+        "blob_sha": "27a67c0784b2595bb61167d70c4d850bde952d15",
+        "bytes": 10074
+      },
+      {
+        "path": "network_core/spreadsheet_templates.py",
+        "blob_sha": "d95d20c1672cce37d07c555987bea50ad2b68986",
+        "bytes": 10455
+      },
+      {
+        "path": "network_core/storage.py",
+        "blob_sha": "3697020c275934b44d549c2b06a84e04eae9aafb",
+        "bytes": 7308
+      },
+      {
+        "path": "network_core/troubleshooting.py",
+        "blob_sha": "da546ed8db25e7e6401761f94537eb1d0fed3024",
+        "bytes": 18146
+      },
+      {
+        "path": "network_core/xlsx_import.py",
+        "blob_sha": "a1bee45fcfdf8a5f282820a6ddc269cb3bd311e4",
+        "bytes": 14382
+      },
+      {
+        "path": "web/app.js",
+        "blob_sha": "29b2607e92e20b8317f2250e530108113579f83d",
+        "bytes": 142243
+      },
+      {
+        "path": "web/canvas.js",
+        "blob_sha": "ed3f1df83043d3bb3b5dbe8c83e28c34ef11d832",
+        "bytes": 21598
+      },
+      {
+        "path": "web/features/diagnostics/icmp-investigation-panel.js",
+        "blob_sha": "afe7f7d3fef47223328c93b6f0e94d96df2121e3",
+        "bytes": 17929
+      },
+      {
+        "path": "web/features/diagnostics/presenters.js",
+        "blob_sha": "714b747d93d5727532b4b7decfffd9e2ee06d2b9",
+        "bytes": 8736
+      },
+      {
+        "path": "web/features/diagnostics/protocol-lessons.js",
+        "blob_sha": "00997effeff726705f52d2bc4d7a2ad7f4193e35",
+        "bytes": 2178
+      },
+      {
+        "path": "web/features/diagnostics/queries.js",
+        "blob_sha": "a8cb06a4b75ad0961e7fcd425c01836edb011b54",
+        "bytes": 949
+      },
+      {
+        "path": "web/features/layout/elk.js",
+        "blob_sha": "4b9c6918b4c01b9f9b8d00fa8a0ede03acf23c65",
+        "bytes": 11945
+      },
+      {
+        "path": "web/features/projects/import-review.js",
+        "blob_sha": "bd3fc143af34b4816c5fb7eca10885e127febbc9",
+        "bytes": 57702
+      },
+      {
+        "path": "web/features/projects/mapping-profiles.js",
+        "blob_sha": "fe82ad30847ed1d9d8c06b69fd5b554d1ad48c30",
+        "bytes": 9772
+      },
+      {
+        "path": "web/features/projects/persistence.js",
+        "blob_sha": "48cb9ea20a5fccf861f3163e55a4ce90fc14aa84",
+        "bytes": 1280
+      },
+      {
+        "path": "web/features/projects/transfer.js",
+        "blob_sha": "a0af65363e0185ce03589256a3aaf0cd846d8bcc",
+        "bytes": 7197
+      },
+      {
+        "path": "web/features/sessions/dhcp-investigation.js",
+        "blob_sha": "e1fb2093202bb3c78f34488d121599d9016e2e70",
+        "bytes": 6299
+      },
+      {
+        "path": "web/features/sessions/dora-session.js",
+        "blob_sha": "224ffaefc9b2461ad2fe54e626862e9170b18d85",
+        "bytes": 7572
+      },
+      {
+        "path": "web/features/sessions/icmp-investigation.js",
+        "blob_sha": "224435fb58d3573fc6e1ec958a3ac2a2950d25c9",
+        "bytes": 6835
+      },
+      {
+        "path": "web/features/sessions/simulation-session.js",
+        "blob_sha": "23e6d1abdb4c4bac714e23697ea291990674f23e",
+        "bytes": 7474
+      },
+      {
+        "path": "web/model.js",
+        "blob_sha": "9a78a844b5c7957f1f9d65dc8987540e3e9505cf",
+        "bytes": 3389
+      },
+      {
+        "path": "web/services/api.js",
+        "blob_sha": "9a20c1800128ae37432a34a29ef774fdaf0124e4",
+        "bytes": 4835
+      },
+      {
+        "path": "web/ui/dom.js",
+        "blob_sha": "7e84b08dd99403d20007bfaea283f7fad8eee988",
+        "bytes": 2256
+      }
+    ],
+    "regression_tests_and_fixtures": [
+      {
+        "path": "tests/browser_api_capability.py",
+        "blob_sha": "7d95e0e1f616a0990e1592da444351bc3ddfa8f9",
+        "bytes": 3833
+      },
+      {
+        "path": "tests/browser_camera_performance.py",
+        "blob_sha": "33e4d61ffc1f89cbdf7007c575d71b7334d174a8",
+        "bytes": 11139
+      },
+      {
+        "path": "tests/browser_canvas_large_zoom.py",
+        "blob_sha": "e48a6dd0821411093951eb7954f3c7e11e3611b3",
+        "bytes": 4953
+      },
+      {
+        "path": "tests/browser_elk_import.py",
+        "blob_sha": "a750a968ccdd5373b03173dd60d2918a1453bb9c",
+        "bytes": 18883
+      },
+      {
+        "path": "tests/browser_elk_layout.py",
+        "blob_sha": "352feadfda997b01c9898044b674d8758a448d9d",
+        "bytes": 9624
+      },
+      {
+        "path": "tests/browser_icmp_lesson.py",
+        "blob_sha": "fe30bb96d7604220ad30405e5546394fa5b16c0f",
+        "bytes": 28243
+      },
+      {
+        "path": "tests/browser_primary_selection_x11.py",
+        "blob_sha": "80ce262d396312bc79e2288cd9c503776fd4f9e6",
+        "bytes": 5598
+      },
+      {
+        "path": "tests/browser_smoke.py",
+        "blob_sha": "66fcab9282f585947969b31c5699d0e60a7148bb",
+        "bytes": 423021
+      },
+      {
+        "path": "tests/browser_svg_performance.py",
+        "blob_sha": "12f292147331598679901f19d2b95da3c0f0e5c6",
+        "bytes": 9899
+      },
+      {
+        "path": "tests/canvas_zoom_bounds_test.mjs",
+        "blob_sha": "279447e314c96d5854f7817050caab95a7a1fc75",
+        "bytes": 3349
+      },
+      {
+        "path": "tests/elk_layout_adapter_test.mjs",
+        "blob_sha": "edc202311a27ddaa3e6e7f11ac61d5ae096de7e3",
+        "bytes": 5262
+      },
+      {
+        "path": "tests/import_review_ui_test.mjs",
+        "blob_sha": "5c4b2e39dd3cf6d3a219fc279f9baf68dfe8f788",
+        "bytes": 2268
+      },
+      {
+        "path": "tests/mapping_profiles_test.mjs",
+        "blob_sha": "1a899e6034cc61b594c4c851286767a8408cf120",
+        "bytes": 9129
+      },
+      {
+        "path": "tests/ods_fixture.py",
+        "blob_sha": "9bde35cc767c7f44cf33a48ae83316ddb2dc745b",
+        "bytes": 4389
+      },
+      {
+        "path": "tests/packet_journey_test.mjs",
+        "blob_sha": "07f315818f6b30911cb791e4dfeed2abefd0a637",
+        "bytes": 3201
+      },
+      {
+        "path": "tests/pedagogy_assessment.py",
+        "blob_sha": "6ef9dc2c263c52cc7e44ee69b598664b89a87694",
+        "bytes": 20744
+      },
+      {
+        "path": "tests/raw_json_ingress_test.mjs",
+        "blob_sha": "d1e55b394958600be36bb92136bd9beb180dd420",
+        "bytes": 3749
+      },
+      {
+        "path": "tests/run_pedagogy_assessment.py",
+        "blob_sha": "0f1ac03c31a4937f201d40b8acb50c2030e48f47",
+        "bytes": 3964
+      },
+      {
+        "path": "tests/session_stale_responses_test.mjs",
+        "blob_sha": "6bdf9456e1050f322683149ff2cb3bd8df3dfb6c",
+        "bytes": 15845
+      },
+      {
+        "path": "tests/spreadsheet_v13_fixture.py",
+        "blob_sha": "cd2be4a2274c8409d3e54542186d9093e35c9715",
+        "bytes": 4733
+      },
+      {
+        "path": "tests/test_arp_diagnostics_http.py",
+        "blob_sha": "8b93e84b38a6c42ca830c1d2beb9f0ee60f6917e",
+        "bytes": 7792
+      },
+      {
+        "path": "tests/test_arp_special_addresses.py",
+        "blob_sha": "44e94bc045b1004b7deec5e2763ebf56c5ddb9e8",
+        "bytes": 3155
+      },
+      {
+        "path": "tests/test_arp.py",
+        "blob_sha": "610e2e93a54cb36bcc6ac820c2cc29b5ac215bab",
+        "bytes": 11316
+      },
+      {
+        "path": "tests/test_ci_integrity.py",
+        "blob_sha": "590c9d1d72e0b30c41b03edfa8c8bd653ba5ba13",
+        "bytes": 4533
+      },
+      {
+        "path": "tests/test_ci_x11_required.py",
+        "blob_sha": "6965d29a12f6cbf0f754b900b907a0521e1ffc30",
+        "bytes": 2159
+      },
+      {
+        "path": "tests/test_connected_routing.py",
+        "blob_sha": "d420e12f222538369fa0104bd1e733963070313d",
+        "bytes": 12430
+      },
+      {
+        "path": "tests/test_csv_import.py",
+        "blob_sha": "dd32b9f84733da5989940ee23b2ee16b23f9e7f1",
+        "bytes": 7290
+      },
+      {
+        "path": "tests/test_dhcp_clock.py",
+        "blob_sha": "d01a097c911d7c1b52147ff3bcfb73e9c91f0fc9",
+        "bytes": 14957
+      },
+      {
+        "path": "tests/test_dhcp_dora.py",
+        "blob_sha": "795da0508658fb29112b043cfce36ec023fcd995",
+        "bytes": 16659
+      },
+      {
+        "path": "tests/test_dhcp_investigation_time.py",
+        "blob_sha": "ccf3b61e6f47cb143f94d1df371d61b72b238804",
+        "bytes": 17011
+      },
+      {
+        "path": "tests/test_dhcp_investigation.py",
+        "blob_sha": "9e56835af731a27461b77910421858a57bf40920",
+        "bytes": 22138
+      },
+      {
+        "path": "tests/test_dhcp_link_fault.py",
+        "blob_sha": "02223b28017b2ce3ed70c0798638f49e9138e908",
+        "bytes": 14226
+      },
+      {
+        "path": "tests/test_dhcp_port_vlan_fault.py",
+        "blob_sha": "1f053995a67daa4bcda5f28211f624530eac9b31",
+        "bytes": 17703
+      },
+      {
+        "path": "tests/test_dhcp_registry.py",
+        "blob_sha": "075db3fae1c274855c4feb4bee1583b80abdea52",
+        "bytes": 16196
+      },
+      {
+        "path": "tests/test_dhcp_renewal.py",
+        "blob_sha": "0e3d6e33fe7c0f672bd68741bbd60500f2e7077c",
+        "bytes": 20046
+      },
+      {
+        "path": "tests/test_dhcp.py",
+        "blob_sha": "9b7842c1110894dc153bd2d043387252b50d0876",
+        "bytes": 16734
+      },
+      {
+        "path": "tests/test_documentation_policy.py",
+        "blob_sha": "63bdb5c73186cdca908cabcb20246eb7ecfc88f5",
+        "bytes": 14110
+      },
+      {
+        "path": "tests/test_ethernet_frame.py",
+        "blob_sha": "a886e5766cdd746510e8e1341d6979a7e1b8fdb5",
+        "bytes": 7924
+      },
+      {
+        "path": "tests/test_ethernet.py",
+        "blob_sha": "d3d67a9ca5586da0e85a1a21cd87d4930feaf8c0",
+        "bytes": 10624
+      },
+      {
+        "path": "tests/test_example.py",
+        "blob_sha": "63f17f3d7946dad022df118ed94af4bd923e123c",
+        "bytes": 740
+      },
+      {
+        "path": "tests/test_http_boundary.py",
+        "blob_sha": "e8f762dfc235d1a220e8d1575d4f9dddf59ec714",
+        "bytes": 18429
+      },
+      {
+        "path": "tests/test_icmp_echo.py",
+        "blob_sha": "03a4c50fcbee1330d3edc5f77cdf225dfb76fc7e",
+        "bytes": 17980
+      },
+      {
+        "path": "tests/test_icmp_errors.py",
+        "blob_sha": "17c049b2f15997b42d35d684e162bf21f9544edd",
+        "bytes": 19701
+      },
+      {
+        "path": "tests/test_icmp_investigation_lan.py",
+        "blob_sha": "8e0b531001258b15363afa969b6ad22c89bbcc42",
+        "bytes": 10317
+      },
+      {
+        "path": "tests/test_icmp_investigation.py",
+        "blob_sha": "97a645167893936d5d526262e4321a67bfa23885",
+        "bytes": 40547
+      },
+      {
+        "path": "tests/test_icmp_lesson.py",
+        "blob_sha": "427c23bb8d5f23dc9165d9cc5eb3619e097dbf69",
+        "bytes": 14363
+      },
+      {
+        "path": "tests/test_import_cables.py",
+        "blob_sha": "8c01c3d0a4457d0216b5fff5867f5c6233454f7a",
+        "bytes": 21970
+      },
+      {
+        "path": "tests/test_import_candidate.py",
+        "blob_sha": "ac90ffa7c58b37455c439666abc801448222c31b",
+        "bytes": 24313
+      },
+      {
+        "path": "tests/test_import_inspection.py",
+        "blob_sha": "6650b5f022a84aca696f52fc4214897ae0d4948a",
+        "bytes": 24174
+      },
+      {
+        "path": "tests/test_import_integration_4c.py",
+        "blob_sha": "313d09eb2ad823c2cc5bac44e44a108533a4a11b",
+        "bytes": 25601
+      },
+      {
+        "path": "tests/test_import_ipv4.py",
+        "blob_sha": "c5d96305493571494aaf2dd1f7ce64a97f54148e",
+        "bytes": 11239
+      },
+      {
+        "path": "tests/test_import_paging.py",
+        "blob_sha": "e56f4aca486c6a85576d2097499a989747bcafa3",
+        "bytes": 6274
+      },
+      {
+        "path": "tests/test_import_plan.py",
+        "blob_sha": "cd444ccb0380b46a828b0c95f8497cc134f083f6",
+        "bytes": 17545
+      },
+      {
+        "path": "tests/test_import_ports.py",
+        "blob_sha": "94db8e62296c6f419530751bac3cf5b396d1e948",
+        "bytes": 7533
+      },
+      {
+        "path": "tests/test_import_static_routes.py",
+        "blob_sha": "b5fe56bcaf9954938a204439ec84eedf6813b30f",
+        "bytes": 12391
+      },
+      {
+        "path": "tests/test_import_verification.py",
+        "blob_sha": "fec9f11739301ee12c5b5a39e617f2d03d36b947",
+        "bytes": 11575
+      },
+      {
+        "path": "tests/test_import_vlan.py",
+        "blob_sha": "d8b6035ee1d3112c6c18b037938d706c0f2925c9",
+        "bytes": 10186
+      },
+      {
+        "path": "tests/test_import_zones.py",
+        "blob_sha": "7e63496653c7d5b270bd36c77465ea0c8f45c719",
+        "bytes": 9403
+      },
+      {
+        "path": "tests/test_ipv4_forwarding.py",
+        "blob_sha": "c0bcb9f8f0d702ed9cd49d65f5e3c3fe62f5593c",
+        "bytes": 17127
+      },
+      {
+        "path": "tests/test_ipv4_host_address.py",
+        "blob_sha": "a7c3cd370d5cb8766b4c7fe18517cffb3c6c4a30",
+        "bytes": 7776
+      },
+      {
+        "path": "tests/test_ipv4_special_addresses.py",
+        "blob_sha": "3803dfe375ff2d6ee224a7e1258c6eff7e5f1b32",
+        "bytes": 4521
+      },
+      {
+        "path": "tests/test_json_boundary.py",
+        "blob_sha": "44f8b73531b693213970caf12f190923a0a1ec9f",
+        "bytes": 5309
+      },
+      {
+        "path": "tests/test_mac_persistence.py",
+        "blob_sha": "e9f8a94d9949ea3db29abb38c1f84dcc0a2ee8c3",
+        "bytes": 6653
+      },
+      {
+        "path": "tests/test_model.py",
+        "blob_sha": "ee54acd5c6c0f76c5ee0df489129068eddd3eb4d",
+        "bytes": 10468
+      },
+      {
+        "path": "tests/test_naming_contract.py",
+        "blob_sha": "abbcbd6e9e6979b2e9d57a3fe3fd7724d8f4c775",
+        "bytes": 3812
+      },
+      {
+        "path": "tests/test_ods_import.py",
+        "blob_sha": "c77655bd9290fafc5952387800725f075e02c39d",
+        "bytes": 16153
+      },
+      {
+        "path": "tests/test_pedagogy_assessment.py",
+        "blob_sha": "c7363a612364676dc6ea2e340079ea68b5881d84",
+        "bytes": 4494
+      },
+      {
+        "path": "tests/test_protocol_reference_boundaries.py",
+        "blob_sha": "89d755e71dc1d898980490a3b73d0c4344b3f99a",
+        "bytes": 11346
+      },
+      {
+        "path": "tests/test_protocol_reference_forwarding.py",
+        "blob_sha": "db04f81a83400db8fea93894d07ad13f0a963af3",
+        "bytes": 7933
+      },
+      {
+        "path": "tests/test_protocol_reference_l3_dhcp.py",
+        "blob_sha": "df7eda8048f2d014b94ecbadbaeeea0e263eee95",
+        "bytes": 11331
+      },
+      {
+        "path": "tests/test_protocol_reference_vectors.py",
+        "blob_sha": "2ff52eea8f83ae93b80ae7a2c9f5bd4cc534d12d",
+        "bytes": 8006
+      },
+      {
+        "path": "tests/test_quality_005_http_races.py",
+        "blob_sha": "cceb03a764dcd5a6aa560df6097127fb18594d32",
+        "bytes": 11716
+      },
+      {
+        "path": "tests/test_quality_005_storage_faults.py",
+        "blob_sha": "59114cd4d3d918afd8e5feafd5e3554dfb7dcbde",
+        "bytes": 6525
+      },
+      {
+        "path": "tests/test_session_idle.py",
+        "blob_sha": "f3499a3c51f6f19d055cd2f5e573b6ee1ea6a7de",
+        "bytes": 11637
+      },
+      {
+        "path": "tests/test_simulation_sessions.py",
+        "blob_sha": "cab3f635578f1317c0e3a02d164d754c1543c584",
+        "bytes": 14412
+      },
+      {
+        "path": "tests/test_spreadsheet_export.py",
+        "blob_sha": "e1e035d0a08dce05a996e8432a89b0663e0184fd",
+        "bytes": 17042
+      },
+      {
+        "path": "tests/test_spreadsheet_templates.py",
+        "blob_sha": "a6745b1e21281eea4542a953356e65e2503c7f8f",
+        "bytes": 15529
+      },
+      {
+        "path": "tests/test_spreadsheet_v13.py",
+        "blob_sha": "2eb0a26097dc8b80baef4518d343c3c9a1666059",
+        "bytes": 15153
+      },
+      {
+        "path": "tests/test_static_routing.py",
+        "blob_sha": "cfe4367af68c35835868f8e7d0875454ba48d1c7",
+        "bytes": 14438
+      },
+      {
+        "path": "tests/test_storage_concurrency.py",
+        "blob_sha": "b5995e2323d33fd0d1c8ac21df48aa6393e6cf48",
+        "bytes": 8147
+      },
+      {
+        "path": "tests/test_storage_http.py",
+        "blob_sha": "84f02a9a1575070d5d4e67ee247e68d5566a4fdf",
+        "bytes": 12534
+      },
+      {
+        "path": "tests/test_storage_symlink_boundary.py",
+        "blob_sha": "3eba5fff5fefb87adac6f3260d13ee13cb860893",
+        "bytes": 8654
+      },
+      {
+        "path": "tests/test_troubleshooting_ipv4_routes.py",
+        "blob_sha": "13250fa16296a5ba95641200b7fe03fbfe455da8",
+        "bytes": 13757
+      },
+      {
+        "path": "tests/test_troubleshooting_port_vlan.py",
+        "blob_sha": "dee11e484308e801b4d08cb504b4774c7b01a513",
+        "bytes": 13497
+      },
+      {
+        "path": "tests/test_troubleshooting.py",
+        "blob_sha": "7b5bf0ba40a33628c1d88742620eed953f7e8383",
+        "bytes": 10333
+      },
+      {
+        "path": "tests/test_uploaded_json_boundary.py",
+        "blob_sha": "72888575d0c4d64468eb9d93225e00c6b5b34b9d",
+        "bytes": 3459
+      },
+      {
+        "path": "tests/test_vlan_arp.py",
+        "blob_sha": "952ba7dd5490364efe2d642eb011e5b473b05395",
+        "bytes": 14288
+      },
+      {
+        "path": "tests/test_vlan_boundary.py",
+        "blob_sha": "0e11d0298023051ed5f30d81e3555aa77f9ee349",
+        "bytes": 1085
+      },
+      {
+        "path": "tests/test_vlan_persistence.py",
+        "blob_sha": "d8f1955e022d041ab7d0cb367128947bacb88912",
+        "bytes": 10599
+      },
+      {
+        "path": "tests/test_vlan.py",
+        "blob_sha": "871f3c1823679e4b9f943c880e2567a2c218d50d",
+        "bytes": 11235
+      },
+      {
+        "path": "tests/test_web_import_graph.py",
+        "blob_sha": "8af38c6575e53d2a5b064a0b9f3126cd6835f684",
+        "bytes": 2157
+      },
+      {
+        "path": "tests/test_xlsx_import.py",
+        "blob_sha": "f2e3c7db91f5e5d81e661c5dc885c391d2232ddb",
+        "bytes": 14662
+      },
+      {
+        "path": "tests/xlsx_fixture.py",
+        "blob_sha": "7c3ee43f250225e10d4e74868afdbc69296f943c",
+        "bytes": 6581
+      },
+      {
+        "path": "web/fixtures/icmp-echo-lesson.json",
+        "blob_sha": "87b882b28b0f8879ebf2344be1361ed824249590",
+        "bytes": 3510
+      }
+    ]
+  },
+  "regression_commands": [
+    "python3 -m unittest discover -s tests -p 'test_*.py' -v",
+    "npm run check",
+    "python3 tests/browser_smoke.py",
+    "python3 tests/run_pedagogy_assessment.py",
+    "python3 tests/browser_api_capability.py",
+    "xvfb-run -a python3 tests/browser_primary_selection_x11.py",
+    "python3 tests/browser_elk_layout.py",
+    "python3 tests/browser_elk_import.py",
+    "python3 tests/browser_canvas_large_zoom.py"
+  ],
+  "disclaimer": "A0 documentation-only evidence snapshot. No G1–G7 guard, no ratchet, no CODEOWNERS or required architecture-guard exists as a result of this artifact; A1 is responsible."
+}
