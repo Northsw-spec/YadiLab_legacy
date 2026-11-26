@@ -47,6 +47,16 @@ WEB = Path(__file__).resolve().parent.parent / "web"
 MAX_BODY = 8 * 1024 * 1024
 DEFAULT_PORT = 8765
 DEFAULT_PORT_CANDIDATES = 10
+# Only peer/socket-disconnect transport errnos may be treated as expected.
+# Do not hide filesystem or model failures behind a generic OSError handler.
+CLIENT_DISCONNECT_ERRNOS = frozenset((
+    errno.EPIPE, errno.ECONNRESET, errno.ECONNABORTED,
+    errno.ENOTCONN, errno.ESHUTDOWN,
+))
+
+
+class ClientDisconnected(Exception):
+    """A peer left during HTTP wire I/O; never emit a second response."""
 
 
 class RequestFramingError(ProjectValidationError):
@@ -112,6 +122,39 @@ class LabHTTPServer(ThreadingHTTPServer):
 class Handler(BaseHTTPRequestHandler):
     server: LabHTTPServer
 
+    @staticmethod
+    def _expected_peer_disconnect(error: OSError) -> bool:
+        return (isinstance(error, (BrokenPipeError, ConnectionResetError,
+                                   ConnectionAbortedError))
+                or error.errno in CLIENT_DISCONNECT_ERRNOS)
+
+    def handle_one_request(self) -> None:
+        # Covers early trust/media failures and do_OPTIONS, where _json may
+        # run before the do_GET/do_POST domain-exception handler is installed.
+        # Real server errors must still propagate to the HTTP server.
+        try:
+            super().handle_one_request()
+        except ClientDisconnected:
+            self.close_connection = True
+        except OSError as error:
+            # A peer may also reset the socket during HTTP request parsing.
+            if not self._expected_peer_disconnect(error):
+                raise
+            self.close_connection = True
+
+    def _finish_response(self, body: bytes) -> None:
+        # Both end_headers() and the body send may fail after a client resets
+        # the connection. Never run the normal JSON error writer afterward:
+        # some bytes may already have been sent, and a second write is invalid.
+        try:
+            self.end_headers()
+            self.wfile.write(body)
+        except OSError as error:
+            if not self._expected_peer_disconnect(error):
+                raise
+            self.close_connection = True
+            raise ClientDisconnected() from None
+
     def _trusted_request(self) -> bool:
         # The listener is local, but a browser can be directed to it through
         # an attacker-controlled DNS name. Compare the literal authority with
@@ -158,8 +201,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
-        self.end_headers()
-        self.wfile.write(body)
+        self._finish_response(body)
 
     def _read_json(self) -> object:
         # RFC 9112: competing length fields or transfer codings make the
@@ -178,9 +220,21 @@ class Handler(BaseHTTPRequestHandler):
             raise RequestFramingError("request: invalid Content-Length") from None
         if size > MAX_BODY:
             raise ProjectValidationError("request: PAYLOAD_LIMIT: body larger than 8 MiB")
-        return decode_json_document(self.rfile.read(size), context="request")
+        try:
+            raw = self.rfile.read(size)
+        except OSError as error:
+            if not self._expected_peer_disconnect(error):
+                raise
+            self.close_connection = True
+            raise ClientDisconnected() from None
+        return decode_json_document(raw, context="request")
 
     def _respond_error(self, error: Exception) -> None:
+        if isinstance(error, ClientDisconnected):
+            # Successful domain work (notably Save) must not be run again just
+            # to produce an error response the disconnected client cannot read.
+            self.close_connection = True
+            return
         if isinstance(error, RequestFramingError):
             self.close_connection = True
             self._json(HTTPStatus.BAD_REQUEST, {
@@ -215,8 +269,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_header("Content-Length", str(len(payload)))
                 self.send_header("Cache-Control", "no-store")
                 self.send_header("X-Content-Type-Options", "nosniff")
-                self.end_headers()
-                self.wfile.write(payload)
+                self._finish_response(payload)
             elif path == "/api/projects":
                 self._json(200, {"projects": self.server.store.list()})
             elif path.startswith("/api/projects/"):
@@ -245,8 +298,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_header("Content-Type", mime + ("; charset=utf-8" if mime.startswith("text/") or mime == "text/javascript" else ""))
                 self.send_header("Content-Length", str(len(data)))
                 self.send_header("Cache-Control", "no-store")
-                self.end_headers()
-                self.wfile.write(data)
+                self._finish_response(data)
             else:
                 self._json(404, {"error": "NOT_FOUND", "message": "No such resource"})
         except Exception as e:
