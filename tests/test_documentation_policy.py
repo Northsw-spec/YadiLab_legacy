@@ -120,6 +120,8 @@ class DocumentationPolicyTests(unittest.TestCase):
                     self.assertNotIn(phrase, source)
         self.assertIn("Simulerade kabelöverföringar:", app)
         self.assertIn("simulerade kabelöverföringar", presenters)
+        self.assertIn("ej levererade felpaket redovisas separat", presenters)
+        self.assertNotIn("ICMP-fel visas endast när", presenters)
         self.assertIn("simulerat DHCPACK", html)
         self.assertIn("Simulerat ICMP Echo över ARP", html)
         self.assertIn("simulerat ICMP Echo", icmp_panel)
