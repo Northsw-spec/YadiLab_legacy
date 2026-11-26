@@ -1,0 +1,74 @@
+{
+  "schema": "yadilab.a0.frontend-import-graph.v1",
+  "baseline_main_sha": "f36435dd7b108756bdac6e3919c1cb1c61cf58d7",
+  "entrypoint": "web/app.js",
+  "module_count": 18,
+  "direct_import_count": 29,
+  "adjacency": {
+    "web/app.js": [
+      "web/model.js",
+      "web/canvas.js",
+      "web/ui/dom.js",
+      "web/services/api.js",
+      "web/features/projects/persistence.js",
+      "web/features/projects/transfer.js",
+      "web/features/diagnostics/presenters.js",
+      "web/features/diagnostics/queries.js",
+      "web/features/sessions/dhcp-investigation.js",
+      "web/features/sessions/icmp-investigation.js",
+      "web/features/sessions/dora-session.js",
+      "web/features/sessions/simulation-session.js",
+      "web/features/diagnostics/icmp-investigation-panel.js",
+      "web/features/diagnostics/protocol-lessons.js",
+      "web/features/projects/import-review.js",
+      "web/features/layout/elk.js"
+    ],
+    "web/canvas.js": [
+      "web/model.js"
+    ],
+    "web/features/diagnostics/icmp-investigation-panel.js": [
+      "web/ui/dom.js"
+    ],
+    "web/features/diagnostics/presenters.js": [],
+    "web/features/diagnostics/protocol-lessons.js": [],
+    "web/features/diagnostics/queries.js": [
+      "web/services/api.js"
+    ],
+    "web/features/layout/elk.js": [],
+    "web/features/projects/import-review.js": [
+      "web/ui/dom.js",
+      "web/services/api.js",
+      "web/features/projects/transfer.js",
+      "web/features/projects/mapping-profiles.js"
+    ],
+    "web/features/projects/mapping-profiles.js": [],
+    "web/features/projects/persistence.js": [
+      "web/services/api.js"
+    ],
+    "web/features/projects/transfer.js": [
+      "web/services/api.js"
+    ],
+    "web/features/sessions/dhcp-investigation.js": [
+      "web/services/api.js"
+    ],
+    "web/features/sessions/dora-session.js": [
+      "web/services/api.js"
+    ],
+    "web/features/sessions/icmp-investigation.js": [
+      "web/services/api.js"
+    ],
+    "web/features/sessions/simulation-session.js": [
+      "web/services/api.js"
+    ],
+    "web/model.js": [],
+    "web/services/api.js": [],
+    "web/ui/dom.js": []
+  },
+  "graph_check": {
+    "reachable_count": 18,
+    "orphan_paths": [],
+    "unresolved_imports": [],
+    "cycles_reported": []
+  },
+  "limitations": "Static ES import graph only. It does not prove state ownership, event registration lifecycle, or absence of copied code. A1 must add mandatory regression guards."
+}
