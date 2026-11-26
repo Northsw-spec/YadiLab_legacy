@@ -25,7 +25,7 @@ These are *regression tripwires*, not objective quality or runtime-correctness s
 `tools/architecture_guard.py` verifies current source rather than trusting the historical A0 file list:
 
 - Every first-party ES module is registered in the authoritative frontend contract, imported from the entrypoint, free of cycles, and contains only declared ES imports/exports.
-- Presentation modules cannot import project storage. Session controllers cannot depend on project storage, presentation or DOM utility. The app composition root cannot be imported downstream.
+- Presentation modules cannot import project storage. Session controllers cannot depend on project storage, presentation or DOM utility. The app composition root cannot be imported downstream. **Module layer is derived from its actual file path**, not trusted from the editable JSON owner's label; a forged owner therefore cannot launder a forbidden dependency.
 - Existing top-level `app.js` function and state-binding inventories are frozen; adding a copied presenter/controller function or new state binding fails. The counters forbid increasing direct event registration and DOM references in `app.js`.
 - Python source is parsed using **Python AST**, checking the single final project validator and single ICMP EchoExchange implementation and preventing import-stage dependencies on HTTP.
 - Native JS syntax remains verified by the existing `npm run check` and real Chromium functional tests.
@@ -62,7 +62,7 @@ The guard writes machine-readable `architecture-report.json` to the job workspac
 
 ## Test matrix
 
-`tests/test_architecture_guard.py` has independent synthetic demonstrations for: valid baseline, removed ICMP session file, import cycle, orphan, presentation→storage dependency, duplicated ping presenter, copied session state, fraudulent raised budget even with matching source change, deleted regression test, removed guard script, removed module contract, weakened public exports, duplicate backend validator, legitimate decreased code budget, and removed required test from policy.
+`tests/test_architecture_guard.py` has **17** independent synthetic demonstrations for: valid baseline, removed ICMP session file, import cycle, orphan, presentation→storage dependency, forged source owner and owner-label laundering attempt, duplicated ping presenter, copied session state, fraudulent raised budget even with matching source change, deleted regression test, removed guard script, removed module contract, weakened public exports, duplicate backend validator, legitimate decreased code budget, and removed required test from policy.
 
 **A1 completion evidence required:**
 
