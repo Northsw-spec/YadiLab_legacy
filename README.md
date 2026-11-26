@@ -2,7 +2,7 @@
 
 YadiLab är en **lokal Linux-applikation** för nätverksdokumentation, visualisering och avgränsad simulering. Windows och macOS stöds inte och ska inte bli utvecklingsmål.
 
-**Utvecklingsstatus 2026-11-26:** [Pedagogisk arkitektur (P0–P7)](docs/PEDAGOGICAL_TROUBLESHOOTING_PLAN.md) är **formellt avslutad genom användarbeslut**. **Ingen ny etapp eller aktiv roadmap är beslutad.** Dokumentet bevarar historik och pedagogiska kvalitetskrav; avslutningen innebär inte att all planerad funktionalitet implementerats eller att produkten är verifierat felfri. [MASTERPROMPT](docs/MASTERPROMPT.md) beskriver produktens mål och [AGENTS.md](AGENTS.md) skyddar utvecklingsprocessen. Äldre planer återaktiveras inte automatiskt.
+**Aktiv utvecklingsplan 2026-11-26:** [Åtgärda granskningsbrister och återupprätta hållbar modularisering (A0–A10)](docs/REMEDIATION_PLAN_2026-11-26.md) är godkänd av användaren och **enda aktiva roadmapen**. Utgångspunkt är [hela tekniska granskningen 2026-11-26](docs/reviews/TECHNICAL_REVIEW_2026-11-26.md). **Nästa arbetskort: A0 – forensisk nuläges-/modulgranskning (NOT_STARTED); A1 – obligatoriskt arkitekturskydd före A3/A4-modularisering.** A8/A9 förutsätter separat godkännande. [Pedagogikprogrammet P0–P7](docs/PEDAGOGICAL_TROUBLESHOOTING_PLAN.md) är fortfarande formellt CLOSED och dess undervisningskontrakt gäller. [MASTERPROMPT](docs/MASTERPROMPT.md) är produktkontrakt och [AGENTS.md](AGENTS.md) styr PR/CI. Äldre utvecklingsplaner får inte återaktiveras automatiskt.
 
 ## Starta på Linux
 
