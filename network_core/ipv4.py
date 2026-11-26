@@ -4,7 +4,9 @@ Each hop uses the canonical per-node routing table, actual simulated ARP
 request/reply and a real Ethernet II frame with an RFC 791 IPv4 header.
 ICMP Echo is an explicit caller-supplied datagram payload, while request/
 reply orchestration is delegated to the same engine by icmp_ping.py.
-No transport service, IP error messages, or invented route exists.
+No transport service or invented route exists. The IPv4 trace records
+bounded router-error *candidates* only; the EchoExchange layer separately
+encodes supported ICMP errors and checks their actual simulated return path.
 """
 from __future__ import annotations
 
