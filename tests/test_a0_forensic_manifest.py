@@ -20,14 +20,12 @@ SHA = re.compile(r"[0-9a-f]{40}\Z")
 def manifest_issues(baseline: dict, graph: dict) -> list[str]:
     """Check pinned audit evidence for internal consistency (no live-code gate)."""
     errors = []
-    # The schema namespace derives from repository metadata; never hardcode
-    # a runtime/display product name in Python source.
-    namespace = baseline.get("repo", "").rpartition("/")[2].lower()
-    if not namespace or baseline.get("schema") != f"{namespace}.a0.forensic-baseline.v1":
+    # Audit schemas must be product-neutral in executable source and fixtures.
+    if baseline.get("schema") != "architecture.a0.forensic-baseline.v1":
         errors.append("schema")
     if baseline.get("status") != "BASELINE_NOT_ENFORCEMENT":
         errors.append("scope")
-    if graph.get("schema") != f"{namespace}.a0.frontend-import-graph.v1":
+    if graph.get("schema") != "architecture.a0.frontend-import-graph.v1":
         errors.append("graph schema")
     revision = baseline.get("baseline_main_sha")
     if not isinstance(revision, str) or not SHA.fullmatch(revision):
