@@ -1,5 +1,8 @@
 # YadiLab – protokoll- och produktparitetsmatris
 
+**ABSOLUT SLUTKRAV:** [PT-FULL-001](FULL_PACKET_TRACER_PARITY_CONTRACT.md) är den bindande, obegränsade funktionsparitetskatalogen. **ALL** Cisco Packet Tracer-funktionalitet och ALLA faktiska protokoll-/enhets-/tjänstevarianter på Linux ska finnas och vara testade innan S12/full paritet: inklusive physical/logical, alla deviceprofiler/moduler, full CLI, realtime/simulation, PDU/OSI, Activity Wizard/script/score, IoT/OT, multiuser, extensions och PT-format. **Två enda undantag: inget Windows/macOS-stöd och inget ytterligare tillgänglighets-/keyboard-only-krav.** Alla andra saknade poster är GAP eller BLOCKED tills faktiskt implementerade. Tillfälligt NOT_NATIVE får ALDRIG accepteras som slutstatus. Protokolltabellen nedan är en början, inte ett komplett inventarium av PT.
+
+
 **Baseline:** main 7dbe2285cde7ea87c08afce1c58d36cd0f5697e7, 2026-11-26. **PT-referens:** Ciscos offentliga [Introduction](https://tutorials.ptnetacad.net/help/default/intro.htm), [Simulation Mode](https://tutorials.ptnetacad.net/help/default/mode_simulation.htm), [What's New 9.0](https://tutorials.ptnetacad.net/help/default/whatsNew.htm), [OT-katalog](https://tutorials.ptnetacad.net/help/default/industrial_otFeatures.htm) samt [8.2 FAQ](https://prelogin-authoring.netacad.com/sites/default/files/cisco-packet-tracer-faq.pdf) för äldre kompletteringar. Detta är en **mål-/gapmatris**, inte ett testresultat på Packet Tracer-installation eller på ännu ej byggda moduler.
 
 **Klassning:** LIMITED_NATIVE = faktisk men avgränsad implementation; NOT_NATIVE = ingen verifierad native motor; NOT_VERIFIED = test/versionsstöd ej självständigt kontrollerat; PLANNED = uttryckligt framtida produktkrav; VERIFIED_NATIVE = endast efter standardförankrade, oberoende positiva/negativa testvektorer och Required CI. PT_DOK = Cisco listar funktionen; betyder inte komplett interoperabilitet. S-nivåer refererar [enda aktiva masterplanen](REMEDIATION_PLAN_2026-11-26.md).
@@ -61,7 +64,7 @@
 | OSI-/PDU-inspektor | Stegvis paketinformation | LIMITED_NATIVE, smal spårvy | S1/S10 – orsaks-ID, bytes, headers, state- och drop-orsaker |
 | Realtid/simulation mode | Eventbaserad tid/animation | LIMITED_NATIVE, ingen global event scheduler | S1/S10 – pause/step/replay, deterministisk tid och separat visual speed |
 | Aktivitetsskapande / autorättning | Instructor/lab/feedback | LIMITED_NATIVE, enskilda lektioner | S10 – lab authoring, dolda facit, invariants och automatiserad bedömning |
-| Multiuser/kollaboration | Delade övningar | NOT_NATIVE | S10/S12 – särskilt säkerhetsbeslut; inte förutsättning för core-paritet |
+| Multiuser/kollaboration | Samverkande remote clouds, port visibility, offline remote save, autentisering | NOT_NATIVE | S10/S12 + PT-F23 – OBLIGATORISK paritet; säker, användaraktiverad federering på Linux |
 | Offline/Linux | Linux-stöd, även andra OS i PT | Linux-only med lokal server | S0/S12 – behåll Linux-only om inte nytt användarbeslut |
 
 ## Bindande uppdateringsregel
@@ -69,3 +72,41 @@
 Varje tillkommande protokoll får en egen rad med: exakt variant/version, RFC/IEEE/IEC eller trovärdig källa, dokumenterat stödomfång, device-profile, state machine, positivt/negativt referensorakel, gränser, fel-/tidsmodell, head-SHA, CI-länk, oberoende jämförelse samt resultatklass. Ingen rad ändras till VERIFIED_NATIVE från enbart plan, mock, logg, diagram eller marknadsföring. Matchad produktparitet kräver att **hela jämförbara övningen** kan genomföras, inte bara att ett paketnamn syns i GUI.
 
 **PT-resultat:** PT_DOK är förhandsinventering. Körbara konkurrentjämförelser med precis Packet Tracer-version och exakt jämförbar labbkonfiguration får markeras VERIFIED_COMPARISON först efter verklig körning; annars NOT_VERIFIED. Ingen tillgång till Ciscos källkod eller upphovsrättsskyddade IOS behövs eller får antas.
+
+## Produktomfattning: alla 29 bindande PT-funktionsfamiljer
+
+Dessa är överordnade grupp-ID, **inte** fulltäckande underfall. S0 ska kartlägga alla dokumenterade och i PT 9.0.1 praktiskt verifierade varianter, kommandon och enheter och ge var och en ett eget testbart under-ID. Ingen funktion försvinner genom att den saknas i denna första tabell. **Alla är GATE_REQUIRED** för FULL_PARITY och S12, utom explicit Linux/keyboard-undantag enligt [PT-FULL-001](FULL_PACKET_TRACER_PARITY_CONTRACT.md).
+
+| ID | PT-funktion som måste nå full paritet | YadiLab aktuell källbas | S-ägare | Slutgrind |
+|---|---|---|---|---|
+| PT-F01 | Logical workspace, kluster, annotation, diagram | LIMITED_NATIVE | S10 | REQUIRED |
+| PT-F02 | Physical workspace, rack, byggnader, plats/ström | NOT_NATIVE | S7/S10 | REQUIRED |
+| PT-F03 | Alla modeller och enhetsprofiler | LIMITED_NATIVE | S2–S10 | REQUIRED |
+| PT-F04 | Alla moduler, portar, medier, kablar | LIMITED_NATIVE | S2/S7/S10 | REQUIRED |
+| PT-F05 | Power-on, reboot, startup/running config | NOT_NATIVE | S1/S10 | REQUIRED |
+| PT-F06 | Full PT-device CLI/GUI semantik | NOT_NATIVE | S10 | REQUIRED |
+| PT-F07 | Realtime/Simulation mode med eventkontroll | LIMITED_NATIVE | S1/S10 | REQUIRED |
+| PT-F08 | Simple/Complex/Periodic PDUs, flera scenarios | LIMITED_NATIVE | S1/S10 | REQUIRED |
+| PT-F09 | OSI/PDU header/device status och eventlogg | LIMITED_NATIVE | S1/S10 | REQUIRED |
+| PT-F10 | PKT/PKZ/PKA format och versionsinteroperabilitet | NOT_VERIFIED | S10 | REQUIRED |
+| PT-F11 | Activity Wizard, scripting, scoring, password | LIMITED_NATIVE | S10 | REQUIRED |
+| PT-F12 | IoT Things, smart home/city/industrial/power | NOT_NATIVE | S9/S10 | REQUIRED |
+| PT-F13 | MCU/SBC, sensorer, analog/digital, Python/JS | NOT_NATIVE | S9/S10 | REQUIRED |
+| PT-F14 | OT PLC/HMI/historian/Cyber Observer | NOT_NATIVE | S9/S10 | REQUIRED |
+| PT-F15 | OT Modbus, PROFINET, CIP, IEC61850, PTP, PRP | NOT_NATIVE | S8/S9 | REQUIRED |
+| PT-F16 | Ethernet, VLAN, L2, STP/RSTP/LACP, IPv4/v6, ND/ICMP | LIMITED_NATIVE | S2/S3 | REQUIRED |
+| PT-F17 | RIP/EIGRP/OSPF/BGP/redistribution | NOT_NATIVE | S5 | REQUIRED |
+| PT-F18 | TCP/UDP/DHCP/DNS/HTTP/VoIP/alla PT-apps | LIMITED_NATIVE | S4/S10 | REQUIRED |
+| PT-F19 | ACL/NAT, firewall, AAA, GRE/IPsec/IPS | NOT_NATIVE | S6 | REQUIRED |
+| PT-F20 | CDP/LLDP/SNMP/Syslog/NTP/NetFlow/HA | NOT_NATIVE | S4/S8 | REQUIRED |
+| PT-F21 | WAN/PPP/Frame Relay/DSL, Wi-Fi, mobil, radio | NOT_NATIVE | S7 | REQUIRED |
+| PT-F22 | QoS, köer, överföring, delay, shaping | NOT_NATIVE | S7 | REQUIRED |
+| PT-F23 | Multiuser remote networks / save / port view | NOT_NATIVE | S10 | REQUIRED |
+| PT-F24 | Extensions / ExApps / utvecklar-API | NOT_NATIVE | S10 | REQUIRED |
+| PT-F25 | Labb/exam/assessment/script/inbyggda övningar | LIMITED_NATIVE | S10 | REQUIRED |
+| PT-F26 | Miljö/fysik/ström/IoT-automation | NOT_NATIVE | S7/S9/S10 | REQUIRED |
+| PT-F27 | Komplexa nät och reproducerbar skalning | NOT_VERIFIED | S11 | REQUIRED |
+| PT-F28 | Linux installation, backup, export, full appflöde | LIMITED_NATIVE | S10/S12 | REQUIRED |
+| PT-F29 | Alla återstående PT-underfall med upptäcktskrav | NOT_VERIFIED | S0/S11/S12 | REQUIRED |
+
+**Inga tillåtna slutundantag:** S12 får inte godkännas så länge något ID eller något faktiskt deltest är OPEN, NOT_NATIVE, PARTIAL, NOT_VERIFIED eller BLOCKED. Öppna licens-/formatproblem gör FULL_PARITY omöjlig att påstå tills de löses lagligt. RFC-/IEEE-/IEC-testorakel plus verkligen körda jämförbara Packet Tracer-scenarier krävs, inte endast hänvisning till en marknadsföringslista. Uppdatera varje post med exakt YadiLab SHA, PT-build, evidenslänk och PASS/FAIL.
