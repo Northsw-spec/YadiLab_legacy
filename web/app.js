@@ -350,11 +350,11 @@ function updateSaveIndicator() {
   span.classList.toggle('saved', Boolean(savedName) && !isDirty());
 }
 function invalidateDhcpDiagnostics() {
-  dhcpGeneration += 1;
+  dhcpGeneration += 1; dhcpBusy = false;
   dhcpDiagnostic = null;
 }
 function invalidateDoraDiagnostics() {
-  doraGeneration += 1;
+  doraGeneration += 1; doraBusy = false;
   doraDiagnostic = null;
 }
 function invalidateInvestigation() { investigation.invalidate(); }
@@ -2281,8 +2281,7 @@ async function runDora() {
   } catch (error) {
     if (stillCurrent()) doraDiagnostic = {error: error.message};
   } finally {
-    doraBusy = false;
-    renderDoraDiagnostics();
+    if (generation === doraGeneration) { doraBusy = false; renderDoraDiagnostics(); }
   }
 }
 
@@ -2328,8 +2327,7 @@ async function runDhcp() {
   } catch (error) {
     if (stillCurrent()) dhcpDiagnostic = {error: error.message};
   } finally {
-    dhcpBusy = false;
-    renderDhcpDiagnostics();
+    if (generation === dhcpGeneration) { dhcpBusy = false; renderDhcpDiagnostics(); }
   }
 }
 
