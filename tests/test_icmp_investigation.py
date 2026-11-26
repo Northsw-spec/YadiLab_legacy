@@ -448,8 +448,9 @@ class IcmpInvestigationTests(unittest.TestCase):
     def test_third_correct_guess_unlocks_repair_but_no_later_guess(self):
         case = scenario("STATIC_ROUTE_MISSING")
         case.probe("ping", {})
-        case.probe("route", {"nodeId": "b", "destinationIpv4": "192.0.2.10"})
-        case.probe("port", {"nodeId": "b", "portId": "eth0"})
+        # This fixture's deterministic STATIC_ROUTE_MISSING candidate is
+        # the source's outbound route, not the guided lesson's return route.
+        case.probe("route", {"nodeId": "a", "destinationIpv4": "203.0.113.20"})
         self.assertTrue(case.state()["canSubmitDiagnosis"])
         for _ in range(2):
             self.assertFalse(case.diagnose("CABLE_DOWN")["correct"])
