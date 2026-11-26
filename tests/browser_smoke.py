@@ -4783,6 +4783,42 @@ def run():
                 dhcp_page.locator('#run-dhcp').click()
             assert fresh_dhcp.value.json()['offeredIpv4'] == '192.0.2.71'
             expect(dhcp_page.locator('#dhcp-result')).to_contain_text('Föreslagen IP: 192.0.2.71')
+
+            # A3 regression: invalidate the still-pending request and start a
+            # fresh one BEFORE the old response arrives. An obsolete finally
+            # must not enable the button or repaint the new request's state.
+            dhcp_page.evaluate("""() => {
+              window.__oldDhcpFetch = window.fetch;
+              window.__dhcpPendingReplies = [];
+              window.fetch = async (...args) => {
+                const response = await window.__oldDhcpFetch(...args);
+                if (args[0] === '/api/dhcp/discover-offer') {
+                  return new Promise(resolve => {
+                    window.__dhcpPendingReplies.push(() => resolve(response));
+                  });
+                }
+                return response;
+              };
+            }""")
+            dhcp_page.locator('#dhcp-offered-ip').fill('192.0.2.70')
+            dhcp_page.locator('#run-dhcp').click()
+            dhcp_page.wait_for_function("window.__dhcpPendingReplies.length === 1")
+            expect(dhcp_page.locator('#run-dhcp')).to_be_disabled()
+            dhcp_page.locator('#dhcp-offered-ip').fill('192.0.2.71')
+            expect(dhcp_page.locator('#run-dhcp')).to_be_enabled()
+            dhcp_page.locator('#run-dhcp').click()
+            dhcp_page.wait_for_function("window.__dhcpPendingReplies.length === 2")
+            expect(dhcp_page.locator('#run-dhcp')).to_be_disabled()
+            assert dhcp_page.evaluate("""async () => {
+              window.__dhcpPendingReplies[0]();
+              await new Promise(resolve => setTimeout(resolve, 250));
+              return document.querySelector('#run-dhcp').disabled;
+            }"""), 'old DHCP finally must not unlock the new pending attempt'
+            expect(dhcp_page.locator('#dhcp-result')).to_contain_text('Ingen aktuell DHCP-diagnostik')
+            dhcp_page.evaluate('window.__dhcpPendingReplies[1]()')
+            expect(dhcp_page.locator('#run-dhcp')).to_be_enabled()
+            expect(dhcp_page.locator('#dhcp-result')).to_contain_text('Föreslagen IP: 192.0.2.71')
+            dhcp_page.evaluate('window.fetch = window.__oldDhcpFetch')
             dhcp_page.locator('[data-item-type="node"][data-item-id="client"]').click()
             expect(dhcp_page.locator('[data-port-ipv4="eth0"]')).to_have_value('')
 
@@ -4895,6 +4931,41 @@ def run():
             assert fresh_dora.value.status == 200
             assert fresh_dora.value.json()['lease']['ipv4'] == '192.0.2.71'
             expect(dhcp_page.locator('#dora-result')).to_contain_text('SIMULERAD BOUND-lease: 192.0.2.71')
+
+            # A3 regression: old DORA finally cannot unlock a new pending
+            # request or show the former lease after an input change.
+            dhcp_page.evaluate("""() => {
+              window.__oldDoraFetch = window.fetch;
+              window.__doraPendingReplies = [];
+              window.fetch = async (...args) => {
+                const response = await window.__oldDoraFetch(...args);
+                if (args[0] === '/api/dhcp/dora') {
+                  return new Promise(resolve => {
+                    window.__doraPendingReplies.push(() => resolve(response));
+                  });
+                }
+                return response;
+              };
+            }""")
+            dhcp_page.locator('#dora-pool-start').fill('192.0.2.70')
+            dhcp_page.locator('#run-dora').click()
+            dhcp_page.wait_for_function("window.__doraPendingReplies.length === 1")
+            expect(dhcp_page.locator('#run-dora')).to_be_disabled()
+            dhcp_page.locator('#dora-pool-start').fill('192.0.2.71')
+            expect(dhcp_page.locator('#run-dora')).to_be_enabled()
+            dhcp_page.locator('#run-dora').click()
+            dhcp_page.wait_for_function("window.__doraPendingReplies.length === 2")
+            expect(dhcp_page.locator('#run-dora')).to_be_disabled()
+            assert dhcp_page.evaluate("""async () => {
+              window.__doraPendingReplies[0]();
+              await new Promise(resolve => setTimeout(resolve, 250));
+              return document.querySelector('#run-dora').disabled;
+            }"""), 'old DORA finally must not unlock the new pending attempt'
+            expect(dhcp_page.locator('#dora-result')).to_contain_text('Ingen aktuell DORA-diagnostik')
+            dhcp_page.evaluate('window.__doraPendingReplies[1]()')
+            expect(dhcp_page.locator('#run-dora')).to_be_enabled()
+            expect(dhcp_page.locator('#dora-result')).to_contain_text('SIMULERAD BOUND-lease: 192.0.2.71')
+            dhcp_page.evaluate('window.fetch = window.__oldDoraFetch')
             dhcp_page.locator('[data-item-type="node"][data-item-id="client"]').click()
             expect(dhcp_page.locator('[data-port-ipv4="eth0"]')).to_have_value('')
             expect(dhcp_page.locator('#save-indicator')).to_contain_text('Osparade ändringar')

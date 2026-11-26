@@ -5,7 +5,7 @@
   "source_baseline": "architecture/a0_baseline.json",
   "source_graph": "architecture/a0_frontend_imports.json",
   "line_budgets": {
-    "web/app.js": 2913,
+    "web/app.js": 2911,
     "network_core/import_plan.py": 966,
     "network_core/icmp_investigation.py": 843
   },
