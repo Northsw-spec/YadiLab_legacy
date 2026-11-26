@@ -31,8 +31,21 @@ function icmpInvestigationDescription(item) {
   if (item.probe === 'ping') {
     const hops = [...o.requestSteps.map(step => ({direction:'UT', ...step})),
                   ...o.replySteps.map(step => ({direction:'RETUR', ...step}))];
+    const error = o.routerError;
+    const errorType = error?.type === 11 ? 'Time Exceeded'
+      : error?.type === 3 ? 'Destination Unreachable' : 'okänd typ';
+    const routerEvidence = error
+      ? '\nRouter-ICMP i simuleringen: typ ' + error.type + '/kod ' + error.code
+        + ' (' + errorType + ') från ' + error.sourceNode + '/' + error.sourcePort
+        + (error.receivedAtSource
+          ? ' · MOTTAGET vid ursprungskällan i modellen'
+          : ' · INTE MOTTAGET vid ursprungskällan; generering i modellen är inte en observerad felrespons')
+        + ' · returspår ' + error.returnTraceStatus
+      : '\nRouter-ICMP: inget genererat av denna begränsade modell i försöket; '
+        + 'ett saknat Echo Reply bevisar inte att en router skickade ett fel.';
     return 'ICMP: ' + o.status + ' · giltig Echo Reply: ' + (o.replyMatched ? 'ja' : 'nej')
       + '\nRequest: ' + o.requestStatus + ' · Reply: ' + (o.replyStatus ?? 'ej skickad')
+      + routerEvidence
       + '\n' + (hops.map(step => step.direction + ' · ' + step.node
         + ' · route ' + step.route.type + ' ' + step.route.destination
         + ' · ARP ' + step.arpStatus
@@ -247,7 +260,8 @@ export function renderIcmpInvestigationPanel(project, session) {
             + icmpInvestigationState.maxProbes
             + ' mätningar använda – inga fler mätningar kan göras'
           : '')
-        + (lesson ? '' : ' · DHCP-ursprung: ' + icmpInvestigationState.dhcpCheck)
+        + (lesson ? '' : ' · DHCP-ursprung: ' + icmpInvestigationState.dhcpAddressOrigin
+            + ' · DHCP-kontroll: ' + icmpInvestigationState.dhcpCheck)
         + (!icmpInvestigationState.diagnosed
             && icmpInvestigationState.diagnosisAttempts >= icmpInvestigationState.maxDiagnosisAttempts
           ? ' · ' + icmpInvestigationState.diagnosisAttempts + ' av '
