@@ -259,7 +259,7 @@ export function renderIcmpInvestigationPanel(project, session) {
   observations.textContent = icmpInvestigationLog.length
     ? icmpInvestigationLog.map((x, i) =>
       (i + 1) + '. ' + icmpInvestigationDescription(x)).join('\n\n')
-    : 'Börja med IP-uppgifter. Skicka sedan verklig ICMP och kontrollera routingtabeller '
+    : 'Börja med IP-uppgifter. Skicka sedan simulerat ICMP Echo och kontrollera routingtabeller '
       + 'samt länk, port/IPv4 och VLAN för att utesluta fel. DHCP-ursprung är okänt i modellen.';
   const verdict = $('icmp-investigation-verdict');
   verdict.classList.remove('ok', 'fail');
@@ -269,7 +269,7 @@ export function renderIcmpInvestigationPanel(project, session) {
   } else if (icmpInvestigationVerdict) {
     verdict.classList.add(icmpInvestigationVerdict.correct ? 'ok' : 'fail');
     verdict.textContent = icmpInvestigationVerdict.correct
-      ? 'DIAGNOS BEKRÄFTAD. Återställ och verifiera en faktisk tur-och-retur Echo Reply.'
+      ? 'DIAGNOS BEKRÄFTAD. Återställ och verifiera ett matchande Echo Reply i simuleringen.'
       : 'HYPOTES AVVISAD. Felkategorin avslöjas inte; kontrollera flera mätningar.';
   } else {
     verdict.textContent = lesson
