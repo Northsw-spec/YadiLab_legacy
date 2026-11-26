@@ -1,12 +1,12 @@
 # YadiLab – pedagogisk felsökningsarkitektur: evidens, orsak och lärande
 
 **Datum:** 2026-11-24 (ISO)  
-**Beslut 2026-11-26:** P0–P7-programmet är **formellt avslutat genom uttryckligt användarbeslut**. Dokumentet bevaras som historisk genomförandeplan och fortsatt bindande pedagogiskt kvalitetskontrakt; ingen utvecklingsetapp är aktiv och ingen P8 är beslutad.  
-**Status:** P0–P7 **CLOSED (2026-11-26)**. Den formella avslutningen är ett projektbeslut, inte bevis för att samtliga tidigare idéer implementerats eller att YadiLab är felfritt. Den sammanhållna nya undervisningsarbetsytan ska fortfarande behandlas som **PLANNED / NOT_VERIFIED** där faktiskt kod- och teststöd saknas. Befintliga funktioner fastställs endast från aktuell kod och tester. Framtida utveckling kräver ett nytt uttryckligt avgränsat uppdrag.  
+**Beslut 2026-11-26:** P0–P7-programmet är **formellt avslutat genom uttryckligt användarbeslut**. Dokumentet bevaras som historisk genomförandeplan och fortsatt bindande pedagogiskt kvalitetskontrakt; **ingen P0–P7-etapp eller P8 är aktiv/beslutad**. Separat därefter är [REMEDIATION_PLAN_2026-11-26.md](REMEDIATION_PLAN_2026-11-26.md) uttryckligen godkänd som den **enda aktiva reparationsroadmapen A0–A10**.  
+**Status:** P0–P7 **CLOSED (2026-11-26)**. Den formella avslutningen är ett projektbeslut, inte bevis för att samtliga tidigare idéer implementerats eller att YadiLab är felfritt. Den sammanhållna nya undervisningsarbetsytan ska fortfarande behandlas som **PLANNED / NOT_VERIFIED** där faktiskt kod- och teststöd saknas. Befintliga funktioner fastställs endast från aktuell kod och tester. Utveckling utanför den separat godkända A0–A10-planens scope kräver nytt uttryckligt avgränsat uppdrag.  
 **Historisk granskad bas:** `main@b1c6fb0323fc93085084128e3ff4382f2b3a9576`. Läs om aktuell HEAD/CI före varje ändring.  
 **Plattform:** Linuxdistributioner endast. Windows och macOS är UNSUPPORTED.
 
-> **LÄS FÖRST – avslutad roadmap.** P0–P7 beskriver ett avslutat utvecklingsprogram och får inte längre användas för att automatiskt välja nästa uppgift. Inget nytt steg, protokoll, API, schema, datalager, OS-stöd, extern integration eller stor UI-ombyggnad är beslutat. Operativa regler: `AGENTS.md`; produktkontrakt: `docs/MASTERPROMPT.md`; importgräns: `docs/IMPORT_SOURCE_CONTRACT.md`. Vid konflikt gäller senaste uttryckliga användarbeslut och verifierad kod/test på aktuell HEAD.
+> **LÄS FÖRST – avslutad roadmap.** P0–P7 beskriver ett avslutat utvecklingsprogram och får inte längre användas för att automatiskt välja nästa uppgift. Aktuella åtgärdskort och deras status finns **endast** i [den aktiva reparationsplanen A0–A10](REMEDIATION_PLAN_2026-11-26.md). Inget nytt steg, protokoll, API, schema, datalager, OS-stöd, extern integration eller stor UI-ombyggnad är beslutat. Operativa regler: `AGENTS.md`; produktkontrakt: `docs/MASTERPROMPT.md`; importgräns: `docs/IMPORT_SOURCE_CONTRACT.md`. Vid konflikt gäller senaste uttryckliga användarbeslut och verifierad kod/test på aktuell HEAD.
 
 ## 1. Produktmål och orubbliga avgränsningar
 

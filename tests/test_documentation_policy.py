@@ -55,13 +55,42 @@ class DocumentationPolicyTests(unittest.TestCase):
         self.assertIn("P0–P7 **CLOSED (2026-11-26)**", body)
         self.assertIn("**Nästa etapp: INGEN BESLUTAD.**", body)
         self.assertNotIn("enda aktiva utvecklingsplanen", body.lower())
+        # Closure of historical P0–P7 and approval of a distinct remediation
+        # roadmap are compatible. Active governing files must point to one
+        # canonical roadmap, not resurrect the retired historical queue.
+        remediation = ROOT / "docs" / "REMEDIATION_PLAN_2026-11-26.md"
+        report = ROOT / "docs" / "reviews" / "TECHNICAL_REVIEW_2026-11-26.md"
+        self.assertTrue(remediation.is_file())
+        self.assertTrue(report.is_file())
+        active = remediation.read_text(encoding="utf-8")
+        source = report.read_text(encoding="utf-8")
+        self.assertIn("**Status:** GODKÄND / AKTIV PLAN", active)
+        self.assertIn("## 0. Operativ startpunkt", active)
+        self.assertIn("A0 – Rebaslinje", active)
+        self.assertIn("G1 – Baslinje", active)
+        self.assertIn("architecture-guard", active)
+        self.assertIn("A8 och A9", active)
+        self.assertIn("DECISION_REQUIRED", active)
+        self.assertIn("CLOSED", active)
+        for phase in range(11):
+            with self.subTest(phase=phase):
+                self.assertIn(f"### A{phase}.", active)
+                self.assertIn(f"| A{phase} |", active)
+        for coverage in range(1, 19):
+            with self.subTest(coverage=coverage):
+                self.assertIn(f"| C{coverage:02d} |", active)
+        for section in range(1, 7):
+            self.assertIn(f"## **{section}.", source)
+        self.assertIn("fe111c5368d4a4758bc86123b06447f34ba2a02e", source)
+        for path in (ROOT / "AGENTS.md", ROOT / "README.md",
+                     ROOT / "docs" / "MASTERPROMPT.md", PLAN):
+            with self.subTest(path=str(path.relative_to(ROOT))):
+                governing = path.read_text(encoding="utf-8")
+                self.assertIn("REMEDIATION_PLAN_2026-11-26.md", governing)
+                self.assertIn("2026-11-26", governing)
         for path in (ROOT / "AGENTS.md", ROOT / "README.md",
                      ROOT / "docs" / "MASTERPROMPT.md"):
-            with self.subTest(path=str(path.relative_to(ROOT))):
-                text = path.read_text(encoding="utf-8")
-                self.assertIn("2026-11-26", text)
-                self.assertIn("automatisk", text.lower())
-                self.assertNotIn("enda aktiva utvecklingsplanen", text.lower())
+            self.assertIn("automatisk", path.read_text(encoding="utf-8").lower())
 
     def test_retired_markdown_is_absent_and_never_referenced(self):
         markdown_files = list(ROOT.rglob("*.md"))
