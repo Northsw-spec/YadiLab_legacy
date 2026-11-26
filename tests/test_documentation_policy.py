@@ -95,6 +95,37 @@ class DocumentationPolicyTests(unittest.TestCase):
                       "Echo Request TTL", "simulerat 64"):
             self.assertIn(token, html)
 
+    def test_active_packet_views_label_simulation_as_simulation(self):
+        # Static checks of precise user-facing claims. These do not certify
+        # external live networks; Chromium exercises the rendered UI separately.
+        app = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+        html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+        presenters = (ROOT / "web" / "features" / "diagnostics" /
+                      "presenters.js").read_text(encoding="utf-8")
+        icmp_panel = (ROOT / "web" / "features" / "diagnostics" /
+                      "icmp-investigation-panel.js").read_text(encoding="utf-8")
+        for source, forbidden in (
+            (app, ("fysisk(a) överföring(ar)", "Faktiska överföringar:",
+                   "Verkligt observerade kablar:", "riktig DHCPACK", "verklig DHCPACK")),
+            (html, ("riktiga kodade DHCP-meddelanden", "VERKLIG DHCPREQUEST",
+                    "Skicka riktigt DHCPREQUEST", "Mät faktisk kabel-/länkstatus",
+                    "Verkligt ICMP Echo", "verkligt simulerade")),
+            (presenters, ("fysisk(a) överföring(ar)",
+                          "Ingen faktisk paketöverföring",
+                          "ingen faktisk datagramöverföring")),
+            (icmp_panel, ("Skicka sedan verklig ICMP", "faktisk tur-och-retur Echo Reply")),
+        ):
+            for phrase in forbidden:
+                with self.subTest(label=phrase):
+                    self.assertNotIn(phrase, source)
+        self.assertIn("Simulerade kabelöverföringar:", app)
+        self.assertIn("simulerade kabelöverföringar", presenters)
+        self.assertIn("ej levererade felpaket redovisas separat", presenters)
+        self.assertNotIn("ICMP-fel visas endast när", presenters)
+        self.assertIn("simulerat DHCPACK", html)
+        self.assertIn("Simulerat ICMP Echo över ARP", html)
+        self.assertIn("simulerat ICMP Echo", icmp_panel)
+
     def test_relative_markdown_links_point_to_real_files(self):
         # This is a deliberately narrow repository-file check, not a general
         # Markdown, HTTP, GitHub anchor or external-link validator.

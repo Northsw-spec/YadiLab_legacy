@@ -6511,7 +6511,7 @@ def run():
             expect(page.locator('#session-result')).to_contain_text('VLAN 10')
             page.locator('#session-arp').click()
             expect(page.locator('#session-result')).to_contain_text('Status: CACHE_HIT')
-            expect(page.locator('#session-result')).to_contain_text('Faktiska överföringar: 0')
+            expect(page.locator('#session-result')).to_contain_text('Simulerade kabelöverföringar: 0')
             page.locator('#session-ethernet').click()
             expect(page.locator('#session-result')).to_contain_text('Status: SIMULATED')
             expect(page.locator('#session-result')).to_contain_text('0x88B5')
@@ -6540,7 +6540,7 @@ def run():
             expect(page.locator('#route-result')).to_contain_text('Routingstatus: MATCH')
             expect(page.locator('#route-result')).to_contain_text('192.0.2.0/24')
             expect(page.locator('#route-result')).to_contain_text('node-1/port-1')
-            expect(page.locator('#route-result')).to_contain_text('Ingen faktisk paketöverföring')
+            expect(page.locator('#route-result')).to_contain_text('Ingen paket- eller ARP-simulering utfördes')
 
             page.locator('#route-destination-ip').fill('198.51.100.55')
             with page.expect_response('**/api/routing/connected') as lookup:
@@ -6702,7 +6702,7 @@ def run():
             assert unresolved.value.json()['status'] == 'REQUEST_FAILED'
             assert unresolved.value.json()['request']['status'] == 'ARP_FAILED'
             expect(page.locator('#ping-result')).to_contain_text('Ping-status: REQUEST_FAILED')
-            expect(page.locator('#ping-result')).to_contain_text('Reply: ingen faktisk datagramöverföring')
+            expect(page.locator('#ping-result')).to_contain_text('Reply: ingen simulerad datagramöverföring')
             page.locator('#ping-destination').fill('2001:db8::20')
             with page.expect_response('**/api/icmp/echo') as invalid_ip:
                 page.locator('#run-ping').click()

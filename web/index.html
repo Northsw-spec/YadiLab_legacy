@@ -155,7 +155,7 @@
             <p id="probe-status" role="status" aria-live="polite">Ingen aktuell paketresa.</p>
           </section>
           <section id="layout-controls" class="layout-controls" aria-label="Förhandsvisning av automatisk layout" hidden><p id="layout-status" role="status" aria-live="polite">Ingen förhandsvisning.</p><div class="layout-actions"><button id="layout-apply" type="button" class="btn btn-small btn-primary" disabled>Tillämpa placering</button><button id="layout-cancel" type="button" class="btn btn-small btn-ghost" disabled>Avbryt</button></div></section>
-          <svg id="topology" aria-label="Nätverkstopologi med verkliga deklarerade länkar. Panorera med musens mittenknapp." role="img" tabindex="0"></svg>
+          <svg id="topology" aria-label="Nätverkstopologi med uttryckligen deklarerade länkar. Panorera med musens mittenknapp." role="img" tabindex="0"></svg>
           <div id="empty-state" class="empty-state">
             <div class="empty-illustration"><span class="empty-node">▣</span><span class="empty-line"></span><span class="empty-node">▣</span></div>
             <h2>Ett nätverk börjar med en enhet</h2>
@@ -218,7 +218,7 @@
         <section class="trace-panel" aria-label="DHCPv4 DORA-session">
           <div class="eyebrow">LAYER 3 · DHCPv4 DORA</div>
           <h3>DHCP – Discover / Offer / Request / ACK</h3>
-          <p class="muted tiny">En engångssimulering med fyra riktiga kodade DHCP-meddelanden över deklarerade kablar och VLAN. Välj klient, server och en begränsad adresspool uttryckligen. En BOUND-lease finns endast i minnet för detta anrop – klientens dokumenterade IPv4 ändras aldrig.</p>
+          <p class="muted tiny">En engångssimulering med fyra paketkodade DHCP-meddelanden över deklarerade kablar och VLAN. Välj klient, server och en begränsad adresspool uttryckligen. En BOUND-lease finns endast i minnet för detta anrop – klientens dokumenterade IPv4 ändras aldrig.</p>
           <label for="dora-client">From · klientgränssnitt (utan IPv4)</label>
           <select id="dora-client" class="control"></select>
           <label for="dora-from-mac">From · klient-MAC (DHCP har ännu ingen klient-IPv4)</label>
@@ -286,7 +286,7 @@
         <section class="trace-panel" aria-label="Interaktiv DHCP-felsökning">
           <div class="eyebrow">FELSÖKNINGSLABB · PROCESS OF ELIMINATION</div>
           <h3>Varför kan klienten inte förnya sin DHCP-lease?</h3>
-          <p class="muted tiny">Utgå från valda klient-, server- och poolvärden ovan. Labbet verifierar först ett riktigt DHCPACK, går till T1 och injicerar ett dolt fel. På högre nivåer för du själv den virtuella tiden vidare till T2 eller exakt expiration – aldrig automatiskt. Vid utgången lease krävs ny fyrastegs-DORA, inte renewal. Facit visas endast efter verifierad återhämtning. Inget sparas.</p>
+          <p class="muted tiny">Utgå från valda klient-, server- och poolvärden ovan. Labbet verifierar först ett simulerat DHCPACK, går till T1 och injicerar ett dolt fel. På högre nivåer för du själv den virtuella tiden vidare till T2 eller exakt expiration – aldrig automatiskt. Vid utgången lease krävs ny fyrastegs-DORA, inte renewal. Facit visas endast efter verifierad återhämtning. Inget sparas.</p>
           <label for="investigation-difficulty">Svårighetsgrad och tidsförlopp</label>
           <select id="investigation-difficulty" class="control">
             <option value="T1_ONLY">Grund – T1: DHCP unicast-förnyelse</option>
@@ -298,15 +298,15 @@
             <button id="investigation-stop" type="button" class="btn btn-outline" disabled>Avsluta övning</button>
           </div>
           <div id="investigation-status" class="small-muted" role="status">Ingen felsökningsövning startad.</div>
-          <div class="eyebrow">VIRTUELL TID · ENDAST EFTER VERKLIG DHCPREQUEST</div>
+          <div class="eyebrow">VIRTUELL TID · ENDAST EFTER SIMULERAD DHCPREQUEST</div>
           <button id="investigation-advance" type="button" class="btn btn-outline full" disabled>Flytta till nästa DHCP-gräns (T2 / expiration)</button>
           <div id="investigation-clock-result" class="trace-result" aria-live="polite">Ingen tid har flyttats fram i denna övning.</div>
           <div class="eyebrow">1 · GÖR EGNA OBSERVATIONER</div>
           <label for="investigation-probe">Undersökning</label>
           <select id="investigation-probe" class="control">
             <option value="lease">Kontrollera klientens lease och T1/T2</option>
-            <option value="renew">Skicka riktigt DHCPREQUEST och observera resultat</option>
-            <option value="link">Mät faktisk kabel-/länkstatus</option>
+            <option value="renew">Skicka simulerat DHCPREQUEST och observera resultat</option>
+            <option value="link">Mät simulerad kabel-/länkstatus</option>
             <option value="port">Kontrollera switchportens administrativa status</option>
             <option value="vlan">Kontrollera dokumenterat mot observerat access-VLAN</option>
           </select>
@@ -326,7 +326,7 @@
           <button id="investigation-submit" type="button" class="btn btn-soft full" disabled>Pröva diagnos</button>
           <div id="investigation-verdict" class="trace-result" aria-live="polite">Diagnosen kräver ett misslyckat DHCPREQUEST och mätningar som skiljer felorsakerna åt.</div>
           <div class="eyebrow">3 · VERIFIERA REPARATIONEN</div>
-          <button id="investigation-repair" type="button" class="btn btn-outline full" disabled>Återställ identifierat fel och testa riktig DHCPACK</button>
+          <button id="investigation-repair" type="button" class="btn btn-outline full" disabled>Återställ identifierat fel och testa simulerat DHCPACK</button>
           <div id="investigation-recovery" class="trace-result" aria-live="polite">Ingen reparation utförd. Resultatet är inte verifierat.</div>
         </section>
         <section class="trace-panel" aria-label="Beständig Layer 2-session">
@@ -457,7 +457,7 @@
         <section class="trace-panel" aria-label="Dold ICMP routing och Layer 2 felsökning">
           <div class="eyebrow">FELSÖKNINGSLABB · ROUTING ELLER LAYER 2?</div>
           <h3>Varför fungerar inte ping mellan två hosts?</h3>
-          <p class="muted tiny">Välj en källa och en destination som redan har bevisats nå varandra via verkligt simulerade ICMP Echo Request/Reply. Labbet injicerar ett dolt, separat verifierat fel i dokumenterad kabel, avstängd switchport, VLAN, IPv4-adress eller nätmask; i routade nät även statisk route eller next-hop. Undersök först IP-uppgifter, routingtabeller och faktiska paket. DHCP-adressens ursprung är inte lagrat i projektet och markeras därför som EJ VERIFIERAT – aldrig automatiskt friskförklarat. Allt sker i minnet.</p>
+          <p class="muted tiny">Välj en källa och en destination som redan har bevisats nå varandra via simulerade ICMP Echo Request/Reply i den lokala motorn. Labbet injicerar ett dolt, separat verifierat fel i dokumenterad kabel, avstängd switchport, VLAN, IPv4-adress eller nätmask; i routade nät även statisk route eller next-hop. Undersök först IP-uppgifter, routingtabeller och simulerade paket. DHCP-adressens ursprung är inte lagrat i projektet och markeras därför som EJ VERIFIERAT – aldrig automatiskt friskförklarat. Allt sker i minnet.</p>
           <label for="icmp-lesson-case">Övningsfall i kursbanken</label>
           <select id="icmp-lesson-case" class="control">
             <option value="echo-reply">Fall A</option>
@@ -535,10 +535,10 @@
           <select id="icmp-investigation-probe" class="control">
             <option value="address">Klientens dokumenterade IP och DHCP-bevisläge</option>
             <option value="route">Routingtabell och longest-prefix match</option>
-            <option value="ping">Verkligt ICMP Echo över ARP och Layer 2</option>
-            <option value="link">Observerad kabelstatus mot dokumentation</option>
+            <option value="ping">Simulerat ICMP Echo över ARP och Layer 2</option>
+            <option value="link">Simulerad kabelstatus mot dokumentation</option>
             <option value="port">Administrativ portstatus och IPv4/CIDR mot dokumentation</option>
-            <option value="vlan">Observerad VLAN-konfiguration på switchport</option>
+            <option value="vlan">Simulerad VLAN-konfiguration på switchport</option>
           </select>
           <label for="icmp-investigation-route-node">Enhet för routingtabell</label>
           <select id="icmp-investigation-route-node" class="control"></select>
@@ -553,7 +553,7 @@
           <select id="icmp-investigation-port" class="control"></select>
           <label for="icmp-investigation-vlan">Switchport att läsa VLAN på</label>
           <select id="icmp-investigation-vlan" class="control"></select>
-          <button id="icmp-investigation-measure" type="button" class="btn btn-outline full" disabled>Utför faktisk simulerad mätning</button>
+          <button id="icmp-investigation-measure" type="button" class="btn btn-outline full" disabled>Utför simulerad mätning</button>
           <div id="icmp-investigation-observations" class="trace-result" aria-live="polite">Börja med IP-konfiguration. Undersök routing, ICMP och länk/VLAN för att utesluta fel.</div>
           <div class="eyebrow">2 · PRÖVA ROTORSAKEN</div>
           <label for="icmp-investigation-diagnosis">Vilket fel stöds av mätningarna?</label>
