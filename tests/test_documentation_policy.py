@@ -126,6 +126,32 @@ class DocumentationPolicyTests(unittest.TestCase):
         self.assertIn("Simulerat ICMP Echo över ARP", html)
         self.assertIn("simulerat ICMP Echo", icmp_panel)
 
+    def test_dhcp_icmp_contracts_do_not_deny_present_capabilities(self):
+        from network_core.dhcp import DhcpSession
+        from network_core.dhcp_registry import DhcpLabSession
+        from network_core.icmp_ping import EchoExchange
+        from network_core.icmp_errors import ICMPError
+
+        self.assertTrue(callable(DhcpSession.renew))
+        self.assertTrue(callable(DhcpLabSession.renew))
+        self.assertTrue(callable(EchoExchange.ping))
+        self.assertTrue(callable(ICMPError.parse))
+        dhcp = (ROOT / "docs" / "DHCP_DORA.md").read_text(encoding="utf-8")
+        self.assertNotIn("eller RFC-förnyelsemekanism finns", dhcp)
+        self.assertIn("T1- och T2-förnyelse", dhcp)
+        self.assertIn("/api/dhcp/session/renew", dhcp)
+        self.assertIn("Ingen realtidsbaserad nedräkning, automatisk", dhcp)
+        self.assertIn("ny ACK-bekräftad simulerad BOUND-lease", dhcp)
+        self.assertNotIn("verkligt T1-/T2-DHCPREQUEST", dhcp)
+        source = (ROOT / "network_core" / "icmp_ping.py").read_text(encoding="utf-8")
+        codec = (ROOT / "network_core" / "ipv4_packet.py").read_text(encoding="utf-8")
+        trace = (ROOT / "network_core" / "ipv4.py").read_text(encoding="utf-8")
+        self.assertNotIn("No synthetic RTT, ICMP Time Exceeded, or default route", source)
+        self.assertIn("explicit default routes", source)
+        self.assertIn("ICMP Time Exceeded (11/0)", source)
+        self.assertIn("ICMPv4 Echo and the bounded ICMP router-error", codec)
+        self.assertIn("router-error *candidates* only", trace)
+
     def test_relative_markdown_links_point_to_real_files(self):
         # This is a deliberately narrow repository-file check, not a general
         # Markdown, HTTP, GitHub anchor or external-link validator.
