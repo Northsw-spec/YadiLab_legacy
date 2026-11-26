@@ -330,6 +330,55 @@ def abandoned_investigation_cleanup(context, network_mode, errors):
                 page.locator('#investigation-start').click()
             assert new_start.value.status == 200
             page.close()
+            # Native multihop reference, actual local HTTP and real
+            # Chromium: a router with no route sends ICMP Type 3/Code 0
+            # back to the source, but NEVER an Echo Reply. This error is
+            # evidence of a received router response, not an answer-key leak.
+            from test_icmp_echo import multihop_reply_lab
+            router_project = multihop_reply_lab()
+            router_project['nodes'].sort(key=lambda node: node['id'] != 'r')
+            page = fresh()
+            with page.expect_response('**/api/validate') as imported:
+                page.locator('#import-file').set_input_files({
+                    'name': 'router-error-case.json', 'mimeType': 'application/json',
+                    'buffer': json.dumps(router_project).encode('utf-8'),
+                })
+            assert imported.value.status == 200
+            page.locator('#icmp-investigation-source').select_option('["a","eth0"]')
+            page.locator('#icmp-investigation-destination').fill('198.51.100.20')
+            page.locator('#icmp-investigation-ttl').fill('5')
+            # Six documented links carried both directions in the baseline;
+            # the first static-route candidate following them is r2-transit.
+            with patch('network_core.icmp_investigation.secrets.randbelow', return_value=6):
+                with page.expect_response('**/api/icmp/investigation/start') as started:
+                    page.locator('#icmp-investigation-start').click()
+            assert started.value.status == 200
+            sid = started.value.json()['sessionId']
+            assert server.icmp_investigations._sessions[sid]._fault == {
+                'type': 'STATIC_ROUTE_REMOVED', 'nodeId': 'r',
+                'routeId': 'r2-transit',
+            }
+            seen = probe(page, 'ping')['observation']
+            assert seen['status'] == 'REQUEST_FAILED'
+            assert seen['replyMatched'] is False
+            assert seen['routerError']['type'] == 3
+            assert seen['routerError']['deliveryStatus'] == 'RECEIVED'
+            assert seen['routerError']['receivedAtSource'] is True
+            assert seen['routerError']['returnTraceStatus'] == 'DELIVERED'
+            assert 'STATIC_ROUTE_MISSING' not in json.dumps(seen)
+            expect(page.locator('#icmp-investigation-observations')).to_contain_text(
+                'Router-ICMP i simuleringen: typ 3/kod 0 (Destination Unreachable)')
+            expect(page.locator('#icmp-investigation-observations')).to_contain_text(
+                'MOTTAGET vid ursprungskällan i modellen')
+            expect(page.locator('#icmp-investigation-observations')).not_to_contain_text(
+                'INTE MOTTAGET')
+            expect(page.locator('#icmp-investigation-diagnose')).to_be_disabled()
+            with page.expect_response('**/api/icmp/investigation/stop') as stopped:
+                page.locator('#icmp-investigation-stop').click()
+            assert stopped.value.status == 200
+            page.close()
+            assert hashlib.sha256(saved_file.read_bytes()).hexdigest() == digest
+
             assert not errors, errors
         finally:
             server.shutdown()
@@ -748,7 +797,12 @@ def icmp_panel_integration(context, network_mode, errors):
             # remains labelled with its original link after a selector change.
             failed = probe(page, 'ping')['observation']
             assert failed['status'] != 'REPLIED' and failed['replyMatched'] is False
+            assert failed['routerError'] is None
             expect(page.locator('#icmp-investigation-observations')).to_contain_text('giltig Echo Reply: nej')
+            expect(page.locator('#icmp-investigation-observations')).to_contain_text(
+                'Router-ICMP: inget genererat av denna begränsade modell')
+            expect(page.locator('#icmp-investigation-status')).to_contain_text(
+                'DHCP-ursprung: UNKNOWN · DHCP-kontroll: NOT_VERIFIED')
             probe(page, 'route')
             page.locator('#icmp-investigation-probe').select_option('link')
             page.locator('#icmp-investigation-link').select_option('lb')
