@@ -1,5 +1,8 @@
 # YadiLab – Linuxbaserad nätverkssimulator och pedagogiskt felsökningslabb
 
+**Bindande slutmål – HEL Cisco Packet Tracer-paritet:** [PT-FULL-001](docs/FULL_PACKET_TRACER_PARITY_CONTRACT.md) kräver ALLT Packet Tracer kan göra i YadiLab på Linux, inklusive alla protokoll, enheter/moduler, fysisk/logisk workspace, GUI/CLI, full simulering och PDU, Activity Wizard/bedömning/scripting, IoT/OT, multiuser, extensions och filformat. Alla verkliga underfall ska bevisas. Därefter ska YadiLab objektivt överträffa Packet Tracer i korrekthet, precision, omfattning och pedagogik. Detta är ännu **inte dagens implementerade stöd**. Endast Linux-only och att nya accessibility/keyboard-only-krav saknas är explicita undantag.
+
+
 **Ny produktvision 2026-11-26:** YadiLab ska bli en fullständig **in-process nätverkssimulator** (inte en VM-/IOS-emulator) med målet att objektivt överträffa Cisco Packet Tracer i teknisk korrekthet, protokollbredd, funktion och pedagogik. Detta är **planerat, inte dagens implementerade stöd**. Den [enda aktiva A0–A10 + S0–S12-planen](docs/REMEDIATION_PLAN_2026-11-26.md), [MASTERPROMPT](docs/MASTERPROMPT.md), [Cisco-gapforskningen](docs/research/PACKET_TRACER_GAP_ANALYSIS_2026-11-26.md), [protokollmatrisen](docs/PROTOCOL_COVERAGE_MATRIX.md) och [simuleringskärnans kontrakt](docs/architecture/DETERMINISTIC_ENGINE_CONTRACT.md) ger konkret implementationsordning och standardkrav. A9-protokollutbyggnad har uttryckligen godkänts; A8-människostudien inte. A3-del 3 [PR #179](https://github.com/Northsw-spec/YadiLab/pull/179) är mergad i main 7dbe2285cde7ea87c08afce1c58d36cd0f5697e7; hela A3 återstår fortfarande.
 
 

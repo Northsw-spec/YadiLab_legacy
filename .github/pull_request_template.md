@@ -1,5 +1,8 @@
 # YadiLab – ändrings- och evidenschecklista
 
+**ABSOLUT PT-FULL-001-OMFÅNG:** [full funktionsparitet](../docs/FULL_PACKET_TRACER_PARITY_CONTRACT.md) gäller varje PR och framtida release. **Alla** PT-protokoll, devices/moduler, CLI/GUI, fysisk/logisk workspace, simulatorläge/PDU, utbildnings-/examensfunktioner, IoT/OT, multiuser, scripting, extensions, filformat och kvarvarande PT-funktioner är obligatoriska i slutversionen. Endast Linux-only och inget särskilt keyboard/accessibility-mål undantas. Ange vilka PT-F-ID/underfall som faktiskt verifieras av PR:n, vad som fortfarande saknas, och vilken standard/PT-version oraklen gäller. Ingen COMPLETE-etikett med öppna gap.
+
+
 **Ensam aktiv plan:** [A0–A10 + S0–S12](../docs/REMEDIATION_PLAN_2026-11-26.md), [MASTERPROMPT](../docs/MASTERPROMPT.md), [Packet Tracer-forskning](../docs/research/PACKET_TRACER_GAP_ANALYSIS_2026-11-26.md), [protokollmatris](../docs/PROTOCOL_COVERAGE_MATRIX.md), [eventmotorkontrakt](../docs/architecture/DETERMINISTIC_ENGINE_CONTRACT.md). P0–P7 CLOSED. A9-expansion godkänd 2026-11-26; A8 mänsklig studie separat.
 
 ## Arbetskort och verkligt beteende

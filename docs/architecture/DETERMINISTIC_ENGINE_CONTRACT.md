@@ -1,5 +1,8 @@
 # Deterministisk simuleringskärna – tekniskt arkitekturkontrakt
 
+**INTEGRATIONSSCOPE:** [PT-FULL-001](../FULL_PACKET_TRACER_PARITY_CONTRACT.md) kräver ALL Packet Tracer-kompatibel funktionalitet. Den gemensamma DES-kärnan måste därför stödja riktiga packets, timers, fysiska länk- och enhetstillstånd, multiuser/federering när användaren aktiverar det, isolerat IoT/OT/scripting och fulla device-/CLI-scenarier utan att en parallell motor skapas. Inget generellt förbud mot all autentiserad peer-kommunikation får reducera Multiuser till OPTIONAL. Enbart Linux; accessibility/keyboard-only inte mål.
+
+
 **Arkitekturbeslut 2026-11-26:** [ADR-0001](ADR_0001_CORE_REPLACEMENT_2026-11-26.md) fastslår selektiv nybyggnad av EXEKVERINGSKÄRNAN, inte av hela produkten. Bevara korrekta bytecodecs, UI, import/data och testsanning; pensionera synkron bulk-forwarding och separata klockor. Test-only S1-POC tillåts efter S0 utan dubbel användarsynlig engine.
 
 

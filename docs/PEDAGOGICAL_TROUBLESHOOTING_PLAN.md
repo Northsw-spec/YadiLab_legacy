@@ -1,5 +1,8 @@
 # YadiLab – pedagogisk felsökningsarkitektur: evidens, orsak och lärande
 
+**NYTT OBLIGATORISKT HELHETSKRAV:** [PT-FULL-001](FULL_PACKET_TRACER_PARITY_CONTRACT.md) kräver även ALL Cisco Packet Tracers utbildningsfunktionalitet (Activity Wizard, variabler, säkert scripting, automatisk bedömning, simulering, instruktioner, övningspaket och IoT/OT-lärflöden), inte bara de nio historiska felsökningsrubrikerna. Detta dokument är ett bevarat **pedagogiskt kvalitetskontrakt**, aldrig en tillåten slutlig avgränsning av simuleringsprotokoll eller produktfunktioner. Inga keyboard-only/accessibility-tillägg krävs, men bevara befintliga regressionsskydd.
+
+
 **Nytt produktbeslut 2026-11-26:** P0–P7 förblir historiskt CLOSED och dess nio rubriker är ett kvalitetskontrakt, men [enda aktiva masterplanen A0–A10 + S0–S12](REMEDIATION_PLAN_2026-11-26.md) har nu uttryckligen beställt ett Packet Tracer-plus-simuleringsuppdrag. Se [MASTERPROMPT](MASTERPROMPT.md), [protokollmatrisen](PROTOCOL_COVERAGE_MATRIX.md), [motorarkitekturen](architecture/DETERMINISTIC_ENGINE_CONTRACT.md) och [Codex-policyn](CODEX_EXECUTION_POLICY.md). Historiska ord om att inga nya protokoll är beställda gäller inte längre för S-korten.
 
 

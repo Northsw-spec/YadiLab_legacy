@@ -1,5 +1,8 @@
 # YadiLab – utvecklingskontrakt
 
+**Bindande fullständighet:** [PT-FULL-001](docs/FULL_PACKET_TRACER_PARITY_CONTRACT.md) är slutkravet: ALLT Cisco Packet Tracer kan göra på Linux utan någon protokoll-/enhets-/UI-/labb-/IoT-/OT-/multiuser-/formatlucka, sedan verifierbart bättre korrekthet och precision. Enbart Linux och inget nytt keyboard-accessibility-mål är undantagna.
+
+
 **Nytt bindande produktbeslut 2026-11-26 – Packet Tracer-plus:** YadiLab ska utvecklas till en komplett, tekniskt precis, deterministisk nätverkssimulator med målet att verifierbart överträffa Cisco Packet Tracer, **utan VM, gäst-OS, IOS-emulering, GNS3/EVE-NG, container- eller extern simuleringsruntime**. Den enda aktiva utvecklingsplanen är [A0–A10 + S0–S12](docs/REMEDIATION_PLAN_2026-11-26.md): A-korten för stabilisering och S-korten för godkänd native protokollutbyggnad. [MASTERPROMPT](docs/MASTERPROMPT.md), [Cisco-forskning](docs/research/PACKET_TRACER_GAP_ANALYSIS_2026-11-26.md), [protokollmatris](docs/PROTOCOL_COVERAGE_MATRIX.md) och [motorkontrakt](docs/architecture/DETERMINISTIC_ENGINE_CONTRACT.md) är underställda samma plan. **A9:s utbyggnadsomfång är nu uttryckligen godkänt; A8:s empiriska människostudie kräver fortfarande separat beslut.** S1:s **isolerade arkitektur-POC får börja efter S0** med A1 Required guard och oberoende orakel; **ingen produktionscutover eller S2-utbyggnad före POC-grind**. A3/A4-frontend/importarbete är inte automatiskt blockerande för en test-only scheduler. Se [ADR-0001](docs/architecture/ADR_0001_CORE_REPLACEMENT_2026-11-26.md). Dessa nya beslut har företräde framför äldre, smalare produktförbud i detta dokument.
 
 

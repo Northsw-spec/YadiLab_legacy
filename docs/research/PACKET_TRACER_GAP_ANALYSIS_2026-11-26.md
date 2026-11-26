@@ -1,5 +1,8 @@
 # Packet Tracer kontra YadiLab – källbaserad gap- och arkitekturanalys
 
+**UPPDATERAT ABSOLUT KRAV:** [PT-FULL-001](../FULL_PACKET_TRACER_PARITY_CONTRACT.md) är den bindande hela-produktkatalogen (PT-F01–PT-F29 och varje underfall). Den tidigare forskningen identifierade protokollgap men var **INTE tillräckligt heltäckande** för paritet: måste även täcka hela device- och module-palette, fysisk/logisk arbetsyta, CLI, realtid/simulation, Activity Wizard/score/scripts, IoT-MCU/SBC/Python/JS, Multiuser, Extensions/API, PKT/PKZ/PKA-format, ExApps och alla framtida verifierade PT-features. PT 9.0 publicerad hjälp; 9.0.1 som målbinär kräver verklig versionerad kontroll. Slutleverans med någon annan kvarstående PT-funktionslucka än Linux-/accessibility-undantaget är EJ GODKÄND.
+
+
 **Datum:** 2026-11-26. **Kodbas:** Northsw-spec/YadiLab main vid squash 7dbe2285cde7ea87c08afce1c58d36cd0f5697e7. **Beslut:** användaren har uttryckligen ersatt det gamla begränsade produktmålet med en komplett, noggrann, in-process nätverkssimulator som ska kunna överträffa Cisco Packet Tracer. Denna rapport är **forskningsunderlag**, inte en parallell roadmap. Den enda körbara utvecklingskön finns i [huvudplanen](../REMEDIATION_PLAN_2026-11-26.md); produktkontraktet i [MASTERPROMPT](../MASTERPROMPT.md).
 
 ## Våg 1 – Cisco förstahandskällor och versioner

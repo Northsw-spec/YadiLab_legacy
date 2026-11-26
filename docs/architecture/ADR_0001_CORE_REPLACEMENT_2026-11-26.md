@@ -1,5 +1,8 @@
 # ADR-0001 – Selektiv ombyggnad av nätverkssimuleringskärnan
 
+**ABSOLUT FUNKTIONALITETSMÅL:** [PT-FULL-001](../FULL_PACKET_TRACER_PARITY_CONTRACT.md) kräver ALL Packet Tracer-funktionalitet och alla protokoll, inte bara en bättre DHCP/ICMP-routermodell. Detta ADR väljer **ny DES-kärna + bevarad produkt**, inte ett mindre slutmål. S1-POC0/POC1 är endast teknikriskreducering; kommande S2–S12 får inte godkännas förrän enheter, kommandomodeller, IoT/OT, Activity Wizard, multiuser, filformat och API/extensionflöden också är verifierade. Endast Linux/nya accessibility-/keyboard-krav är explicit undantagna.
+
+
 **Datum:** 2026-11-26. **Status:** BESLUTAT ARKITEKTURVÄGVAL; dokumentations-PR #180, inte bevis för implementerad DES och inte MERGED före Required CI. **Granskad kodbas:** [main 7dbe2285cde7ea87c08afce1c58d36cd0f5697e7](https://github.com/Northsw-spec/YadiLab/tree/7dbe2285cde7ea87c08afce1c58d36cd0f5697e7). Underordnad [enda aktiva masterplanen](../REMEDIATION_PLAN_2026-11-26.md).
 
 ## Beslut – vilket av de tre vägvalen är bäst?

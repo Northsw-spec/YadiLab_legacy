@@ -1,5 +1,8 @@
 # Codex – obligatoriskt produktivitets- och CI-kontrakt
 
+**ABSOLUT PRODUKTKRAV:** [PT-FULL-001](FULL_PACKET_TRACER_PARITY_CONTRACT.md) styr ALL utveckling och framtida godkännande. Alla PT-funktioner (inte bara protokollen) måste fungera i Linux-versionen och bevisas i individuell funktions-/versionsmatris före S12. Multiuser/Extensions/IoT-script/Activity Wizard, CLI, deviceprofiler, fysisk arbetsyta och PT-filformat är **inte valfria** och kräver ingen ny per-feature beställning eftersom användaren redan uttryckligen beställt ALLT. Enda undantag Windows/macOS och nya accessibility/keyboard-only-krav. Codex ska inte lägga kredit på sådan extrascope, men inte försvaga existerande keyboard-regressioner. Restkrav och lagliga hinder är blockerade, inte godkända.
+
+
 **Utökat bindande uppdrag 2026-11-26:** [enda huvudplanen A0–A10 + S0–S12](REMEDIATION_PLAN_2026-11-26.md), [MASTERPROMPT](MASTERPROMPT.md), [protokollmatris](PROTOCOL_COVERAGE_MATRIX.md) och [simuleringskontrakt](architecture/DETERMINISTIC_ENGINE_CONTRACT.md) styr nu Packet Tracer-plus-målet. **A9:s native protokoll-/eventmotorutbyggnad är beställd som S-kort; A8:s mänskliga studie kräver fortfarande separat godkännande.** Äldre regler om enbart A0–A10 eller förbud mot nya protokoll är upphävda för det nya explicita S-omfånget, inte för CI-säkerhet eller emulering. Kredit-, test-, Required- och squashreglerna nedan gäller oförändrade även för S-kod.
 
 
