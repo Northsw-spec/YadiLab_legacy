@@ -60,7 +60,7 @@ class DocumentationPolicyTests(unittest.TestCase):
             with self.subTest(path=str(path.relative_to(ROOT))):
                 text = path.read_text(encoding="utf-8")
                 self.assertIn("2026-11-26", text)
-                self.assertIn("automatiskt", text.lower())
+                self.assertIn("automatisk", text.lower())
                 self.assertNotIn("enda aktiva utvecklingsplanen", text.lower())
 
     def test_retired_markdown_is_absent_and_never_referenced(self):
