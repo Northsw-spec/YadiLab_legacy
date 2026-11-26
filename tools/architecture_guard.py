@@ -299,10 +299,26 @@ def validate(root: Path, policy: dict, old: dict | None = None) -> tuple[list[st
 
     if old is not None:
         issues.extend(compare_policies(old, policy))
+    base_budgets = old.get("line_budgets", {}) if old is not None else {}
+    source_trend = {
+        path: {"actual_lines": actual, "base_budget": base_budgets.get(path),
+               "delta_vs_base": (actual - base_budgets[path]
+                                 if path in base_budgets else None)}
+        for path, actual in actual_budgets.items()
+    }
+    owner_counts: dict[str, int] = {}
+    for spec in contracts.values():
+        name = spec.get("owner", "UNKNOWN")
+        owner_counts[name] = owner_counts.get(name, 0) + 1
     report = {"policy_schema": policy.get("schema"),
               "baseline_source": policy.get("source_baseline"),
               "source_lines": actual_budgets,
+              "source_line_trend": source_trend,
               "frontend_module_count": len(all_modules),
+              "frontend_module_delta_vs_base": (
+                  len(all_modules) - len(old.get("frontend_contracts", {}))
+                  if old is not None else None),
+              "module_owner_counts": dict(sorted(owner_counts.items())),
               "import_edge_count": sum(map(len, graph.values())),
               "backend_module_count": len(actual_backend),
               "regression_files": len(tests),
