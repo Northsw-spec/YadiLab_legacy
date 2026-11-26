@@ -435,12 +435,34 @@ class IcmpInvestigationTests(unittest.TestCase):
             ("route", {"nodeId": "a", "destinationIpv4": "203.0.113.20"}),
         ):
             case.probe(name, target)
-        for _ in range(3):
+        for attempt in range(1, 4):
             result = case.diagnose("CABLE_DOWN")
             self.assertFalse(result["correct"])
+            self.assertTrue(result["canDiagnose"])  # Existing evidence remains.
+            self.assertEqual(result["canSubmitDiagnosis"], attempt < 3)
+            self.assertEqual(result["maxDiagnosisAttempts"], 3)
             self.assertNotIn("STATIC_ROUTE_MISSING", json.dumps(result))
         with self.assertRaisesRegex(ProjectValidationError, "maximum guesses"):
             case.diagnose("STATIC_ROUTE_MISSING")
+
+    def test_third_correct_guess_unlocks_repair_but_no_later_guess(self):
+        case = scenario("STATIC_ROUTE_MISSING")
+        case.probe("ping", {})
+        case.probe("route", {"nodeId": "b", "destinationIpv4": "192.0.2.10"})
+        case.probe("port", {"nodeId": "b", "portId": "eth0"})
+        self.assertTrue(case.state()["canSubmitDiagnosis"])
+        for _ in range(2):
+            self.assertFalse(case.diagnose("CABLE_DOWN")["correct"])
+        accepted = case.diagnose("STATIC_ROUTE_MISSING")
+        self.assertTrue(accepted["correct"])
+        self.assertTrue(accepted["repairAvailable"])
+        self.assertFalse(accepted["canSubmitDiagnosis"])
+        self.assertEqual(accepted["diagnosisAttempts"], 3)
+        with self.assertRaisesRegex(ProjectValidationError, "already recorded"):
+            case.diagnose("CABLE_DOWN")
+        restored = case.repair()
+        self.assertEqual(restored["status"], "RECOVERED")
+        self.assertTrue(restored["replyMatched"])
 
     def test_numeric_equivalent_json_projects_fail_exact_session_snapshot(self):
         from network_core.simulation import _signature
