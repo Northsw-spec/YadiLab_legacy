@@ -38,6 +38,6 @@ Dessa värden är statiska mått, inte semantisk eller runtimecertifiering. \`ar
 
 ## Kvarstående A3
 
-Detta är **inte** ett försök att avsluta hela A3 med endast 51 färre rader. Fortsatt arbete i separata, granskade PR:er: en enda explicit ägare av workspace-/edit-revisioner och invalidering; Builder-/inspector-presentation, diagnosorkestrering, import-/mapping-/Save/Open-UI samt tillhörande stale-response-/session- och layoutparitet. Ingen andra simulator, ingen duplicerad app-state, inga ospecificerade nätverksfakta.
+Detta är **inte** ett försök att avsluta hela A3 med endast 51 färre rader. Den efterföljande del 2 (PR #177) har redan samlat workspace-/edit-revisioner hos en ägare. Kvarvarande arbete i separata PR:er: UI-invalideringens sidoeffekter och sena `finally`, Builder-/inspector-presentation, diagnosorkestrering, import-/mapping-/Save/Open-UI samt tillhörande stale-/session- och layoutparitet. Ingen andra simulator, ingen duplicerad app-state, inga ospecificerade nätverksfakta.
 
 **Slutvillkor för del-PR:** Required \`unit-tests\` och \`architecture-guard\` SUCCESS på exakt HEAD, inga blockerande reviews, main oförändrad, squash-merge och därefter kontroll av ny main/CI. Om något av detta saknas: del-PR **NOT_ACCEPTED**, A3 fortsatt IN_PROGRESS. Återställning genom revert av enbart del-PR #176.
