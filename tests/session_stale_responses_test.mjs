@@ -5,6 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createSimulationSessionController} from '../web/features/sessions/simulation-session.js';
 import {createDoraSessionController} from '../web/features/sessions/dora-session.js';
+import {createDhcpInvestigationController} from '../web/features/sessions/dhcp-investigation.js';
 
 function deferredTransport(t) {
   const prior = globalThis.fetch;
@@ -47,6 +48,9 @@ function simulation(ctx) {
 function dora(ctx) {
   return createDoraSessionController({getContext: () => ({...ctx}), onChange() {}});
 }
+function investigation(ctx) {
+  return createDhcpInvestigationController({getContext: () => ({...ctx}), onChange() {}});
+}
 async function startSimulation(c, transport, sessionId = 'session-1') {
   const start = c.start();
   const request = transport.next('/api/simulation/start');
@@ -60,6 +64,20 @@ async function startDora(c, transport, readInputs, sessionId = 'dora-1') {
   const request = transport.next('/api/dhcp/session/start');
   assert.equal(request.body.project.schemaVersion, '1.3');
   request.reply({sessionId, leaseCount: 0, clockSeconds: 0});
+  await started;
+  assert.equal(c.getState().id, sessionId);
+}
+async function startInvestigation(c, transport, sessionId = 'investigation-1') {
+  const signature = () => 'fixed DHCP investigation selections';
+  const started = c.start({
+    clientNode: 'client', clientPort: 'eth0',
+    serverNode: 'server', serverPort: 'eth0',
+    poolStart: '192.0.2.70', poolEnd: '192.0.2.71',
+    leaseSeconds: 60,
+  }, signature);
+  const request = transport.next('/api/dhcp/investigation/start');
+  assert.equal(request.body.project.schemaVersion, '1.3');
+  request.reply({sessionId, observations: 0, canDiagnose: false, phase: 'RENEWING'});
   await started;
   assert.equal(c.getState().id, sessionId);
 }
@@ -218,5 +236,81 @@ test('5C-D3: server-expired DORA session cannot be displayed as a successful lea
   assert.equal(state.state, null);
   assert.match(state.trace.error, /upphört på servern/);
   assert.equal(state.busy, false);
+  transport.empty();
+});
+
+
+test('P7-I1: expired DHCP investigation Stop releases an absent server ID and permits restart', async t => {
+  const transport = deferredTransport(t), ctx = context(), c = investigation(ctx);
+  await startInvestigation(c, transport, 'expired-investigation');
+  const stopped = c.stop();
+  const request = transport.next('/api/dhcp/investigation/stop');
+  assert.deepEqual(request.body, {sessionId: 'expired-investigation'});
+  request.reply({error: 'INVALID_PROJECT',
+    message: 'investigation: unknown or expired session'}, 422);
+  await stopped;
+  assert.equal(c.getState().id, null);
+  assert.equal(c.getState().state, null);
+  assert.equal(c.getState().busy, false);
+  assert.equal(c.getState().pendingStopCount, 0);
+  await startInvestigation(c, transport, 'fresh-investigation');
+  assert.equal(c.getState().id, 'fresh-investigation');
+  transport.empty();
+});
+
+test('P7-I2: a malformed HTTP 200 is not a confirmed DHCP investigation Stop', async t => {
+  const transport = deferredTransport(t), ctx = context(), c = investigation(ctx);
+  await startInvestigation(c, transport, 'unconfirmed-investigation');
+  const stopped = c.stop();
+  const request = transport.next('/api/dhcp/investigation/stop');
+  request.reply({status: 'NOT_STOPPED'});
+  await stopped;
+  assert.equal(c.getState().id, 'unconfirmed-investigation');
+  assert.match(c.getState().error, /avsluta sessionen på servern/);
+  assert.equal(c.getState().busy, false);
+  assert.equal(c.getState().pendingStopCount, 1);
+
+  const retry = c.stop();
+  const confirmed = transport.next('/api/dhcp/investigation/stop');
+  assert.deepEqual(confirmed.body, {sessionId: 'unconfirmed-investigation'});
+  confirmed.reply({status: 'STOPPED'});
+  await retry;
+  assert.equal(c.getState().id, null);
+  assert.equal(c.getState().pendingStopCount, 0);
+  transport.empty();
+});
+
+test('P7-I3: an HTTP 500 keeps the DHCP investigation active until later expiry is confirmed', async t => {
+  const transport = deferredTransport(t), ctx = context(), c = investigation(ctx);
+  await startInvestigation(c, transport, 'temporary-stop-error');
+  const failedStop = c.stop();
+  const rejected = transport.next('/api/dhcp/investigation/stop');
+  rejected.reply({error: 'INTERNAL', message: 'synthetic server failure'}, 500);
+  await failedStop;
+  assert.equal(c.getState().id, 'temporary-stop-error');
+  assert.equal(c.getState().pendingStopCount, 1);
+
+  const retry = c.stop();
+  const expired = transport.next('/api/dhcp/investigation/stop');
+  expired.reply({error: 'INVALID_PROJECT',
+    message: 'investigation: unknown or expired session'}, 422);
+  await retry;
+  assert.equal(c.getState().id, null);
+  assert.equal(c.getState().state, null);
+  assert.equal(c.getState().pendingStopCount, 0);
+  transport.empty();
+});
+
+test('P7-I4: invalidated expired DHCP investigation does not keep an orphaned Stop', async t => {
+  const transport = deferredTransport(t), ctx = context(), c = investigation(ctx);
+  await startInvestigation(c, transport, 'orphan-expired-investigation');
+  c.invalidate();
+  const pending = transport.next('/api/dhcp/investigation/stop');
+  pending.reply({error: 'INVALID_PROJECT',
+    message: 'investigation: unknown or expired session'}, 422);
+  await flushMicrotasks();
+  assert.equal(c.getState().id, null);
+  assert.equal(c.getState().state, null);
+  assert.equal(c.getState().pendingStopCount, 0);
   transport.empty();
 });

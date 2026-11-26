@@ -504,7 +504,7 @@ def investigation_lifecycle_races(context, base, network_mode, errors):
       window.fetch = (url, init) => {
         if (url === '/api/dhcp/investigation/stop') {
           const body = JSON.parse(init.body);
-          body.sessionId = 'expired-race-id';
+          body.unexpected = true;  // Invalid POST body; active session remains.
           window.fetch = original;
           return original(url, {...init, body: JSON.stringify(body)});
         }
@@ -519,6 +519,24 @@ def investigation_lifecycle_races(context, base, network_mode, errors):
     with page.expect_response('**/api/dhcp/investigation/stop') as retried_stop:
         page.locator('#investigation-stop').click()
     assert retried_stop.value.status == 200
+
+    # A genuinely absent server session must release the same local ID,
+    # unlike the malformed request above. Exercise real HTTP in Chromium.
+    removed_session = start(page)
+    assert server_status(page, removed_session) == 200
+    with page.expect_response('**/api/dhcp/investigation/stop') as already_expired:
+        page.locator('#investigation-stop').click()
+    assert already_expired.value.status == 422
+    assert already_expired.value.json()['error'] == 'INVALID_PROJECT'
+    assert already_expired.value.json()['message'] == 'investigation: unknown or expired session'
+    expect(page.locator('#investigation-status')).to_contain_text('Ingen felsökningsövning')
+    expect(page.locator('#investigation-start')).to_be_enabled()
+    expect(page.locator('#investigation-stop')).to_be_disabled()
+    fresh_id = start(page)
+    assert fresh_id != removed_session
+    with page.expect_response('**/api/dhcp/investigation/stop') as final_stop:
+        page.locator('#investigation-stop').click()
+    assert final_stop.value.status == 200
     assert not errors, errors
     page.close()
 

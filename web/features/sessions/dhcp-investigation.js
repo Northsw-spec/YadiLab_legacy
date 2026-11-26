@@ -29,9 +29,17 @@ export function createDhcpInvestigationController({getContext, onChange}) {
   const requestStop = sessionId => {
     if (stopping.has(sessionId)) return stopping.get(sessionId);
     const request = api('/api/dhcp/investigation/stop', {sessionId})
-      .then(() => { pendingStops.delete(sessionId); return true; })
-      .catch(() => {
-        // Keep the exact orphan ID for a later explicit retry. No cleanup claim.
+      .then(data => {
+        if (data.status !== 'STOPPED') throw new Error('Servern bekräftade inte Stop.');
+        pendingStops.delete(sessionId);
+        return true;
+      }).catch(problem => {
+        if (missingSession(problem)) {
+          // An expired/unknown server ID has no session left to release.
+          pendingStops.delete(sessionId);
+          return true;
+        }
+        // Keep an unconfirmed active ID for an explicit retry.
         pendingStops.add(sessionId);
         return false;
       }).finally(() => { stopping.delete(sessionId); });
