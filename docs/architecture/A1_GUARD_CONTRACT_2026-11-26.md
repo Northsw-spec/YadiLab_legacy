@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-26  
 **Active plan:** [A0–A10 remediation roadmap](../REMEDIATION_PLAN_2026-11-26.md)  
-**Status:** **IN_PROGRESS / NOT ACCEPTED** until the `architecture-guard` check is actually marked **Required** in the active main ruleset and a failing check demonstrably blocks merge.  
+**Status:** **DONE / ACCEPTED (2026-11-26).** [PR #170](https://github.com/Northsw-spec/YadiLab/pull/170) is merged; [PR #173](https://github.com/Northsw-spec/YadiLab/pull/173) independently demonstrated that a failing Required `architecture-guard` blocks merge although `unit-tests` succeeds. No probe was merged.  
 **Baseline:** `main@fcf81716285ef3a4d927d3ac05556b5c2fb6f7f5`, [A0 report](A0_FORENSIC_BASELINE_2026-11-26.md) and A0 Git-blob manifest.  
 **Scope:** G1–G7, C03–C05. No network simulator, UI, persistence schema or protocol code was intentionally changed.
 
@@ -44,9 +44,9 @@ These are *regression tripwires*, not objective quality or runtime-correctness s
 2. Run `tools/architecture_guard.py --base-ref BASE_SHA` on PRs (or without a base on branch pushes).
 3. Fail on any contract or policy discrepancy; publish a compact architecture report in the Actions job summary even if validation fails.
 
-**Defense in depth already active in this PR:** the existing `unit-tests` workflow (already Required by main ruleset) now executes the same `tools/architecture_guard.py` with the exact PR-base ratchet, and `tests/test_ci_integrity.py` checks that this step is not detached. This gives a **required functional gate** against architectural regression even before the separately named check is configured Required. It does **not** satisfy the explicit A1 acceptance criterion for independently required status.
+**Defense in depth retained:** the existing `unit-tests` workflow executes the same `tools/architecture_guard.py` with the exact PR-base ratchet, and `tests/test_ci_integrity.py` checks it remains attached. The **separate** `architecture-guard` is also Required, so both controls independently protect the branch.
 
-**Crucial remaining deployment task:** GitHub repository administrator must add the exact `architecture-guard` context from the GitHub Actions installation alongside `unit-tests` in the active main branch ruleset: [main ruleset ID 27419615](https://github.com/Northsw-spec/YadiLab/rules/27419615). Preserve strict required checks and protected linear history. After adding, confirm the API returns both contexts with the correct app integration ID, and verify that the status is genuinely required (missing or failing check causes merge to be blocked). **A green workflow alone is not a required status. Do not mark A1 DONE without this evidence.**
+**Actual Required status independently confirmed:** active [main ruleset ID 27419615](https://github.com/Northsw-spec/YadiLab/rules/27419615) lists both `unit-tests` and `architecture-guard` as **Required** from GitHub Actions integration ID `15368`, with strict status checks enabled. [PR #173](https://github.com/Northsw-spec/YadiLab/pull/173) deliberately added `exit 17` **only** to the independent workflow after normal validation. On exact HEAD `90e5ab61e23ee8a824c42f48f253d33e28cd76ce`, both `unit-tests` succeeded (push [45854012171](https://github.com/Northsw-spec/YadiLab/actions/runs/45854012171), PR [45854035243](https://github.com/Northsw-spec/YadiLab/actions/runs/45854035243)), while both independent architecture checks failed (push [45854011534](https://github.com/Northsw-spec/YadiLab/actions/runs/45854011534), PR [45854035286](https://github.com/Northsw-spec/YadiLab/actions/runs/45854035286)). GitHub API explicitly reported `mergeable_state=blocked`; #173 was **closed without merge**. This proves that the independently Required guard, not just the duplicate backup gate, is enforced.
 
 ## G5. Named source ownership
 
@@ -64,13 +64,13 @@ The guard writes machine-readable `architecture-report.json` to the job workspac
 
 `tests/test_architecture_guard.py` has **17** independent synthetic demonstrations for: valid baseline, removed ICMP session file, import cycle, orphan, presentation→storage dependency, forged source owner and owner-label laundering attempt, duplicated ping presenter, copied session state, fraudulent raised budget even with matching source change, deleted regression test, removed guard script, removed module contract, weakened public exports, duplicate backend validator, legitimate decreased code budget, and removed required test from policy.
 
-**A1 completion evidence required:**
+**A1 acceptance ledger (all verified at 2026-11-26):**
 
-- [ ] Required GitHub Actions `architecture-guard` is green on the **final PR HEAD**.
-- [ ] Existing `unit-tests` is green on the **same exact final PR HEAD**.
-- [ ] GitHub API confirms the active main ruleset requires both contexts.
-- [ ] Deliberate invalid change is demonstrated to fail the new job; verify required-check merge blocking without modifying protected main.
-- [ ] PR is mergeable and squash-merged with no unauthorized bypass.
-- [ ] Main status verified and A0–A10 roadmap updated to A1 DONE / next A2.
+- [x] Required GitHub Actions `architecture-guard` passed on merged [PR #170](https://github.com/Northsw-spec/YadiLab/pull/170)'s exact final HEAD.
+- [x] Existing `unit-tests` passed on the exact same PR #170 HEAD.
+- [x] GitHub API confirmed both Required checks (integration `15368`, strict).
+- [x] Real negative probes: [#172](https://github.com/Northsw-spec/YadiLab/pull/172) (budget raise fails both checks); [#173](https://github.com/Northsw-spec/YadiLab/pull/173) (separate architecture fails while `unit-tests` succeeds, GitHub merge blocked). Neither merged.
+- [x] Implementation PR #170 squash-merged; main protected with no bypass.
+- [x] Main verified and A0–A10 roadmap updated in A1 acceptance closeout PR; A2 NEXT.
 
-**Failure policy:** If ruleset editing is unavailable, retain an honest `BLOCKED_REQUIRED_RULESET_UPDATE` status. A1 implementation may be merged as partial infrastructure after successful functional CI; that does **not** authorize A2, A3 or A4 or certify A1 complete.
+**Ongoing failure policy:** If a future repository change removes either Required check or modifies its integration, do not regard the guard as effective: mark A1 regression **BLOCKED** and restore the ruleset before dependent work. Static guards and passing workflow runs do not themselves prove semantic correctness; retain real browser/network/save tests for all subsequent PRs.
