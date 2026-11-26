@@ -1,6 +1,12 @@
 # Codex – obligatoriskt produktivitets- och CI-kontrakt
 
-**Status:** Normativ operativ instruktion från 2026-11-26. **Gäller allt Codex-/agentarbete i YadiLab** genom [AGENTS.md](../AGENTS.md), [MASTERPROMPT](MASTERPROMPT.md), [enda aktiva A0–A10-planen](REMEDIATION_PLAN_2026-11-26.md) och [PR-mallen](../.github/pull_request_template.md). Detta är **inte en ny roadmap**, inte ett mandat att ändra omfång och inte en ersättning för GitHubs tekniska branchskydd.
+**ABSOLUT PRODUKTKRAV:** [PT-FULL-001](FULL_PACKET_TRACER_PARITY_CONTRACT.md) styr ALL utveckling och framtida godkännande. Alla PT-funktioner (inte bara protokollen) måste fungera i Linux-versionen och bevisas i individuell funktions-/versionsmatris före S12. Multiuser/Extensions/IoT-script/Activity Wizard, CLI, deviceprofiler, fysisk arbetsyta och PT-filformat är **inte valfria** och kräver ingen ny per-feature beställning eftersom användaren redan uttryckligen beställt ALLT. Enda undantag Windows/macOS och nya accessibility/keyboard-only-krav. Codex ska inte lägga kredit på sådan extrascope, men inte försvaga existerande keyboard-regressioner. Restkrav och lagliga hinder är blockerade, inte godkända.
+
+
+**Utökat bindande uppdrag 2026-11-26:** [enda huvudplanen A0–A10 + S0–S12](REMEDIATION_PLAN_2026-11-26.md), [MASTERPROMPT](MASTERPROMPT.md), [protokollmatris](PROTOCOL_COVERAGE_MATRIX.md) och [simuleringskontrakt](architecture/DETERMINISTIC_ENGINE_CONTRACT.md) styr nu Packet Tracer-plus-målet. **A9:s native protokoll-/eventmotorutbyggnad är beställd som S-kort; A8:s mänskliga studie kräver fortfarande separat godkännande.** Äldre regler om enbart A0–A10 eller förbud mot nya protokoll är upphävda för det nya explicita S-omfånget, inte för CI-säkerhet eller emulering. Kredit-, test-, Required- och squashreglerna nedan gäller oförändrade även för S-kod.
+
+
+**Status:** Normativ operativ instruktion från 2026-11-26. **Gäller allt Codex-/agentarbete i YadiLab** genom [AGENTS.md](../AGENTS.md), [MASTERPROMPT](MASTERPROMPT.md), [enda aktiva A0–A10 + S0–S12-planen](REMEDIATION_PLAN_2026-11-26.md) och [PR-mallen](../.github/pull_request_template.md). Detta är **inte en ny roadmap**, inte ett mandat att ändra omfång och inte en ersättning för GitHubs tekniska branchskydd.
 
 **Primärregel: maximera verifierade kod-/arkitektur-/buggfixleveranser per Codex-credit, inte antal verktygsanrop eller hur länge en session förblir öppen. Ingen passiv väntan på GitHub Actions.** Ett CI-jobb körs på GitHubs infrastruktur oberoende av att agenten fortsätter fråga om status. Skilj Codex-credits från GitHub Actions-minuter; de är inte samma resurs.
 
@@ -47,9 +53,9 @@ Om nästa steg kräver en extern händelse och inga säkra parallella uppgifter 
 ## 5. Hårt bevarade säkerhets- och arkitekturgränser
 
 - Max **en aktiv PR**. Nästa oberoende A-kort börjar först efter verifierad merge/stängning av pågående PR; säker analys får fortsätta men ingen konkurrerande PR.
-- Enda giltiga backlog: [A0–A10](REMEDIATION_PLAN_2026-11-26.md). A8/A9 kräver separat uttryckligt godkännande. Historiska P0–P7 är CLOSED.
+- Enda giltiga backlog: [A0–A10 + S0–S12](REMEDIATION_PLAN_2026-11-26.md). A8/A9 har nu olika beslut: A8 kräver separat godkännande, A9:s fullständiga simuleringsutbyggnad har redan godkänts uttryckligen och genomförs inom S1–S12 efter beroendegrindar. Historiska P0–P7 är CLOSED.
 - Varje faktisk ändring ska förbättra buggsäkerhet, beteendetest, arkitekturägarskap, användarnytta eller spårbarhet. **Ingen refaktorering bara för färre rader** och ingen onödig funktionalitet utanför scope.
-- Skydda explicit nätverksmodell och en validator, ingen påhittad topologi/packet-/RFC-evidens, inga nya plattformar eller protokoll utan beslut.
+- Skydda en explicit nätverksmodell/en validator och sanningsenliga paket/RFC-bevis. S-kortens nya protokoll är nu godkända i princip, men kräver riktig referensorakel, säker migration, gemensam eventmotor, state-ägare och negativa tester. Ingen VM, emulator, extern runtime eller annan OS-familj utan nytt uttryckligt beslut.
 - Required branchregler `unit-tests` och `architecture-guard` från GitHub Actions gäller fortsatt. Inga path-filter, skippade jobb, borttagna tester eller manuellt kringgående av `main`-skyddet.
 - **Styrningens tekniska gräns:** Markdown kan instruera Codex, men kan inte ensam tvinga en agent att förbruka färre credits eller garantera framtida agentbeteende. Maskinella tester i `tests/test_codex_governance.py` och `tests/test_ci_integrity.py` upprätthåller länkar och CI-avgränsningar; beteende i själva agentsessionen kräver att agenten följer denna instruktion.
 

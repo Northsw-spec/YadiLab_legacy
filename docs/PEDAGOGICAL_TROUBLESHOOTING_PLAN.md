@@ -1,10 +1,16 @@
 # YadiLab – pedagogisk felsökningsarkitektur: evidens, orsak och lärande
 
+**NYTT OBLIGATORISKT HELHETSKRAV:** [PT-FULL-001](FULL_PACKET_TRACER_PARITY_CONTRACT.md) kräver även ALL Cisco Packet Tracers utbildningsfunktionalitet (Activity Wizard, variabler, säkert scripting, automatisk bedömning, simulering, instruktioner, övningspaket och IoT/OT-lärflöden), inte bara de nio historiska felsökningsrubrikerna. Detta dokument är ett bevarat **pedagogiskt kvalitetskontrakt**, aldrig en tillåten slutlig avgränsning av simuleringsprotokoll eller produktfunktioner. Inga keyboard-only/accessibility-tillägg krävs, men bevara befintliga regressionsskydd.
+
+
+**Nytt produktbeslut 2026-11-26:** P0–P7 förblir historiskt CLOSED och dess nio rubriker är ett kvalitetskontrakt, men [enda aktiva masterplanen A0–A10 + S0–S12](REMEDIATION_PLAN_2026-11-26.md) har nu uttryckligen beställt ett Packet Tracer-plus-simuleringsuppdrag. Se [MASTERPROMPT](MASTERPROMPT.md), [protokollmatrisen](PROTOCOL_COVERAGE_MATRIX.md), [motorarkitekturen](architecture/DETERMINISTIC_ENGINE_CONTRACT.md) och [Codex-policyn](CODEX_EXECUTION_POLICY.md). Historiska ord om att inga nya protokoll är beställda gäller inte längre för S-korten.
+
+
 **Datum:** 2026-11-24 (ISO)  
 **Operativ agentprocess:** [CODEX_EXECUTION_POLICY.md](CODEX_EXECUTION_POLICY.md) gäller allt framtida Codex-arbete. Detta dokument är historiskt, inte en ny uppgiftskö; undvik passiv Actions-väntan och återstart av P0–P7.
 
-**Beslut 2026-11-26:** P0–P7-programmet är **formellt avslutat genom uttryckligt användarbeslut**. Dokumentet bevaras som historisk genomförandeplan och fortsatt bindande pedagogiskt kvalitetskontrakt; **ingen P0–P7-etapp eller P8 är aktiv/beslutad**. Separat därefter är [REMEDIATION_PLAN_2026-11-26.md](REMEDIATION_PLAN_2026-11-26.md) uttryckligen godkänd som den **enda aktiva reparationsroadmapen A0–A10**.  
-**Status:** P0–P7 **CLOSED (2026-11-26)**. Den formella avslutningen är ett projektbeslut, inte bevis för att samtliga tidigare idéer implementerats eller att YadiLab är felfritt. Den sammanhållna nya undervisningsarbetsytan ska fortfarande behandlas som **PLANNED / NOT_VERIFIED** där faktiskt kod- och teststöd saknas. Befintliga funktioner fastställs endast från aktuell kod och tester. Utveckling utanför den separat godkända A0–A10-planens scope kräver nytt uttryckligt avgränsat uppdrag.  
+**Beslut 2026-11-26:** P0–P7-programmet är **formellt avslutat genom uttryckligt användarbeslut**. Dokumentet bevaras som historisk genomförandeplan och fortsatt bindande pedagogiskt kvalitetskontrakt; **ingen P0–P7-etapp eller P8 är aktiv/beslutad**. Separat därefter är [REMEDIATION_PLAN_2026-11-26.md](REMEDIATION_PLAN_2026-11-26.md) uttryckligen godkänd som en del av den **enda aktiva huvudplanen A0–A10 + S0–S12**.  
+**Status:** P0–P7 **CLOSED (2026-11-26)**. Den formella avslutningen är ett projektbeslut, inte bevis för att samtliga tidigare idéer implementerats eller att YadiLab är felfritt. Den sammanhållna nya undervisningsarbetsytan ska fortfarande behandlas som **PLANNED / NOT_VERIFIED** där faktiskt kod- och teststöd saknas. Befintliga funktioner fastställs endast från aktuell kod och tester. Native utbyggnad inom den senare godkända S0–S12-planen är nu beställd, men får inte beskrivas som redan implementerad. Ytterligare utbyggnad utanför detta scope kräver nytt beslut.  
 **Historisk granskad bas:** `main@b1c6fb0323fc93085084128e3ff4382f2b3a9576`. Läs om aktuell HEAD/CI före varje ändring.  
 **Plattform:** Linuxdistributioner endast. Windows och macOS är UNSUPPORTED.
 
