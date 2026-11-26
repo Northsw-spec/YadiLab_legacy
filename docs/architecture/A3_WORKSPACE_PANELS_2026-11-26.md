@@ -3,7 +3,7 @@
 **Datum:** 2026-11-26  
 **Leverans:** [PR #176](https://github.com/Northsw-spec/YadiLab/pull/176)  
 **Aktiv roadmap:** [A0–A10](../REMEDIATION_PLAN_2026-11-26.md), C03–C05  
-**Status:** A3 **IN_PROGRESS**. Del-PR:n är levererad och blir accepterad först efter att båda Required CI-checks är SUCCESS på exakt sista PR-HEAD och squash-merge verifierats. A3 är **inte DONE** efter denna del.
+**Status:** **Del 1 DONE** efter [PR #176](https://github.com/Northsw-spec/YadiLab/pull/176), squash `35ed34bd76551849ca79ebc5ca75813f2540e5d1` med två Required `unit-tests`, två Required `architecture-guard` och fokuserad ELK SUCCESS. **Hela A3 är fortfarande IN_PROGRESS**. Framtida Codex-arbeten följer [CODEX_EXECUTION_POLICY.md](../CODEX_EXECUTION_POLICY.md).
 
 ## Avgränsning
 

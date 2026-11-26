@@ -4,7 +4,9 @@
 **Active plan:** [A0–A10 remediation roadmap](../REMEDIATION_PLAN_2026-11-26.md)  
 **Status:** **DONE / ACCEPTED (2026-11-26).** [PR #170](https://github.com/Northsw-spec/YadiLab/pull/170) is merged; [PR #173](https://github.com/Northsw-spec/YadiLab/pull/173) independently demonstrated that a failing Required `architecture-guard` blocks merge although `unit-tests` succeeds. No probe was merged.  
 **Baseline:** `main@fcf81716285ef3a4d927d3ac05556b5c2fb6f7f5`, [A0 report](A0_FORENSIC_BASELINE_2026-11-26.md) and A0 Git-blob manifest.  
-**Scope:** G1–G7, C03–C05. No network simulator, UI, persistence schema or protocol code was intentionally changed.
+**Scope:** G1–G7, C03–C05.
+
+**Operativ styrning vid fortsatt Codex-arbete:** [CODEX_EXECUTION_POLICY.md](../CODEX_EXECUTION_POLICY.md). Avbryt äldre PR-run vid ny commit, men hoppa aldrig över separat Required `architecture-guard`. Modul-/testantal i historisk A1-rapport är ursprungliga värden; aktuell CI inventerar manifestet. No network simulator, UI, persistence schema or protocol code was intentionally changed.
 
 ## G1. Monotonic budgets
 
@@ -38,7 +40,7 @@ These are *regression tripwires*, not objective quality or runtime-correctness s
 
 ## G4. Independent CI status and branch rules
 
-`.github/workflows/architecture_guard.yml` executes a separate job named **`architecture-guard`** on every push and pull request, without path filters or conditional skips:
+`.github/workflows/architecture_guard.yml` executes a separate job named **`architecture-guard`** on every pull request and push to protected `main` (not also a duplicate push on each PR branch), without PR path filters or conditional skips:
 
 1. Run `tests/test_architecture_guard.py`, including deliberate invalid fixtures.
 2. Run `tools/architecture_guard.py --base-ref BASE_SHA` on PRs (or without a base on branch pushes).

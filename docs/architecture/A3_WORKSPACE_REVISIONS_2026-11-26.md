@@ -3,7 +3,7 @@
 **Datum:** 2026-11-26  
 **Leverans:** [PR #177](https://github.com/Northsw-spec/YadiLab/pull/177) (delarbete, inte hela A3)  
 **Styrning:** [enda aktiva A0–A10-planen](../REMEDIATION_PLAN_2026-11-26.md), framför allt C03–C05  
-**Status:** **IN_PROGRESS** före verifierad Required CI och squash-merge. A3 som helhet kvarstår IN_PROGRESS även efter accepterad del-PR.
+**Status:** **Del 2 DONE** efter [PR #177](https://github.com/Northsw-spec/YadiLab/pull/177), squash `16e6bd67444b1ef9eb96f2448edf04efda2ab17f` med två Required `unit-tests`, två Required `architecture-guard` och fokuserad ELK SUCCESS. **Hela A3 IN_PROGRESS**. Framtida Codex-arbeten följer [CODEX_EXECUTION_POLICY.md](../CODEX_EXECUTION_POLICY.md) utan passiv CI-väntan.
 
 ## Felskyddets tidigare spridning
 
