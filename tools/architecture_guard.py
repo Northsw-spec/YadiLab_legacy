@@ -123,6 +123,14 @@ def forbidden_edge(path: str, target: str, owner: str) -> bool:
 
 RETIREMENT_GROUPS = ("backend", "frontend", "tests")
 
+# New engine cannot route execution back into the legacy synchronous dataplane.
+LEGACY_RUNTIME = frozenset({
+    "ethernet", "arp", "ipv4", "routing", "dhcp", "dhcp_registry",
+    "simulation", "icmp_ping", "icmp_errors", "dhcp_investigation",
+    "icmp_investigation",
+})
+
+
 
 def retirement_receipts(policy: dict) -> dict:
     result = policy.get("retirement_receipts", {})
@@ -377,6 +385,25 @@ def validate(root: Path, policy: dict, old: dict | None = None) -> tuple[list[st
         except SyntaxError:
             issues.append(f"BACKEND_PYTHON_SYNTAX_ERROR: {rel}")
             continue
+        if rel.startswith("network_core/engine/"):
+            for node in ast.walk(tree):
+                name = None
+                if isinstance(node, ast.Import):
+                    for alias in node.names:
+                        module = alias.name
+                        if (module.startswith("network_core.")
+                                and module.split(".")[1] in LEGACY_RUNTIME):
+                            issues.append(f"ENGINE_IMPORTS_LEGACY_RUNTIME: {rel} -> {module}")
+                if isinstance(node, ast.ImportFrom):
+                    if node.level >= 2:
+                        name = (node.module or "").split(".")[0]
+                        if not name and node.names:
+                            name = node.names[0].name
+                    elif node.level == 0 and node.module:
+                        parts = node.module.split(".")
+                        name = parts[1] if len(parts) > 1 and parts[0] == "network_core" else None
+                    if name in LEGACY_RUNTIME:
+                        issues.append(f"ENGINE_IMPORTS_LEGACY_RUNTIME: {rel} -> {name}")
         for node in tree.body:
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 if node.name == "validate_project" and rel != "network_core/model.py":

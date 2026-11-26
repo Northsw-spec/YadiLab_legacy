@@ -268,6 +268,16 @@ class ArchitectureGuardTests(unittest.TestCase):
         self.assertProblem("PROTECTION_REMOVED: critical_files", old=old)
 
 
+    def test_negative_fresh_engine_imports_legacy_runtime(self):
+        path = "network_core/engine/bad.py"
+        file = self.root / path
+        file.parent.mkdir(parents=True, exist_ok=True)
+        file.write_text(
+            "from network_core.ethernet import EthernetFabric\n", encoding="utf-8")
+        self.policy["required_backend_modules"].append(path)
+        self.assertProblem("ENGINE_IMPORTS_LEGACY_RUNTIME")
+
+
 
 if __name__ == "__main__":
     unittest.main()
