@@ -128,7 +128,7 @@ export function presentPing(pingDiagnostic) {
       }
     }
   }
-  lines.push('Svarstid: ej uppmätt. ICMP-fel visas endast när ett felpaket nådde mottagaren i simuleringen. Inga externa nät verifieras.');
+  lines.push('Svarstid: ej uppmätt. Ett genererat ICMP-fel är bekräftat mottaget endast vid status RECEIVED; ej levererade felpaket redovisas separat. Inga externa nät verifieras.');
   text = lines.join('\n');
   return {status: tone, text};
 }
