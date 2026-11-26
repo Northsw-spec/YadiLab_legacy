@@ -5,7 +5,7 @@
   "source_baseline": "architecture/a0_baseline.json",
   "source_graph": "architecture/a0_frontend_imports.json",
   "line_budgets": {
-    "web/app.js": 2926,
+    "web/app.js": 2913,
     "network_core/import_plan.py": 966,
     "network_core/icmp_investigation.py": 843
   },
@@ -131,7 +131,6 @@
     "ADDRESS_BINDINGS",
     "arpDiagnostic",
     "arpHighlightedLinks",
-    "builderValidationGeneration",
     "canvas",
     "dhcpBusy",
     "dhcpDiagnostic",
@@ -142,7 +141,6 @@
     "doraDiagnostic",
     "doraGeneration",
     "doraSession",
-    "editRevision",
     "elkAbort",
     "elkAccepted",
     "elkBusy",
@@ -231,7 +229,8 @@
         "web/features/diagnostics/protocol-lessons.js",
         "web/features/projects/import-review.js",
         "web/features/layout/elk.js",
-        "web/ui/workspace-panels.js"
+        "web/ui/workspace-panels.js",
+        "web/features/projects/workspace-revisions.js"
       ],
       "exports": []
     },
@@ -428,6 +427,13 @@
       "exports": [
         "setupWorkspacePanels"
       ]
+    },
+    "web/features/projects/workspace-revisions.js": {
+      "owner": "projects",
+      "imports": [],
+      "exports": [
+        "createWorkspaceRevisions"
+      ]
     }
   },
   "required_tests": [
@@ -527,6 +533,7 @@
     "tests/test_web_import_graph.py",
     "tests/test_xlsx_import.py",
     "tests/workspace_panels_test.mjs",
+    "tests/workspace_revisions_test.mjs",
     "tests/xlsx_fixture.py"
   ],
   "critical_files": [

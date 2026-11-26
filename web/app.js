@@ -15,6 +15,7 @@ import {setupProtocolLessons} from './features/diagnostics/protocol-lessons.js';
 import {createImportReview} from './features/projects/import-review.js';
 import {computeElkPreview} from './features/layout/elk.js';
 import {setupWorkspacePanels} from './ui/workspace-panels.js';
+import {createWorkspaceRevisions} from './features/projects/workspace-revisions.js';
 
 let project = blank();
 let selection = null;
@@ -38,9 +39,8 @@ let filename = 'lab';
 let savedName = null;
 let savedSha = null;
 let savedSnapshot = JSON.stringify(project);
-let editRevision = 0;
-let workspaceRevision = 0;
-let builderValidationGeneration = 0;
+// All revision and async Builder-validation tokens are owned by this tracker.
+const workspaceRevision = createWorkspaceRevisions();
 let savePending = false;
 let openGeneration = 0;
 const diagnosticRuns = {arp: 0, route: 0, ipv4: 0, ping: 0};
@@ -52,19 +52,19 @@ const diagnosticFields = {
 };
 let toastTimer;
 const investigation = createDhcpInvestigationController({
-  getContext: () => ({workspaceRevision, editRevision, projectSnapshot: JSON.stringify(project)}),
+  getContext: () => workspaceRevision.sessionContext(project),
   onChange: renderInvestigation,
 });
 const icmpInvestigation = createIcmpInvestigationController({
-  getContext: () => ({workspaceRevision, editRevision, projectSnapshot: JSON.stringify(project)}),
+  getContext: () => workspaceRevision.sessionContext(project),
   onChange: renderIcmpInvestigation,
 });
 const doraSession = createDoraSessionController({
-  getContext: () => ({workspaceRevision, editRevision, projectSnapshot: JSON.stringify(project)}),
+  getContext: () => workspaceRevision.sessionContext(project),
   onChange: () => { renderDoraDiagnostics(); renderDoraSession(); },
 });
 const simulationSession = createSimulationSessionController({
-  getContext: () => ({workspaceRevision, editRevision, projectSnapshot: JSON.stringify(project)}),
+  getContext: () => workspaceRevision.sessionContext(project),
   onChange: render,
 });
 const canvas = new TopologyCanvas($('topology'), {
@@ -76,7 +76,7 @@ const canvas = new TopologyCanvas($('topology'), {
       invalidateElk();
       node.x = Math.max(-100000, Math.min(100000, x));
       node.y = Math.max(-100000, Math.min(100000, y));
-      editRevision += 1;
+      workspaceRevision.markEdit();
       importReview.onEdit();
       previewGeneration += 1;
       previewFile = null;
@@ -174,8 +174,8 @@ function updateBoundAddress(binding) {
 }
 function syncBoundAddresses() {
   for (const binding of ADDRESS_BINDINGS) {
-    if (binding.workspaceRevision !== workspaceRevision) {
-      binding.workspaceRevision = workspaceRevision;
+    if (binding.workspaceRevision !== workspaceRevision.workspace) {
+      binding.workspaceRevision = workspaceRevision.workspace;
       $(binding.input).dataset.manual = 'false';
     }
     updateBoundAddress(binding);
@@ -369,7 +369,7 @@ function invalidateDoraSession() {
 function changed({keepTrace = false} = {}) {
   invalidateElk();
   forgetJourney();
-  editRevision += 1;
+  workspaceRevision.markEdit();
   importReview.onEdit();
   previewGeneration += 1;
   previewFile = null;
@@ -1610,14 +1610,8 @@ function renderIPv4Trace() {
 }
 
 async function validateBuilderAttempt(attempt, {renderOnError = true} = {}) {
-  const context = {
-    workspaceRevision, editRevision, filename, project,
-    snapshot: JSON.stringify(project), generation: ++builderValidationGeneration,
-  };
-  const current = () => workspaceRevision === context.workspaceRevision &&
-    editRevision === context.editRevision && filename === context.filename &&
-    project === context.project && JSON.stringify(project) === context.snapshot &&
-    builderValidationGeneration === context.generation;
+  const context = workspaceRevision.beginValidation(project, filename);
+  const current = () => workspaceRevision.validationCurrent(context, project, filename);
   const stale = () => notify('Valideringen avbröts: arbetsytan ändrades eller ett nyare försök startades. Försök igen.', true);
   try {
     const normalized = await api('/api/validate', attempt);
@@ -1921,7 +1915,7 @@ function confirmDiscard() {
 }
 function resetProject(value = blank(), pristineBlank = false) {
   invalidateElk();
-  workspaceRevision += 1;
+  workspaceRevision.replace();
   importReview.onWorkspace();
   project = value;
   delete $('trace-target').dataset.userSelected;
@@ -1943,17 +1937,17 @@ async function saveProject() {
   savePending = true;
   $('save-project').disabled = true;
   try {
-    const request = prepareSave({filename, project, workspaceRevision, editRevision, savedName, savedSha});
+    const request = prepareSave({filename, project, ...workspaceRevision.versions(), savedName, savedSha});
     const result = await saveSnapshot(request, error => {
       // Never approve an overwrite using a document/filename that changed
       // after the original Save click, even if the server reports a conflict.
-      if (workspaceRevision !== request.workspaceRevision || editRevision !== request.editRevision ||
-          filename !== request.filename || JSON.stringify(project) !== request.serializedProject) {
+      if (!workspaceRevision.matches(request) || filename !== request.filename ||
+          JSON.stringify(project) !== request.serializedProject) {
         throw new Error('Arbetsytan ändrades under sparning. Spara igen för att välja aktuell version.');
       }
       return confirm(`Filen ${request.filename}.yadilab har annat innehåll eller finns redan. Skriv över den AKTUELLA versionen på disk?`);
     });
-    if (workspaceRevision !== request.workspaceRevision || filename !== request.filename) {
+    if (workspaceRevision.workspace !== request.workspaceRevision || filename !== request.filename) {
       // Disk Save may have succeeded, but the user has changed documents;
       // never attach the old file's SHA or data to the new workspace.
       notify(`Den tidigare versionen sparades som ${result.filename}.yadilab. Aktuell arbetsyta ändrades inte.`);
@@ -1999,13 +1993,9 @@ async function openProject() {
   // otherwise automatic import layout can change editRevision and reject Open.
   invalidateElk();
   render();
-  const requestedWorkspace = workspaceRevision;
-  const requestedEdit = editRevision;
-  const requestedFilename = filename;
-  const requestedSnapshot = JSON.stringify(project);
-  const sameWorkspace = () => workspaceRevision === requestedWorkspace
-    && editRevision === requestedEdit && filename === requestedFilename
-    && JSON.stringify(project) === requestedSnapshot && $('saved-projects').value === slug;
+  const requestedContext = workspaceRevision.capture(project, filename);
+  const sameWorkspace = () => workspaceRevision.isCurrent(requestedContext, project, filename)
+    && $('saved-projects').value === slug;
   try {
     const loaded = await readSavedProject(slug);
     if (generation !== openGeneration) return;
@@ -2014,8 +2004,8 @@ async function openProject() {
       return;
     }
     invalidateElk();
-    workspaceRevision += 1;
-    editRevision += 1;
+    workspaceRevision.replace();
+    workspaceRevision.markEdit();
     importReview.onWorkspace();
     invalidateSimulationSession();
     routeLookup = null;
@@ -2041,11 +2031,10 @@ async function openProject() {
   }
 }
 function transferContext() {
-  return {workspaceRevision, editRevision, snapshot: JSON.stringify(project), filename};
+  return workspaceRevision.capture(project, filename);
 }
 function transferCurrent(context) {
-  return workspaceRevision === context.workspaceRevision && editRevision === context.editRevision &&
-    filename === context.filename && JSON.stringify(project) === context.snapshot;
+  return workspaceRevision.isCurrent(context, project, filename);
 }
 function transferStale() {
   notify('Åtgärden avbröts: arbetsytan ändrades under import eller export. Försök igen.', true);
@@ -2274,14 +2263,13 @@ async function runDora() {
   const [clientNode, clientPort] = JSON.parse(client);
   const [serverNode, serverPort] = JSON.parse(server);
   const snapshot = JSON.stringify(project);
-  const snapshotWorkspace = workspaceRevision;
-  const snapshotEdit = editRevision;
+  const snapshotVersions = workspaceRevision.versions();
   const generation = ++doraGeneration;
   doraBusy = true;
   doraDiagnostic = null;
   renderDoraDiagnostics();
   const stillCurrent = () => generation === doraGeneration
-    && workspaceRevision === snapshotWorkspace && editRevision === snapshotEdit
+    && workspaceRevision.matches(snapshotVersions)
     && JSON.stringify(project) === snapshot
     && JSON.stringify(currentInputs()) === JSON.stringify(inputs);
   try {
@@ -2323,14 +2311,13 @@ async function runDhcp() {
   const [clientNode, clientPort] = JSON.parse(client);
   const [serverNode, serverPort] = JSON.parse(server);
   const snapshot = JSON.stringify(project);
-  const snapshotWorkspace = workspaceRevision;
-  const snapshotEdit = editRevision;
+  const snapshotVersions = workspaceRevision.versions();
   const generation = ++dhcpGeneration;
   dhcpDiagnostic = null;
   dhcpBusy = true;
   renderDhcpDiagnostics();
   const stillCurrent = () => generation === dhcpGeneration &&
-    workspaceRevision === snapshotWorkspace && editRevision === snapshotEdit &&
+    workspaceRevision.matches(snapshotVersions) &&
     JSON.stringify(project) === snapshot && JSON.stringify(currentInputs()) === JSON.stringify(inputs);
   try {
     const response = await api('/api/dhcp/discover-offer', {
@@ -2353,12 +2340,12 @@ function beginDiagnostic(kind, readInputs = () => [
   ...diagnosticInputs(kind),
   ...(ADDRESS_BINDINGS.filter(binding => binding.input === kind + '-from-ip').map(binding => $(binding.input).value.trim())),
 ]) {
-  return {kind, run: ++diagnosticRuns[kind], workspaceRevision, editRevision,
+  return {kind, run: ++diagnosticRuns[kind], ...workspaceRevision.versions(),
     snapshot: JSON.stringify(project), inputs: readInputs(), readInputs};
 }
 function diagnosticCurrent(context) {
   return diagnosticRuns[context.kind] === context.run &&
-    workspaceRevision === context.workspaceRevision && editRevision === context.editRevision &&
+    workspaceRevision.matches(context) &&
     JSON.stringify(project) === context.snapshot &&
     JSON.stringify(context.readInputs()) === JSON.stringify(context.inputs);
 }
