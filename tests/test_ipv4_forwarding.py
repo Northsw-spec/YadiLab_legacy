@@ -341,6 +341,29 @@ class IPv4HTTPTests(unittest.TestCase):
         self.assertEqual(output["status"],"ARP_FAILED")
         self.assertEqual(output["steps"][0]["ipv4Transmissions"],[])
 
+    def test_http_valid_project_non_unicast_connected_target_is_explicit_status(self):
+        project = lab()
+        original = copy.deepcopy(project)
+        for destination in ("192.0.2.0", "192.0.2.255", "203.0.113.255"):
+            with self.subTest(destination=destination):
+                code, response = self.request(self.body(project, dest=destination))
+                self.assertEqual(code, 200)
+                self.assertEqual(response["status"], "NON_UNICAST_DESTINATION")
+                self.assertIn("not a modeled unicast IPv4 receiver", response["meaning"])
+                self.assertIsNone(response["receiver"])
+                self.assertIsNone(response["routerErrorCandidate"])
+                self.assertFalse(response["icmpSent"])
+                self.assertNotIn("INVALID_PROJECT", response)
+                if destination.startswith("192.0.2."):
+                    self.assertEqual(response["steps"], [])
+                else:
+                    self.assertEqual([s["node"] for s in response["steps"]], ["a"])
+        code, success = self.request(self.body(project, dest="203.0.113.20"))
+        self.assertEqual(code, 200)
+        self.assertEqual(success["status"], "DELIVERED")
+        self.assertEqual(project, original)
+        self.assertEqual(list(self.root.glob("*.yadilab")), [])
+
     def test_http_bad_requests_422_never_success(self):
         base=self.body()
         for bad in (
