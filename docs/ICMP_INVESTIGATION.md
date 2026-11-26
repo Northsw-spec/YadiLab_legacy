@@ -125,7 +125,7 @@ eller simulerad felpunkt exponeras.
 | `probe` | `target` | Resultat |
 |---|---|---|
 | `address` | `{}` | Dokumenterad IPv4 och portstatus; adressursprung `UNKNOWN` och DHCP-kontroll `NOT_VERIFIED` |
-| `ping` | `{}` | Riktigt ICMP Echo: Request/Reply-status, riktiga route- och ARP-steg, VLAN-drops och faktiskt använda kablar |
+| `ping` | `{}` | Simulerat ICMP Echo: Request/Reply-status, route-/ARP-steg, VLAN-drops och simulerade transmissioner på deklarerade kablar. `routerError` är antingen `null` eller en separat typ/kod och returevidens för ett av motorn genererat ICMP-routerfel. `receivedAtSource=true` kräver faktisk simulerad returleverans; ett genererat men förlorat fel får aldrig presenteras som observerat av källan. |
 | `route` | `{"nodeId":"a","destinationIpv4":"203.0.113.20"}` | Simulerad longest-prefix route lookup samt separat dokumenterade statiska routes med route-ID/next-hop, för att skilja `NO_ROUTE` från `MATCH` med ARP-fel |
 | `link` | `{"linkId":"la"}` | Dokumenterat jämfört med simulerat länktillstånd och deklarerade ändpunkter |
 | `port` | `{"nodeId":"sw-left","portId":"a"}` | Dokumenterat kontra simulerat administrativt portläge och IPv4/CIDR (eller null för port utan IP); inte live-telemetri |

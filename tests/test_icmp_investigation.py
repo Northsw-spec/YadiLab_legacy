@@ -69,6 +69,53 @@ class IcmpInvestigationTests(unittest.TestCase):
         self.assertTrue(case.diagnose("STATIC_ROUTE_MISSING")["correct"])
         self.assertTrue(case.repair()["replyMatched"])
 
+    def test_router_generated_icmp_error_is_distinct_from_echo_reply(self):
+        from test_icmp_echo import multihop_reply_lab
+
+        # Force the only router-owned static route to be the first eligible
+        # STATIC_ROUTE_MISSING candidate. A forwards to r, whose route to
+        # the far host is now absent. r can send a genuine modeled ICMP 3/0
+        # back on its directly connected source subnet.
+        project = multihop_reply_lab()
+        project["nodes"].sort(key=lambda node: node["id"] != "r")
+        original = deepcopy(project)
+        case = IcmpInvestigation(
+            project, "a", "eth0", "198.51.100.20", 5,
+            _test_kind="STATIC_ROUTE_MISSING")
+        self.assertEqual(case._fault["nodeId"], "r")
+        self.assertEqual(case._fault["routeId"], "r2-transit")
+        self.assertFalse(case.state()["canDiagnose"])
+        observed = case.probe("ping", {})["observation"]
+        self.assertEqual(observed["status"], "REQUEST_FAILED")
+        self.assertEqual(observed["requestStatus"], "NO_ROUTE")
+        self.assertIsNone(observed["replyStatus"])
+        self.assertFalse(observed["replyMatched"])
+        self.assertEqual(observed["routerError"], {
+            "type": 3, "code": 0, "deliveryStatus": "RECEIVED",
+            "receivedAtSource": True,
+            "sourceNode": "r", "sourcePort": "wan",
+            "quotedDestinationIpv4": "198.51.100.20",
+            "returnTraceStatus": "DELIVERED", "source": "SIMULATED",
+        })
+        # The probe reveals only a real simulated router error, not the
+        # exercise's privileged diagnosis, repair or hidden route identifier.
+        self.assertNotIn("routeId", json.dumps(observed["routerError"]))
+        self.assertNotIn("STATIC_ROUTE_MISSING", json.dumps(observed))
+        self.assertEqual(case.state()["diagnosisAttempts"], 0)
+        self.assertEqual(project, original)
+
+    def test_no_router_icmp_error_is_not_conjured_from_missing_echo(self):
+        project = routed_reply_lab()
+        original = deepcopy(project)
+        case = IcmpInvestigation(
+            project, "a", "eth0", "203.0.113.20", 5,
+            _test_kind="CABLE_DOWN")
+        observed = case.probe("ping", {})["observation"]
+        self.assertEqual(observed["status"], "REQUEST_FAILED")
+        self.assertFalse(observed["replyMatched"])
+        self.assertIsNone(observed["routerError"])
+        self.assertEqual(project, original)
+
     def test_each_hidden_cause_proven_by_failure_and_restored_echo(self):
         for kind in KINDS:
             with self.subTest(kind=kind):
