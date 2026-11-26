@@ -559,5 +559,10 @@
     "network_core/model.py": "validate_project",
     "network_core/icmp_ping.py": "EchoExchange"
   },
-  "guard_policy": "Budget may only decrease across PR head/base; removed modules, tests, contracts, or required checks must fail. Any exception needs separately authorized change and independent verification, never a self-issued approval."
+  "guard_policy": "Budget may only decrease across PR head/base; removed modules, tests, contracts, or required checks must fail. Any exception needs separately authorized change and independent verification, never a self-issued approval.",
+  "retirement_receipts": {
+    "backend": {},
+    "frontend": {},
+    "tests": {}
+  }
 }

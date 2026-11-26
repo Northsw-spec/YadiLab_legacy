@@ -120,31 +120,125 @@ def forbidden_edge(path: str, target: str, owner: str) -> bool:
     return False
 
 
+
+RETIREMENT_GROUPS = ("backend", "frontend", "tests")
+
+
+def retirement_receipts(policy: dict) -> dict:
+    result = policy.get("retirement_receipts", {})
+    return result if isinstance(result, dict) else {}
+
+
+def retirement_issues(root: Path, policy: dict,
+                      inventory: dict[str, set[str]]) -> list[str]:
+    """Retire legacy files only with real replacements, tests and a decision.
+
+    Structural verification is a necessary condition, never proof of
+    functional parity; Required CI and external protocol oracles remain.
+    """
+    errors: list[str] = []
+    records = policy.get("retirement_receipts")
+    if not isinstance(records, dict) or set(records) != set(RETIREMENT_GROUPS):
+        return ["INVALID_RETIREMENT_REGISTRY"]
+    for group in RETIREMENT_GROUPS:
+        entries = records[group]
+        if not isinstance(entries, dict):
+            errors.append(f"INVALID_RETIREMENT_GROUP: {group}")
+            continue
+        prefix = {"backend": "network_core/", "frontend": "web/",
+                  "tests": "tests/"}[group]
+        for path, evidence in entries.items():
+            if not isinstance(path, str) or not path.startswith(prefix):
+                errors.append(f"INVALID_RETIREMENT_PATH: {group}: {path}")
+                continue
+            if path in inventory[group]:
+                errors.append(f"RETIRED_PATH_STILL_ACTIVE: {group}: {path}")
+            if not isinstance(evidence, dict) or set(evidence) != {
+                    "replacements", "acceptance_tests", "decision"}:
+                errors.append(f"INVALID_RETIREMENT_RECEIPT: {group}: {path}")
+                continue
+            replacements = evidence["replacements"]
+            acceptance = evidence["acceptance_tests"]
+            decision = evidence["decision"]
+            valid_successors = (
+                isinstance(replacements, list) and len(replacements) > 0
+                and all(isinstance(x, str) and x != path for x in replacements))
+            if not valid_successors or (
+                    len(set(replacements)) != len(replacements)
+                    or not all(x in inventory[group] for x in replacements)):
+                errors.append(f"NO_LIVE_RETIREMENT_SUCCESSOR: {group}: {path}")
+            valid_tests = (
+                isinstance(acceptance, list) and len(acceptance) > 0
+                and all(isinstance(x, str) for x in acceptance))
+            if not valid_tests or (
+                    len(set(acceptance)) != len(acceptance)
+                    or not all(x in inventory["tests"] for x in acceptance)):
+                errors.append(f"UNVERIFIED_RETIREMENT_TESTS: {group}: {path}")
+            if (not isinstance(decision, str)
+                    or not decision.startswith("docs/")
+                    or not decision.endswith(".md")
+                    or ".." in Path(decision).parts
+                    or not (root / decision).is_file()):
+                errors.append(f"MISSING_RETIREMENT_DECISION: {group}: {path}")
+            else:
+                doc = (root / decision).read_text(encoding="utf-8")
+                if path not in doc or not valid_successors or any(
+                        successor not in doc for successor in replacements):
+                    errors.append(f"UNTRACKED_RETIREMENT_DECISION: {group}: {path}")
+    return errors
+
+
 def compare_policies(old: dict, new: dict) -> list[str]:
     """No self-approved expansion of guarded budgets/ownership across a PR."""
     errors: list[str] = []
     if old.get("schema") != new.get("schema") or old.get("version") != new.get("version"):
         errors.append("POLICY_SCHEMA_CHANGED")
+    records = retirement_receipts(new)
     for path, amount in old.get("line_budgets", {}).items():
         current = new.get("line_budgets", {}).get(path)
+        group = "frontend" if path.startswith("web/") else "backend"
+        if current is None and path in records.get(group, {}):
+            continue
         if type(current) is not int or current > amount:
             errors.append(f"BUDGET_RAISED_OR_REMOVED: {path}")
     for name, amount in old.get("app_limits", {}).items():
         current = new.get("app_limits", {}).get(name)
         if type(current) is not int or current > amount:
             errors.append(f"APP_LIMIT_RAISED_OR_REMOVED: {name}")
-    for key in ("required_tests", "required_backend_modules", "critical_files"):
-        if not set(old.get(key, [])).issubset(set(new.get(key, []))):
+    if not set(old.get("critical_files", [])).issubset(set(new.get("critical_files", []))):
+        errors.append("PROTECTION_REMOVED: critical_files")
+    for key, group in (("required_tests", "tests"),
+                       ("required_backend_modules", "backend")):
+        removed = set(old.get(key, [])) - set(new.get(key, []))
+        if any(path not in records.get(group, {}) for path in removed):
             errors.append(f"PROTECTION_REMOVED: {key}")
+    previous = retirement_receipts(old)
+    for group in RETIREMENT_GROUPS:
+        earlier, now = previous.get(group, {}), records.get(group, {})
+        if not isinstance(earlier, dict) or not isinstance(now, dict):
+            errors.append(f"INVALID_RETIREMENT_GROUP: {group}")
+            continue
+        for name, evidence in earlier.items():
+            if now.get(name) != evidence:
+                errors.append(f"RETIREMENT_HISTORY_REWRITTEN: {group}: {name}")
+        inventory_key = {"backend": "required_backend_modules",
+                         "frontend": "frontend_contracts",
+                         "tests": "required_tests"}[group]
+        for name in set(now) - set(earlier):
+            if name not in old.get(inventory_key, {}):
+                errors.append(f"UNTRACKED_RETIREMENT: {group}: {name}")
     for key in ("app_functions", "app_top_level_bindings"):
         if not set(new.get(key, [])).issubset(set(old.get(key, []))):
             errors.append(f"APP_RESPONSIBILITY_EXPANDED: {key}")
     old_modules = old.get("frontend_contracts", {})
     new_modules = new.get("frontend_contracts", {})
-    if not set(old_modules).issubset(set(new_modules)):
+    if any(path not in records.get("frontend", {})
+           for path in set(old_modules) - set(new_modules)):
         errors.append("MODULE_CONTRACT_REMOVED")
     for path, previous in old_modules.items():
-        current = new_modules.get(path, {})
+        if path not in new_modules:
+            continue
+        current = new_modules[path]
         if previous.get("owner") != current.get("owner"):
             errors.append(f"OWNER_CHANGED: {path}")
         if not set(previous.get("exports", [])).issubset(set(current.get("exports", []))):
@@ -180,8 +274,8 @@ def validate(root: Path, policy: dict, old: dict | None = None) -> tuple[list[st
         actual_budgets[path] = count
         if type(expected) is not int or expected != count:
             issues.append(f"BUDGET_NOT_RATCHETED: {path} actual={count} accepted={expected}")
-    if set(budgets) != {"web/app.js", "network_core/import_plan.py",
-                        "network_core/icmp_investigation.py"}:
+    # A retired file's budget may vanish only with BASE-verified receipt.
+    if not isinstance(budgets, dict) or not budgets:
         issues.append("BUDGETED_SOURCE_SET_CHANGED")
 
     all_modules = frontend_paths(root)
@@ -267,13 +361,16 @@ def validate(root: Path, policy: dict, old: dict | None = None) -> tuple[list[st
 
     protected_backend = set(policy.get("required_backend_modules", []))
     actual_backend = {p.relative_to(root).as_posix()
-                      for p in (root / "network_core").glob("*.py")}
+                      for p in (root / "network_core").rglob("*.py")
+                      if "__pycache__" not in p.parts}
     if not protected_backend.issubset(actual_backend):
         issues.append("BACKEND_MODULE_REMOVED: " +
                       repr(sorted(protected_backend - actual_backend)))
     if actual_backend != protected_backend:
         issues.append("BACKEND_MODULE_INVENTORY_DRIFT")
-    for file in (root / "network_core").glob("*.py"):
+    for file in (root / "network_core").rglob("*.py"):
+        if "__pycache__" in file.parts:
+            continue
         rel = file.relative_to(root).as_posix()
         try:
             tree = ast.parse(file.read_text(encoding="utf-8"), filename=rel)
@@ -297,6 +394,9 @@ def validate(root: Path, policy: dict, old: dict | None = None) -> tuple[list[st
         issues.append("REGRESSION_TEST_INVENTORY_DRIFT: " +
                       repr(sorted(tests ^ expected_tests)))
 
+    issues.extend(retirement_issues(root, policy, {
+        "backend": actual_backend, "frontend": all_modules, "tests": tests,
+    }))
     if old is not None:
         issues.extend(compare_policies(old, policy))
     base_budgets = old.get("line_budgets", {}) if old is not None else {}
@@ -321,6 +421,9 @@ def validate(root: Path, policy: dict, old: dict | None = None) -> tuple[list[st
               "module_owner_counts": dict(sorted(owner_counts.items())),
               "import_edge_count": sum(map(len, graph.values())),
               "backend_module_count": len(actual_backend),
+              "retirement_receipts": {group: len(evidence)
+                                      for group, evidence in
+                                      retirement_receipts(policy).items()},
               "regression_files": len(tests),
               "app": app_metrics,
               "base_policy_comparison": "enforced" if old is not None else "none",
