@@ -4814,7 +4814,8 @@ def run():
               await new Promise(resolve => setTimeout(resolve, 250));
               return document.querySelector('#run-dhcp').disabled;
             }"""), 'old DHCP finally must not unlock the new pending attempt'
-            expect(dhcp_page.locator('#dhcp-result')).to_contain_text('Ingen aktuell DHCP-diagnostik')
+            expect(dhcp_page.locator('#dhcp-result')).to_contain_text('Simulerar DHCPDISCOVER')
+            assert 'Föreslagen IP: 192.0.2.70' not in dhcp_page.locator('#dhcp-result').inner_text()
             dhcp_page.evaluate('window.__dhcpPendingReplies[1]()')
             expect(dhcp_page.locator('#run-dhcp')).to_be_enabled()
             expect(dhcp_page.locator('#dhcp-result')).to_contain_text('Föreslagen IP: 192.0.2.71')
@@ -4961,7 +4962,8 @@ def run():
               await new Promise(resolve => setTimeout(resolve, 250));
               return document.querySelector('#run-dora').disabled;
             }"""), 'old DORA finally must not unlock the new pending attempt'
-            expect(dhcp_page.locator('#dora-result')).to_contain_text('Ingen aktuell DORA-diagnostik')
+            expect(dhcp_page.locator('#dora-result')).to_contain_text('Simulerar fyra DHCP-meddelanden')
+            assert 'SIMULERAD BOUND-lease: 192.0.2.70' not in dhcp_page.locator('#dora-result').inner_text()
             dhcp_page.evaluate('window.__doraPendingReplies[1]()')
             expect(dhcp_page.locator('#run-dora')).to_be_enabled()
             expect(dhcp_page.locator('#dora-result')).to_contain_text('SIMULERAD BOUND-lease: 192.0.2.71')
