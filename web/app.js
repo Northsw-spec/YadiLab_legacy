@@ -981,7 +981,7 @@ function renderInvestigation() {
     verdict.classList.add(investigationVerdict.correct ? 'ok' : 'fail');
     verdict.textContent = investigationVerdict.correct
       ? 'DIAGNOS BEKRÄFTAD. Du kan nu återställa den identifierade felkategorin '
-        + 'och testa om ett faktiskt DHCPACK når klienten.'
+        + 'och testa om ett simulerat DHCPACK når klienten.'
       : 'HYPOTES AVVISAD. ' + investigationVerdict.feedback
         + ' Den dolda simulerade felorsaken avslöjas inte.';
   } else {
