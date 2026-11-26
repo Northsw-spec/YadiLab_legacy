@@ -152,7 +152,7 @@ class LocalHTTPBoundaryTests(unittest.TestCase):
     def test_static_modules_are_explicitly_allowed_without_directory_access(self):
         headers = (("Host", self.host),)
         for path in ("/ui/dom.js", "/ui/workspace-panels.js", "/services/api.js",
-                     "/features/projects/persistence.js", "/features/projects/transfer.js",
+                     "/features/projects/workspace-revisions.js", "/features/projects/persistence.js", "/features/projects/transfer.js",
                      "/features/diagnostics/queries.js", "/features/diagnostics/presenters.js",
                      "/features/diagnostics/icmp-investigation-panel.js",
                      "/features/diagnostics/protocol-lessons.js",
