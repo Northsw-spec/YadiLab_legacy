@@ -1,7 +1,7 @@
 # YadiLab – pedagogisk felsökningsarkitektur: evidens, orsak och lärande
 
 **Datum:** 2026-11-24 (ISO)  
-**Beslut 2026-11-26:** P0–P7 är **formellt avslutad genom uttryckligt användarbeslut**. Dokumentet bevaras som historisk genomförandeplan och fortsatt bindande pedagogiskt kvalitetskontrakt; ingen utvecklingsetapp är aktiv och ingen P8 är beslutad.  
+**Beslut 2026-11-26:** P0–P7-programmet är **formellt avslutat genom uttryckligt användarbeslut**. Dokumentet bevaras som historisk genomförandeplan och fortsatt bindande pedagogiskt kvalitetskontrakt; ingen utvecklingsetapp är aktiv och ingen P8 är beslutad.  
 **Status:** P0–P7 **CLOSED (2026-11-26)**. Den formella avslutningen är ett projektbeslut, inte bevis för att samtliga tidigare idéer implementerats eller att YadiLab är felfritt. Den sammanhållna nya undervisningsarbetsytan ska fortfarande behandlas som **PLANNED / NOT_VERIFIED** där faktiskt kod- och teststöd saknas. Befintliga funktioner fastställs endast från aktuell kod och tester. Framtida utveckling kräver ett nytt uttryckligt avgränsat uppdrag.  
 **Historisk granskad bas:** `main@b1c6fb0323fc93085084128e3ff4382f2b3a9576`. Läs om aktuell HEAD/CI före varje ändring.  
 **Plattform:** Linuxdistributioner endast. Windows och macOS är UNSUPPORTED.
