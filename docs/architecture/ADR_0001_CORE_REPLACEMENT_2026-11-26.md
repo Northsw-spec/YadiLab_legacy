@@ -1,5 +1,8 @@
 # ADR-0001 – Selektiv ombyggnad av nätverkssimuleringskärnan
 
+**HISTORISKT, ERSATT VÄGVAL:** [ADR-0002](ADR_0002_FRESH_ENGINE_2026-11-26.md) har tolkningsföreträde och byter selektiv gammal nätverkskodåteranvändning mot en självständig ny motor. För behållbara produktdelar och historiskt källunderlag är detta ADR fortfarande relevant. Ingen gammal runtime importeras i ny engine.
+
+
 **ABSOLUT FUNKTIONALITETSMÅL:** [PT-FULL-001](../FULL_PACKET_TRACER_PARITY_CONTRACT.md) kräver ALL Packet Tracer-funktionalitet och alla protokoll, inte bara en bättre DHCP/ICMP-routermodell. Detta ADR väljer **ny DES-kärna + bevarad produkt**, inte ett mindre slutmål. S1-POC0/POC1 är endast teknikriskreducering; kommande S2–S12 får inte godkännas förrän enheter, kommandomodeller, IoT/OT, Activity Wizard, multiuser, filformat och API/extensionflöden också är verifierade. Endast Linux/nya accessibility-/keyboard-krav är explicit undantagna.
 
 

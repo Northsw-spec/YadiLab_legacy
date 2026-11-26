@@ -1,5 +1,8 @@
 # Codex – obligatoriskt produktivitets- och CI-kontrakt
 
+**NU GÄLLANDE MOTORPOLICY:** [ADR-0002](architecture/ADR_0002_FRESH_ENGINE_2026-11-26.md): börja med ny fristående S1-POC0 efter godkänd guard/ADR; slutförd S0-katalog eller A3/A4/A5/A7 behövs inte för denna isolerade motorprototyp. Inga legacy network-runtime imports in i `network_core/engine/`. Registrerade gamla motor-/testfiler får bytas ut med migrationskvitto, inte via säkerhets-/CI-bypass.
+
+
 **ABSOLUT PRODUKTKRAV:** [PT-FULL-001](FULL_PACKET_TRACER_PARITY_CONTRACT.md) styr ALL utveckling och framtida godkännande. Alla PT-funktioner (inte bara protokollen) måste fungera i Linux-versionen och bevisas i individuell funktions-/versionsmatris före S12. Multiuser/Extensions/IoT-script/Activity Wizard, CLI, deviceprofiler, fysisk arbetsyta och PT-filformat är **inte valfria** och kräver ingen ny per-feature beställning eftersom användaren redan uttryckligen beställt ALLT. Enda undantag Windows/macOS och nya accessibility/keyboard-only-krav. Codex ska inte lägga kredit på sådan extrascope, men inte försvaga existerande keyboard-regressioner. Restkrav och lagliga hinder är blockerade, inte godkända.
 
 

@@ -1,5 +1,8 @@
 # YadiLab – enda masterplan: arkitekturstabilisering A0–A10 och komplett nätverkssimulator S0–S12
 
+**SENASTE BESLUT, har företräde:** [ADR-0002 – helt ny egen nätverksmotor](architecture/ADR_0002_FRESH_ENGINE_2026-11-26.md). Gammal nätverksexekveringskod ska inte migreras in i den nya motorn; den ska ersättas från standard-/scenario-orakel. Bevara endast verifierade externa produktkontrakt och regressionstest. **S1-POC0 får börja direkt efter guard-/ADR-PR:ns godkännande utan att invänta fullständig S0-katalog eller samtliga A3/A4/A5/A7-kort.** Legacy finns tillfälligt kvar för användare tills EN verifierad cutover, då avvecklas den via registrerade retirement receipts. Required CI, användardataintegritet och sanningskrav kvarstår.
+
+
 **ABSOLUT UPPDRAG 2026-11-26: INGEN SAKNAD CISCO PACKET TRACER-FUNKTION VID SLUTLEVERANS.** YadiLab ska göra ALLT Packet Tracer gör på Linux: varje protokoll, protokollvariant, enhet/modul, CLI/GUI, fysiskt/logiskt nät, simulation/realtime/PDU, IoT, OT, Activity Wizard, automatiserad rättning/scripting, multiuser, extension/API, projekt-/aktivitetsformat och övriga användarflöden; därefter verifierat överträffa Packet Tracer i alla relevanta kvalitetsområden. **Exakt två användarbeslutade undantag: inget krav på Windows/macOS och inget nytt produktkrav på tillgänglighet/keyboard-only-tjänster.** Inga andra luckor eller permanenta "out-of-scope" tillåtna. Se [PT-FULL-001: bindande 29-familjers fullständighetskontrakt](FULL_PACKET_TRACER_PARITY_CONTRACT.md). Äldre etapptext om begränsad paritet, frivilligt multiuser, smal protokollbredd eller godtagbara slutluckor är upphävd för S12. En juridisk/teknisk blockerare står kvar som blockerad, aldrig som godkänd fullständighet.
 
 
@@ -316,7 +319,7 @@ Föreslagna *förvaltningsmål*, inte bevis för korrekt kod: `app.js` under **1
 | Kort | Status | Leverans | Blockerande föregångare |
 |---|---|---|---|
 | S0 | IN_PROGRESS – masterdesign / docs | Fullständig PT 9.0.1-inventering: PT-F01–PT-F29, alla enheter, protokoll, kommandon, medier, appar, IoT/OT, multiuser, script, format, källor och testfall | A1 och användarbeslut |
-| S1 | NOT_STARTED | Isolerad scheduler-POC0 → paket/ARP-POC1 → go/no-go → selektiv produktionscutover | POC: S0+A1+orakel. Cutover: POC PASS + relevanta A3/A4/A5/A7-grindar |
+| S1 | NOT_STARTED | Helt NY fristående DES-motor: POC0→POC1→ny Ethernet/ARP/IPv4/ICMP/DHCP-stack→EN testad cutover→retire legacy | POC0: ADR-0002/guard Required PASS; POC1: POC0 PASS; cutover: oberoende orakel+API/Save/Open+CI |
 | S2 | NOT_STARTED | Full L2/VLAN, FDB aging, STP/RSTP, LACP/EtherChannel, kontrollerade loopar | S1 |
 | S3 | NOT_STARTED | IPv4/v6, ICMPv6, ND/SLAAC/DAD, MTU/fragment, RIB/FIB/SVI | S1/S2 |
 | S4 | NOT_STARTED | UDP, TCP FSM, DHCPv4/v6 relay/multiserver, DNS och appprotokoll | S1/S2/S3 |
@@ -335,7 +338,7 @@ Håll [Packet Tracer 9.0-katalogen](research/PACKET_TRACER_GAP_ANALYSIS_2026-11-
 
 ### S1. Den gemensamma in-process simuleringskärnan
 
-**Vägval enligt [ADR-0001](architecture/ADR_0001_CORE_REPLACEMENT_2026-11-26.md): behåll produkt och testkontrakt, men BYGG OM simuleringskärnan på riktigt.** Gamla synkrona EthernetFabric.inject/ArpSession.resolve/IPv4Trace.send/DhcpSession.run får ersättas, inte kapslas som enstaka events. S1-POC0/POC1 i isolerade testfixture får föregå fullständig A3/A4; full cutover kräver endast en aktiv auktoritativ motor och Required CI.
+**Vägval enligt [ADR-0002](architecture/ADR_0002_FRESH_ENGINE_2026-11-26.md): BYGG HELT NY nätverksexekvering utan gamla motorimports.** Gammal EthernetFabric/ArpSession/IPv4Trace/DhcpSession blir endast tillfällig legacy-referens och pensioneras efter EN verifierad produktionscutover. Kompatibilitet med korrekta externa observationer krävs, inte kodåteranvändning. S1-POC0/POC1 i isolerade testfixture får föregå fullständig A3/A4; full cutover kräver endast en aktiv auktoritativ motor och Required CI.
 
 Bygg **en** prioriterad händelsekö ordnad på (integer virtual_time_ns, monotont event_id), per-scenario seedad PRNG, avbrytbara timers, resurs-/eventbudget, fail-closed zero-time loop- och overflowguard, och oföränderliga packet-/eventrecords med parent_event_id och packet_id. Simulerad tid är skild från väggklocka och GUI-animation. Varje riktig packet TX → link serialization → propagation → RX → parser → protocol state transition → route/FDB/ACL/queue decision → nästa hop/drop. Gemensam sessionstate äger FDB, ARP/ND, RIB/FIB, TCP, DHCP, OSPF/BGP och NAT enligt capability.
 

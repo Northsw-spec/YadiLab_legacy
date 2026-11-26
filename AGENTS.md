@@ -1,5 +1,8 @@
 # YadiLab – utvecklingskontrakt
 
+**BINDANDE SENASTE BESLUT:** [ADR-0002](docs/architecture/ADR_0002_FRESH_ENGINE_2026-11-26.md) beordrar helt ny egen DES-motor. **Återanvänd inte gammal nätverksmotorkod** (EthernetFabric/ArpSession/IPv4Trace/DhcpSession) som implementation. Behåll bara verifierbara produkt-/data-/UI-/API-kontrakt och oberoende testbevis; kasta inte produktionsruntime före testad cutover. S1-POC0 får starta utan slutförd full S0/PT-katalog eller A3/A4/A5/A7. En avvecklad legacy-modul/testfil får tas bort med `retirement_receipts` som visar aktiv ersättare, acceptanstester och beslutsdokument. Branchskydd och Required CI kvarstår.
+
+
 **Bindande fullständighet:** [PT-FULL-001](docs/FULL_PACKET_TRACER_PARITY_CONTRACT.md) är slutkravet: ALLT Cisco Packet Tracer kan göra på Linux utan någon protokoll-/enhets-/UI-/labb-/IoT-/OT-/multiuser-/formatlucka, sedan verifierbart bättre korrekthet och precision. Enbart Linux och inget nytt keyboard-accessibility-mål är undantagna.
 
 
