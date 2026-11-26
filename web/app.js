@@ -13,9 +13,9 @@ import {createSimulationSessionController} from './features/sessions/simulation-
 import {renderIcmpInvestigationPanel} from './features/diagnostics/icmp-investigation-panel.js';
 import {setupProtocolLessons} from './features/diagnostics/protocol-lessons.js';
 import {createImportReview} from './features/projects/import-review.js';
-import {createWorkspaceRevisions} from './features/projects/workspace-revisions.js';
 import {computeElkPreview} from './features/layout/elk.js';
 import {setupWorkspacePanels} from './ui/workspace-panels.js';
+import {createWorkspaceRevisions} from './features/projects/workspace-revisions.js';
 
 let project = blank();
 let selection = null;
