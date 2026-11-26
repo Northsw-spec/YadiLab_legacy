@@ -1,7 +1,7 @@
 # YadiLab – åtgärdsplan för granskningsbrister och hållbar modularisering
 
 **Datum:** 2026-11-26  
-**Status:** GODKÄND / AKTIV PLAN – **A0 DONE** ([PR #169](https://github.com/Northsw-spec/YadiLab/pull/169), squash `fcf81716285ef3a4d927d3ac05556b5c2fb6f7f5`); **A1 IN_PROGRESS** på egen PR med separat `architecture-guard`. **A1 är inte DONE förrän GitHub-regeln verkligen kräver kontrollen.**  
+**Status:** GODKÄND / AKTIV PLAN – **A0 DONE** ([PR #169](https://github.com/Northsw-spec/YadiLab/pull/169)); **A1 DONE** ([PR #170](https://github.com/Northsw-spec/YadiLab/pull/170) merged, [fristående negativt Required-test i PR #173](https://github.com/Northsw-spec/YadiLab/pull/173) blockerad och stängd utan merge). **A2 NEXT / NOT_STARTED**.  
 **Utgångspunkt:** Granskningsrapporten *Teknisk granskning av YadiLab – 2026-11-26* (hela avsnitt 1–6), användarens observation om försvunnen modularisering samt en separat kodinventering på `main@82fca139cc43e12ff8c21bbb3427ab4f87588fd5`.  
 **Syfte:** Åtgärda påvisade fel och underhållsbrister; verifiera kvarstående osäkerheter; ge dokumenterade simulatorbegränsningar ett explicit beslut; återvinna och skydda modulariseringen.  
 **Styrning:** P0–P7 är formellt avslutat. **Den här A0–A10-planen är nu ensam aktiv utvecklingsplan** genom uttryckligt användarbeslut 2026-11-26, inte en återaktivering av P7. A0–A7 och A10 omfattas av beslutet enligt beroenden och acceptanskrav. **A8 och A9 är villkorade och kräver separata uttryckliga godkännanden**; ingen ny native-protokollmotor, empirisk studie eller annan utökning är automatiskt beställd.
@@ -11,7 +11,7 @@
 
 **LÄS FÖRST:** `AGENTS.md` → **den här enda aktiva planen** → `docs/MASTERPROMPT.md` → `docs/IMPORT_SOURCE_CONTRACT.md` → historisk `docs/PEDAGOGICAL_TROUBLESHOOTING_PLAN.md` endast för fortsatt pedagogiskt kvalitetskontrakt. Primärgranskning ordagrant: [Teknisk granskning 2026-11-26](reviews/TECHNICAL_REVIEW_2026-11-26.md). Välj aldrig uppgift ur den avslutade P0–P7-planen eller andra äldre roadmaps.
 
-**A0 – Rebaslinje & forensisk modulgranskning:** [PR #169](https://github.com/Northsw-spec/YadiLab/pull/169) levererar [forensisk rapport](architecture/A0_FORENSIC_BASELINE_2026-11-26.md), [exakt fil-/testmanifest](../architecture/a0_baseline.json), [ES-importgraf](../architecture/a0_frontend_imports.json) och positiva/negativa manifesttester. **A0 är verifierat MERGED efter required SUCCESS på slutlig PR-HEAD.** **Aktuell uppgift: A1 – Arkitekturspärrar G1–G7 (IN_PROGRESS)**. Se [A1:s arkitekturkontrakt](architecture/A1_GUARD_CONTRACT_2026-11-26.md). Ett nytt separat `architecture-guard`-jobb och dess negativa tester ska köras på slutlig PR-HEAD, och kontrollen måste **därefter faktiskt konfigureras Required i GitHub main-ruleset**. Detta sista administratörssteg kan inte utföras med nu tillgängliga anslutna GitHub-verktyg. **Starta inte A2/A3/A4 förrän A1:s Required-status är API-verifierad**.
+**A0 – Rebaslinje & forensisk modulgranskning:** [PR #169](https://github.com/Northsw-spec/YadiLab/pull/169) är verifierat MERGED med required CI SUCCESS; [A0-forensik](architecture/A0_FORENSIC_BASELINE_2026-11-26.md) och [manifest](../architecture/a0_baseline.json) kvarstår. **A1 – Arkitekturspärrar G1–G7 är DONE:** [PR #170](https://github.com/Northsw-spec/YadiLab/pull/170) implementerade 17 testade negativa/positiva spärrar, modulkontrakt, ägarskap, trendrapport och separata workflowjobb. GitHub [main-ruleset #27419615](https://github.com/Northsw-spec/YadiLab/rules/27419615) kräver nu uttryckligen båda `unit-tests` och `architecture-guard` (app 15368; strict). [PR #173](https://github.com/Northsw-spec/YadiLab/pull/173) gav **grön `unit-tests` + röd separat `architecture-guard` i båda körningar + GitHub `mergeable_state=blocked`**; stängd utan merge. [Evidens i Issue #171](https://github.com/Northsw-spec/YadiLab/issues/171#issuecomment-7197176467). **A2 är NEXT**, inte påbörjad vid detta avslutsbeslut.
 
 **Fortsättningsregel:** När användaren säger `fortsätt` om YadiLab ska nästa **ej slutförda, godkända A-kort** väljas utifrån beroenden och verifierad GitHub-status; inte gamla P7-steg, inte en ny påhittad fas och inte ett valfritt nytt protokoll. Max en aktiv ändrings-PR. Utlovad automatisk bakgrundskörning förekommer inte. Bekräfta exakt PR-HEAD, alla required checks `SUCCESS`, oskadad main och squash före merge. Dokumentera varje färdigt A-kort och påverkat C01–C18-ID i planen eller en evidenslänk som planen refererar till.
 
@@ -20,8 +20,8 @@
 | Arbetskort | Utgångsstatus vid aktivering | Kommentar |
 |---|---|---|
 | **A0** | **DONE – PR #169 / main@fcf8171** | C02–C05: arkitekturhistorik, ägarskap, data- och regressionsmanifest; all required CI SUCCESS på PR-HEAD |
-| **A1** | **IN_PROGRESS / BLOCKED_REQUIRED_RULESET_UPDATE** | G1–G7 implementeras i separat PR; [A1-dokument](architecture/A1_GUARD_CONTRACT_2026-11-26.md); `architecture-guard` måste konfigureras Required i main-ruleset och verifieras innan DONE/A2 |
-| A2 | NOT_STARTED | HTTP-disconnect och sekundär felhantering |
+| **A1** | **DONE – PR #170 + negativt Required-test #173** | C03–C05: [G1–G7-kontrakt](architecture/A1_GUARD_CONTRACT_2026-11-26.md); två Required-checks API-verifierade; `unit-tests=SUCCESS` och `architecture-guard=FAILURE` gav `mergeable_state=blocked` i ej mergad #173 |
+| **A2** | **NEXT / NOT_STARTED** | HTTP-disconnect/`BrokenPipeError`; börja endast separat avgränsad ändrings-PR efter verifierad A1-closeout |
 | A3 | NOT_STARTED | Frontend-modularisering skyddad av A1 |
 | A4 | NOT_STARTED | Backend-import/ICMP-modularisering skyddad av A1 |
 | A5 | NOT_STARTED | Oberoende referenser och komplexa topologier |
@@ -151,7 +151,7 @@ Föreslagna *förvaltningsmål*, inte bevis för korrekt kod: `app.js` under **1
 
 ### A0. Forensik och bevisad nollpunkt
 
-**Leveransevidens:** [PR #169](https://github.com/Northsw-spec/YadiLab/pull/169), [A0-rapport](architecture/A0_FORENSIC_BASELINE_2026-11-26.md), [Git-manifest](../architecture/a0_baseline.json) och [exakt ES-importgraf](../architecture/a0_frontend_imports.json). Test: `tests/test_a0_forensic_manifest.py` med negativt ändrad modul, orphan/cykel, missad import och falskt Git-blobbevis. Räckvidd: statisk inventering, ingen runtimeändring och ingen installerad A1-spärr. **Status: PR #169 levererad; merge/CI-beroende.**
+**Leveransevidens:** [PR #169](https://github.com/Northsw-spec/YadiLab/pull/169), [A0-rapport](architecture/A0_FORENSIC_BASELINE_2026-11-26.md), [Git-manifest](../architecture/a0_baseline.json) och [exakt ES-importgraf](../architecture/a0_frontend_imports.json). Test: `tests/test_a0_forensic_manifest.py` med negativt ändrad modul, orphan/cykel, missad import och falskt Git-blobbevis. Räckvidd: statisk inventering, ingen runtimeändring och ingen installerad A1-spärr. **Status: A0 DONE – PR #169 verifierad squash-merge, CI SUCCESS.**
 
 **Utför:** Läs exakt aktuell `main`, samtliga aktiva PR:er och senaste CI. Dokumentera commit där varje modul extraherades, vilka moduler som fortfarande finns och vilka ansvar som åter dykt upp i `app.js`. Ta fram callgraph/importgraf, state- och eventkarta, antalet direkta DOM-beröringar, funktioner med hög komplexitet samt sessionernas generations-/stale-guards. Lägg samtliga regressionsfall och filbytes i ett versionsbundet manifest.
 
@@ -159,7 +159,7 @@ Föreslagna *förvaltningsmål*, inte bevis för korrekt kod: `app.js` under **1
 
 ### A1. Arkitekturspärrar före ny extraktion
 
-**Aktiv leveransevidens:** [A1-kontrollkontrakt](architecture/A1_GUARD_CONTRACT_2026-11-26.md), `architecture/baseline.json`, `tools/architecture_guard.py`, `tests/test_architecture_guard.py`, `.github/workflows/architecture_guard.yml` och `.github/CODEOWNERS`. **Som mellanliggande skydd körs kontrollen även inom redan Required `unit-tests`**, med ett regressionstest för att kontrollsteget inte lossnar. Separat grön CI och **obligatorisk** kontroll i [main-ruleset](https://github.com/Northsw-spec/YadiLab/rules/27419615) är två skilda krav. **Status för branchregelen: ÄNNU EJ VERIFIED/REQUIRED; arbetet får inte kallas DONE utan verifiering.**
+**Leveransevidens A1 (DONE):** [PR #170](https://github.com/Northsw-spec/YadiLab/pull/170) (`main@b55cdad861e88839924c91f0e09f5e48529e4427`), [A1:s G1–G7-kontrakt](architecture/A1_GUARD_CONTRACT_2026-11-26.md), `architecture/baseline.json`, `tools/architecture_guard.py`, 17 positiva/negativa tester i `tests/test_architecture_guard.py`, `.github/workflows/architecture_guard.yml`, CODEOWNERS och kontinuerlig trendrapport. [Main-ruleset #27419615](https://github.com/Northsw-spec/YadiLab/rules/27419615) kräver **både** `architecture-guard` och `unit-tests` från GitHub Actions (integration 15368); strict aktiverad. **Oberoende skarpt negativt test:** [PR #173](https://github.com/Northsw-spec/YadiLab/pull/173), HEAD `90e5ab61e23ee8a824c42f48f253d33e28cd76ce`, ändrade endast det fristående arbetsflödet med avsiktlig `exit 17`. Båda `unit-tests` blev SUCCESS medan båda separata `architecture-guard` blev FAILURE; GitHub svarade `mergeable_state=blocked` och PR:n stängdes **utan merge**. [Reproducerbar CI-evidens #171](https://github.com/Northsw-spec/YadiLab/issues/171#issuecomment-7197176467). Ingen ändring av motor, schema eller Save/Open. **Begränsning:** statisk JavaScript-modul/ansvarskontroll är inte fullständigt AST- eller dataflödesbevis; fulla beteendetester och kodgranskning krävs fortsatt.
 
 **Utför:** Implementera G1–G7. Lägg till automatiserat test för `architecture/baseline.json`, förbjudna beroenden, svällande entrypoint, modulförsvinnande och kopierad sessionsstate. Skapa kompatibel uppdateringsprocess: budget får sänkas automatiskt men höjning kräver separat, granskad ändring. Gör den obligatoriska checken *required* i GitHub branch rules innan A3.
 
@@ -263,7 +263,7 @@ Föreslagna *förvaltningsmål*, inte bevis för korrekt kod: `app.js` under **1
 ## 8. Definition av färdigt arbete
 
 - [ ] Rapporterade konkret observerade fel och stora arkitekturrisker C03–C08 är stängda med evidens.
-- [ ] `architecture-guard` är obligatoriskt i branchskyddet, negativt testat och går inte att kringgå via ändrad PR-scope.
+- [x] `architecture-guard` är obligatoriskt i branchskyddet; [PR #173](https://github.com/Northsw-spec/YadiLab/pull/173) visade blockerad merge trots `unit-tests=SUCCESS` (test-PR stängd utan merge).
 - [ ] `app.js` är en verklig tunnare koordinator med minskad accepterad budget; backendmoduler är ansvarsmässigt uppdelade.
 - [ ] Tidigare utdragna moduler har fortsatt en ägare och skyddad import-/kontraktsgräns efter *minst en efterföljande feature-PR*.
 - [ ] Oberoende referenstester, större topologier och robust HTTP-disconnect har dokumenterade resultat.
@@ -283,4 +283,4 @@ Föreslagna *förvaltningsmål*, inte bevis för korrekt kod: `app.js` under **1
 
 **Direktlänkar:** https://github.com/Northsw-spec/YadiLab ; https://github.com/Northsw-spec/YadiLab/commit/17acb51c8c64c3b4b7a1026514cb8b0a2177a127 ; https://github.com/Northsw-spec/YadiLab/blob/82fca139cc43e12ff8c21bbb3427ab4f87588fd5/tests/test_web_import_graph.py ; https://github.com/Northsw-spec/YadiLab/blob/82fca139cc43e12ff8c21bbb3427ab4f87588fd5/network_core/server.py .
 
-**Statusnot (2026-11-26):** Planen är godkänd och aktiv. **A0:s rena revisionsleverans finns i PR #169**, med versionsbunden käll-/testmanifestering och negativa manifesttester. A0 blir formellt DONE först efter kontrollerad squash-merge på grön slutlig PR-HEAD. **A1 är nästa utvecklingskort; G1–G7 och `architecture-guard` är ännu INTE installerade.** All senare `DONE`-status kräver kod-/test-/CI-evidens.
+**Statusnot (2026-11-26):** Planen är godkänd och aktiv. **A0 DONE** via PR #169. **A1 DONE** via PR #170 och reproducerad separat Required-spärr i negativ PR #173 (stängd utan merge); ruleset #27419615 har båda kontrollerna som Required. **A2 NEXT / NOT_STARTED**, HTTP-resiliens vid klientavbrott. Övriga A-kort enligt beroenden. Ingen ny roadmap eller obeställda A8/A9-steg.
