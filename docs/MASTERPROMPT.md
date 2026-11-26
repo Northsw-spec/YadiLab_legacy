@@ -1,6 +1,6 @@
 # MASTERPROMPT – pedagogisk nätverksapplikation
 
-**Beslut 2026-11-24:** [PEDAGOGICAL_TROUBLESHOOTING_PLAN.md](PEDAGOGICAL_TROUBLESHOOTING_PLAN.md) är den **enda aktiva utvecklingsplanen** (P0–P7). Detta dokument är ett **produktkontrakt**, inte en andra roadmap. [AGENTS.md](../AGENTS.md) innehåller operativa regler. Senaste uttryckliga användarinstruktion och faktisk kod, tester och GitHub-HEAD har företräde framför äldre statuspåståenden.
+**Beslut 2026-11-26:** [PEDAGOGICAL_TROUBLESHOOTING_PLAN.md](PEDAGOGICAL_TROUBLESHOOTING_PLAN.md) innehåller den **formellt avslutade** genomförandeplanen P0–P7 och fortsatt pedagogiskt kvalitetskontrakt. **Ingen utvecklingsetapp är aktiv.** Detta dokument är ett **produktkontrakt**, inte en andra roadmap. [AGENTS.md](../AGENTS.md) innehåller operativa regler. Senaste uttryckliga användarinstruktion och faktisk kod, tester och GitHub-HEAD har företräde framför äldre statuspåståenden.
 
 ## Produktmål
 
@@ -36,7 +36,7 @@ De guidade ICMP-fallen är **implementerade och täcks av regressionstester**: `
 
 ## Utveckling och acceptans
 
-När användaren begär ”fortsätt”: kontrollera senaste `main`/PR/CI och aktuell implementation, följ nästa **pedagogiska P0–P7-steg**, implementera minsta testbara ändring på en PR, bevara gammal funktion och genomför positiva/negativa tester. Verklig Chromium vid UI, riktig Save/Open/omstart vid dataändring och obligatorisk GitHub-CI på **exakt sista PR-HEAD** krävs. Normal squash-merge endast om alla kontroller är godkända och branchskydd följs. Inga gamla QUALITY-/ELK-/import- eller generella fasplaner får trumfa detta beslut.
+När användaren ger ett nytt uttryckligt utvecklingsuppdrag: kontrollera senaste `main`/PR/CI och aktuell implementation. **Välj inte automatiskt ett nytt eller kvarvarande P0–P7-steg**, eftersom programmet är formellt avslutat. Implementera endast den godkända avgränsade uppgiften på en PR, bevara gammal funktion och genomför positiva/negativa tester. Verklig Chromium vid UI, riktig Save/Open/omstart vid dataändring och obligatorisk GitHub-CI på **exakt sista PR-HEAD** krävs. Normal squash-merge endast om alla kontroller är godkända och branchskydd följs. Inga gamla QUALITY-/ELK-/import- eller generella fasplaner får trumfa detta beslut.
 
 Ett större nytt protokoll, annat schema, extern integration, annan OS-familj eller brytande omdesign kräver separat uttryckligt beslut. Det är inte ett implicit mål i pedagogikplanen.
 
