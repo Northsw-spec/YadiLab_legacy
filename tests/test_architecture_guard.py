@@ -52,6 +52,22 @@ class ArchitectureGuardTests(unittest.TestCase):
         self.assertEqual(contracts["web/ui/workspace-panels.js"]["owner"], "dom")
         self.assertEqual(contracts["web/ui/workspace-panels.js"]["exports"],
                          ["setupWorkspacePanels"])
+        self.assertEqual(contracts["web/features/projects/workspace-revisions.js"]["owner"],
+                         "projects")
+        self.assertEqual(contracts["web/features/projects/workspace-revisions.js"]["exports"],
+                         ["createWorkspaceRevisions"])
+        self.assertNotIn("editRevision", self.policy["app_top_level_bindings"])
+        self.assertNotIn("builderValidationGeneration", self.policy["app_top_level_bindings"])
+
+    def test_negative_deleted_workspace_revision_owner(self):
+        (self.root / "web/features/projects/workspace-revisions.js").unlink()
+        self.assertProblem("REQUIRED_MODULE_MISSING")
+
+    def test_negative_duplicate_workspace_version_state_in_entrypoint(self):
+        path = self.root / "web/app.js"
+        path.write_text(path.read_text("utf-8") +
+                        "\nlet editRevision = 0;\n", encoding="utf-8")
+        self.assertProblem("APP_STATE_OWNERSHIP_DRIFT")
 
     def test_negative_deleted_extracted_workspace_module(self):
         (self.root / "web/ui/workspace-panels.js").unlink()
