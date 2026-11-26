@@ -42,10 +42,20 @@ class ArchitectureGuardTests(unittest.TestCase):
     def test_positive_current_baseline_passes(self):
         issues, report = validate(self.root, self.policy)
         self.assertEqual(issues, [])
-        self.assertEqual(report["frontend_module_count"], 18)
-        self.assertEqual(report["import_edge_count"], 29)
+        contracts = self.policy["frontend_contracts"]
+        self.assertEqual(report["frontend_module_count"], len(contracts))
+        self.assertEqual(report["import_edge_count"],
+                         sum(len(spec["imports"]) for spec in contracts.values()))
         self.assertEqual(report["module_owner_counts"]["session"], 4)
-        self.assertEqual(report["source_line_trend"]["web/app.js"]["actual_lines"], 2977)
+        self.assertEqual(report["source_line_trend"]["web/app.js"]["actual_lines"],
+                         self.policy["line_budgets"]["web/app.js"])
+        self.assertEqual(contracts["web/ui/workspace-panels.js"]["owner"], "dom")
+        self.assertEqual(contracts["web/ui/workspace-panels.js"]["exports"],
+                         ["setupWorkspacePanels"])
+
+    def test_negative_deleted_extracted_workspace_module(self):
+        (self.root / "web/ui/workspace-panels.js").unlink()
+        self.assertProblem("REQUIRED_MODULE_MISSING")
 
     def test_negative_deleted_icmp_session_module(self):
         (self.root / "web/features/sessions/icmp-investigation.js").unlink()

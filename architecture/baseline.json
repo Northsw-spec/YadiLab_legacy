@@ -5,13 +5,13 @@
   "source_baseline": "architecture/a0_baseline.json",
   "source_graph": "architecture/a0_frontend_imports.json",
   "line_budgets": {
-    "web/app.js": 2977,
+    "web/app.js": 2926,
     "network_core/import_plan.py": 966,
     "network_core/icmp_investigation.py": 843
   },
   "app_limits": {
-    "direct_event_listeners": 96,
-    "dom_reference_heuristic": 104
+    "direct_event_listeners": 94,
+    "dom_reference_heuristic": 98
   },
   "app_functions": [
     "advanceDoraSession",
@@ -33,7 +33,6 @@
     "diagnosticInputs",
     "doraSessionInput",
     "downloadExport",
-    "dropdownCards",
     "exportProject",
     "exportSpreadsheet",
     "forgetJourney",
@@ -62,7 +61,6 @@
     "normalizedAddress",
     "notify",
     "openProject",
-    "panelCard",
     "populateDhcpPortSelectors",
     "portForAddressValue",
     "presentJourney",
@@ -109,7 +107,6 @@
     "setDoraSwitchFault",
     "setupAddressBindings",
     "setupTopologyContextMenu",
-    "setupWorkspacePanels",
     "startDoraSession",
     "startElkPreview",
     "startIcmpInvestigation",
@@ -121,7 +118,6 @@
     "stopInvestigation",
     "stopSimulationSession",
     "syncBoundAddresses",
-    "syncDropdownButton",
     "topologyIpv4Choices",
     "transferContext",
     "transferCurrent",
@@ -234,7 +230,8 @@
         "web/features/diagnostics/icmp-investigation-panel.js",
         "web/features/diagnostics/protocol-lessons.js",
         "web/features/projects/import-review.js",
-        "web/features/layout/elk.js"
+        "web/features/layout/elk.js",
+        "web/ui/workspace-panels.js"
       ],
       "exports": []
     },
@@ -422,6 +419,15 @@
         "input",
         "small"
       ]
+    },
+    "web/ui/workspace-panels.js": {
+      "owner": "dom",
+      "imports": [
+        "web/ui/dom.js"
+      ],
+      "exports": [
+        "setupWorkspacePanels"
+      ]
     }
   },
   "required_tests": [
@@ -520,6 +526,7 @@
     "tests/test_vlan_persistence.py",
     "tests/test_web_import_graph.py",
     "tests/test_xlsx_import.py",
+    "tests/workspace_panels_test.mjs",
     "tests/xlsx_fixture.py"
   ],
   "critical_files": [
