@@ -1,7 +1,7 @@
 # YadiLab – åtgärdsplan för granskningsbrister och hållbar modularisering
 
 **Datum:** 2026-11-26  
-**Status:** GODKÄND / AKTIV PLAN – **A0 levererad i PR #169, formellt DONE först när PR #169 är squash-mergad med required CI SUCCESS**; nästa godkända arbetskort är A1  
+**Status:** GODKÄND / AKTIV PLAN – **A0 DONE** ([PR #169](https://github.com/Northsw-spec/YadiLab/pull/169), squash `fcf81716285ef3a4d927d3ac05556b5c2fb6f7f5`); **A1 IN_PROGRESS** på egen PR med separat `architecture-guard`. **A1 är inte DONE förrän GitHub-regeln verkligen kräver kontrollen.**  
 **Utgångspunkt:** Granskningsrapporten *Teknisk granskning av YadiLab – 2026-11-26* (hela avsnitt 1–6), användarens observation om försvunnen modularisering samt en separat kodinventering på `main@82fca139cc43e12ff8c21bbb3427ab4f87588fd5`.  
 **Syfte:** Åtgärda påvisade fel och underhållsbrister; verifiera kvarstående osäkerheter; ge dokumenterade simulatorbegränsningar ett explicit beslut; återvinna och skydda modulariseringen.  
 **Styrning:** P0–P7 är formellt avslutat. **Den här A0–A10-planen är nu ensam aktiv utvecklingsplan** genom uttryckligt användarbeslut 2026-11-26, inte en återaktivering av P7. A0–A7 och A10 omfattas av beslutet enligt beroenden och acceptanskrav. **A8 och A9 är villkorade och kräver separata uttryckliga godkännanden**; ingen ny native-protokollmotor, empirisk studie eller annan utökning är automatiskt beställd.
@@ -11,7 +11,7 @@
 
 **LÄS FÖRST:** `AGENTS.md` → **den här enda aktiva planen** → `docs/MASTERPROMPT.md` → `docs/IMPORT_SOURCE_CONTRACT.md` → historisk `docs/PEDAGOGICAL_TROUBLESHOOTING_PLAN.md` endast för fortsatt pedagogiskt kvalitetskontrakt. Primärgranskning ordagrant: [Teknisk granskning 2026-11-26](reviews/TECHNICAL_REVIEW_2026-11-26.md). Välj aldrig uppgift ur den avslutade P0–P7-planen eller andra äldre roadmaps.
 
-**A0 – Rebaslinje & forensisk modulgranskning:** [PR #169](https://github.com/Northsw-spec/YadiLab/pull/169) levererar [forensisk rapport](architecture/A0_FORENSIC_BASELINE_2026-11-26.md), [exakt fil-/testmanifest](../architecture/a0_baseline.json), [ES-importgraf](../architecture/a0_frontend_imports.json) och positiva/negativa manifesttester. Kontrollera att #169 är **MERGED och att dess slutliga HEAD hade required SUCCESS** innan A0 räknas som DONE. **Nästa konkreta uppgift efter verifierad A0-merge: A1 – Arkitekturspärrar G1–G7 (NEXT / NOT_STARTED).** A1 måste installera, negativt testa och göra `architecture-guard` required i GitHub branchskyddet **innan** A3/A4-modularisering. A0-dokumentation är inte en installerad architecture-guard.
+**A0 – Rebaslinje & forensisk modulgranskning:** [PR #169](https://github.com/Northsw-spec/YadiLab/pull/169) levererar [forensisk rapport](architecture/A0_FORENSIC_BASELINE_2026-11-26.md), [exakt fil-/testmanifest](../architecture/a0_baseline.json), [ES-importgraf](../architecture/a0_frontend_imports.json) och positiva/negativa manifesttester. **A0 är verifierat MERGED efter required SUCCESS på slutlig PR-HEAD.** **Aktuell uppgift: A1 – Arkitekturspärrar G1–G7 (IN_PROGRESS)**. Se [A1:s arkitekturkontrakt](architecture/A1_GUARD_CONTRACT_2026-11-26.md). Ett nytt separat `architecture-guard`-jobb och dess negativa tester ska köras på slutlig PR-HEAD, och kontrollen måste **därefter faktiskt konfigureras Required i GitHub main-ruleset**. Detta sista administratörssteg kan inte utföras med nu tillgängliga anslutna GitHub-verktyg. **Starta inte A2/A3/A4 förrän A1:s Required-status är API-verifierad**.
 
 **Fortsättningsregel:** När användaren säger `fortsätt` om YadiLab ska nästa **ej slutförda, godkända A-kort** väljas utifrån beroenden och verifierad GitHub-status; inte gamla P7-steg, inte en ny påhittad fas och inte ett valfritt nytt protokoll. Max en aktiv ändrings-PR. Utlovad automatisk bakgrundskörning förekommer inte. Bekräfta exakt PR-HEAD, alla required checks `SUCCESS`, oskadad main och squash före merge. Dokumentera varje färdigt A-kort och påverkat C01–C18-ID i planen eller en evidenslänk som planen refererar till.
 
@@ -19,8 +19,8 @@
 
 | Arbetskort | Utgångsstatus vid aktivering | Kommentar |
 |---|---|---|
-| **A0** | **DONE efter verifierad merge av PR #169** | C02–C05: arkitekturhistorik, ägarskap, data- och regressionsmanifest; ingen produktkod ändrad |
-| **A1** | **NEXT / NOT_STARTED (efter A0-merge)** | G1–G7 och `architecture-guard` Required före A3/A4 |
+| **A0** | **DONE – PR #169 / main@fcf8171** | C02–C05: arkitekturhistorik, ägarskap, data- och regressionsmanifest; all required CI SUCCESS på PR-HEAD |
+| **A1** | **IN_PROGRESS / BLOCKED_REQUIRED_RULESET_UPDATE** | G1–G7 implementeras i separat PR; [A1-dokument](architecture/A1_GUARD_CONTRACT_2026-11-26.md); `architecture-guard` måste konfigureras Required i main-ruleset och verifieras innan DONE/A2 |
 | A2 | NOT_STARTED | HTTP-disconnect och sekundär felhantering |
 | A3 | NOT_STARTED | Frontend-modularisering skyddad av A1 |
 | A4 | NOT_STARTED | Backend-import/ICMP-modularisering skyddad av A1 |
@@ -158,6 +158,8 @@ Föreslagna *förvaltningsmål*, inte bevis för korrekt kod: `app.js` under **1
 **Acceptans:** skillnaden mellan 3E (`app.js` 2 237) och nuvarande 2 978 har förklarats i termer av funktion/ansvar, inte endast antal rader; modulnivåer finns dokumenterade; ingen kod har ändrats före arkitekturbaslinjen.
 
 ### A1. Arkitekturspärrar före ny extraktion
+
+**Aktiv leveransevidens:** [A1-kontrollkontrakt](architecture/A1_GUARD_CONTRACT_2026-11-26.md), `architecture/baseline.json`, `tools/architecture_guard.py`, `tests/test_architecture_guard.py`, `.github/workflows/architecture_guard.yml` och `.github/CODEOWNERS`. **Som mellanliggande skydd körs kontrollen även inom redan Required `unit-tests`**, med ett regressionstest för att kontrollsteget inte lossnar. Separat grön CI och **obligatorisk** kontroll i [main-ruleset](https://github.com/Northsw-spec/YadiLab/rules/27419615) är två skilda krav. **Status för branchregelen: ÄNNU EJ VERIFIED/REQUIRED; arbetet får inte kallas DONE utan verifiering.**
 
 **Utför:** Implementera G1–G7. Lägg till automatiserat test för `architecture/baseline.json`, förbjudna beroenden, svällande entrypoint, modulförsvinnande och kopierad sessionsstate. Skapa kompatibel uppdateringsprocess: budget får sänkas automatiskt men höjning kräver separat, granskad ändring. Gör den obligatoriska checken *required* i GitHub branch rules innan A3.
 

@@ -1,0 +1,543 @@
+{
+  "schema": "architecture.guard.v1",
+  "version": 1,
+  "status": "ACTIVE_AFTER_REQUIRED_CHECK_ENABLED",
+  "source_baseline": "architecture/a0_baseline.json",
+  "source_graph": "architecture/a0_frontend_imports.json",
+  "line_budgets": {
+    "web/app.js": 2977,
+    "network_core/import_plan.py": 966,
+    "network_core/icmp_investigation.py": 843
+  },
+  "app_limits": {
+    "direct_event_listeners": 96,
+    "dom_reference_heuristic": 104
+  },
+  "app_functions": [
+    "advanceDoraSession",
+    "advanceInvestigation",
+    "applyElkPreview",
+    "arrangeFromToRows",
+    "beginDiagnostic",
+    "cancelElkPreview",
+    "changed",
+    "clearDiagnostic",
+    "confirmDiscard",
+    "copyIpv4",
+    "createNode",
+    "createZone",
+    "dhcpPortChoices",
+    "diagnoseIcmpInvestigation",
+    "diagnoseInvestigation",
+    "diagnosticCurrent",
+    "diagnosticInputs",
+    "doraSessionInput",
+    "downloadExport",
+    "dropdownCards",
+    "exportProject",
+    "exportSpreadsheet",
+    "forgetJourney",
+    "getSelected",
+    "handlePort",
+    "hideTopologyMenu",
+    "hostIpv4",
+    "icmpInvestigationStartInputs",
+    "importProjects",
+    "invalidateDhcpDiagnostics",
+    "invalidateDoraDiagnostics",
+    "invalidateDoraSession",
+    "invalidateElk",
+    "invalidateIcmpInvestigation",
+    "invalidateInvestigation",
+    "invalidateSimulationSession",
+    "investigationDescription",
+    "investigationStartInputs",
+    "isDirty",
+    "layoutImportedProject",
+    "layoutStatus",
+    "loadIcmpLesson",
+    "measureIcmpInvestigation",
+    "moveCoord",
+    "networkWithoutCoordinates",
+    "normalizedAddress",
+    "notify",
+    "openProject",
+    "panelCard",
+    "populateDhcpPortSelectors",
+    "portForAddressValue",
+    "presentJourney",
+    "previewCurrent",
+    "probeInvestigation",
+    "refreshSavedProjects",
+    "render",
+    "renderArpDiagnostics",
+    "renderDhcpDiagnostics",
+    "renderDoraDiagnostics",
+    "renderDoraSession",
+    "renderIPv4Trace",
+    "renderIcmpInvestigation",
+    "renderInspector",
+    "renderInvestigation",
+    "renderList",
+    "renderPing",
+    "renderRouteLookup",
+    "renderSessionDiagnostics",
+    "renderTroubleshooting",
+    "renewDoraSession",
+    "repairIcmpInvestigation",
+    "repairInvestigation",
+    "replayJourney",
+    "requireBoundAddresses",
+    "resetDoraSession",
+    "resetProject",
+    "resetSimulationSession",
+    "runArp",
+    "runDhcp",
+    "runDora",
+    "runDoraSession",
+    "runIPv4Trace",
+    "runPing",
+    "runRouteLookup",
+    "runSimulationOperation",
+    "runTrace",
+    "runTroubleshooting",
+    "sameAddress",
+    "saveProject",
+    "select",
+    "sessionInteger",
+    "setDoraLinkFault",
+    "setDoraSwitchFault",
+    "setupAddressBindings",
+    "setupTopologyContextMenu",
+    "setupWorkspacePanels",
+    "startDoraSession",
+    "startElkPreview",
+    "startIcmpInvestigation",
+    "startIcmpLesson",
+    "startInvestigation",
+    "startSimulationSession",
+    "stopDoraSession",
+    "stopIcmpInvestigation",
+    "stopInvestigation",
+    "stopSimulationSession",
+    "syncBoundAddresses",
+    "syncDropdownButton",
+    "topologyIpv4Choices",
+    "transferContext",
+    "transferCurrent",
+    "transferStale",
+    "updateBoundAddress",
+    "updateSaveIndicator",
+    "updateTraceSelectors",
+    "validateBuilderAttempt"
+  ],
+  "app_top_level_bindings": [
+    "ADDRESS_BINDINGS",
+    "arpDiagnostic",
+    "arpHighlightedLinks",
+    "builderValidationGeneration",
+    "canvas",
+    "dhcpBusy",
+    "dhcpDiagnostic",
+    "dhcpGeneration",
+    "diagnosticFields",
+    "diagnosticRuns",
+    "doraBusy",
+    "doraDiagnostic",
+    "doraGeneration",
+    "doraSession",
+    "editRevision",
+    "elkAbort",
+    "elkAccepted",
+    "elkBusy",
+    "elkGeneration",
+    "elkPreview",
+    "filename",
+    "highlightedLinks",
+    "icmpInvestigation",
+    "importReview",
+    "investigation",
+    "ipv4Diagnostic",
+    "lastJourney",
+    "openGeneration",
+    "pendingPort",
+    "pingDiagnostic",
+    "previewFile",
+    "previewGeneration",
+    "project",
+    "rendering",
+    "rerenderRequested",
+    "routeLookup",
+    "savePending",
+    "savedName",
+    "savedSha",
+    "savedSnapshot",
+    "selection",
+    "simulationSession",
+    "toastTimer",
+    "traceResult",
+    "troubleDiagnostic",
+    "workspaceRevision"
+  ],
+  "required_backend_modules": [
+    "network_core/__init__.py",
+    "network_core/__main__.py",
+    "network_core/arp.py",
+    "network_core/config.py",
+    "network_core/csv_import.py",
+    "network_core/dhcp.py",
+    "network_core/dhcp_investigation.py",
+    "network_core/dhcp_registry.py",
+    "network_core/ethernet.py",
+    "network_core/ethernet_frame.py",
+    "network_core/icmp.py",
+    "network_core/icmp_errors.py",
+    "network_core/icmp_investigation.py",
+    "network_core/icmp_ping.py",
+    "network_core/import_evidence.py",
+    "network_core/import_inspection.py",
+    "network_core/import_plan.py",
+    "network_core/import_verification.py",
+    "network_core/import_workbooks.py",
+    "network_core/ipv4.py",
+    "network_core/ipv4_packet.py",
+    "network_core/json_boundary.py",
+    "network_core/model.py",
+    "network_core/ods_import.py",
+    "network_core/routing.py",
+    "network_core/server.py",
+    "network_core/session_idle.py",
+    "network_core/simulation.py",
+    "network_core/spreadsheet_export.py",
+    "network_core/spreadsheet_schema.py",
+    "network_core/spreadsheet_templates.py",
+    "network_core/storage.py",
+    "network_core/troubleshooting.py",
+    "network_core/xlsx_import.py"
+  ],
+  "frontend_contracts": {
+    "web/app.js": {
+      "owner": "composition",
+      "imports": [
+        "web/model.js",
+        "web/canvas.js",
+        "web/ui/dom.js",
+        "web/services/api.js",
+        "web/features/projects/persistence.js",
+        "web/features/projects/transfer.js",
+        "web/features/diagnostics/presenters.js",
+        "web/features/diagnostics/queries.js",
+        "web/features/sessions/dhcp-investigation.js",
+        "web/features/sessions/icmp-investigation.js",
+        "web/features/sessions/dora-session.js",
+        "web/features/sessions/simulation-session.js",
+        "web/features/diagnostics/icmp-investigation-panel.js",
+        "web/features/diagnostics/protocol-lessons.js",
+        "web/features/projects/import-review.js",
+        "web/features/layout/elk.js"
+      ],
+      "exports": []
+    },
+    "web/canvas.js": {
+      "owner": "canvas",
+      "imports": [
+        "web/model.js"
+      ],
+      "exports": [
+        "TopologyCanvas",
+        "packetJourneyFrames"
+      ]
+    },
+    "web/features/diagnostics/icmp-investigation-panel.js": {
+      "owner": "diagnostics",
+      "imports": [
+        "web/ui/dom.js"
+      ],
+      "exports": [
+        "renderIcmpInvestigationPanel"
+      ]
+    },
+    "web/features/diagnostics/presenters.js": {
+      "owner": "diagnostics",
+      "imports": [],
+      "exports": [
+        "presentArp",
+        "presentIPv4",
+        "presentPing",
+        "presentRoute"
+      ]
+    },
+    "web/features/diagnostics/protocol-lessons.js": {
+      "owner": "diagnostics",
+      "imports": [],
+      "exports": [
+        "setupProtocolLessons"
+      ]
+    },
+    "web/features/diagnostics/queries.js": {
+      "owner": "diagnostics",
+      "imports": [
+        "web/services/api.js"
+      ],
+      "exports": [
+        "queryArp",
+        "queryIPv4",
+        "queryPing",
+        "queryRoute"
+      ]
+    },
+    "web/features/layout/elk.js": {
+      "owner": "layout",
+      "imports": [],
+      "exports": [
+        "computeElkPreview"
+      ]
+    },
+    "web/features/projects/import-review.js": {
+      "owner": "projects",
+      "imports": [
+        "web/ui/dom.js",
+        "web/services/api.js",
+        "web/features/projects/transfer.js",
+        "web/features/projects/mapping-profiles.js"
+      ],
+      "exports": [
+        "countCandidateVlans",
+        "createImportReview",
+        "displayKey",
+        "letter",
+        "validateReviewPage"
+      ]
+    },
+    "web/features/projects/mapping-profiles.js": {
+      "owner": "projects",
+      "imports": [],
+      "exports": [
+        "bindMappingProfile",
+        "exportMappingProfile",
+        "validateMappingProfile"
+      ]
+    },
+    "web/features/projects/persistence.js": {
+      "owner": "projects",
+      "imports": [
+        "web/services/api.js"
+      ],
+      "exports": [
+        "listSavedProjects",
+        "prepareSave",
+        "readSavedProject",
+        "saveSnapshot"
+      ]
+    },
+    "web/features/projects/transfer.js": {
+      "owner": "projects",
+      "imports": [
+        "web/services/api.js"
+      ],
+      "exports": [
+        "importKind",
+        "prepareImport",
+        "prepareInspection",
+        "prepareProjectExport",
+        "prepareSourceBundle",
+        "prepareSpreadsheetExport",
+        "readSourceBundle",
+        "submitImport",
+        "submitInspection",
+        "submitInspectionPage"
+      ]
+    },
+    "web/features/sessions/dhcp-investigation.js": {
+      "owner": "session",
+      "imports": [
+        "web/services/api.js"
+      ],
+      "exports": [
+        "createDhcpInvestigationController"
+      ]
+    },
+    "web/features/sessions/dora-session.js": {
+      "owner": "session",
+      "imports": [
+        "web/services/api.js"
+      ],
+      "exports": [
+        "createDoraSessionController"
+      ]
+    },
+    "web/features/sessions/icmp-investigation.js": {
+      "owner": "session",
+      "imports": [
+        "web/services/api.js"
+      ],
+      "exports": [
+        "createIcmpInvestigationController"
+      ]
+    },
+    "web/features/sessions/simulation-session.js": {
+      "owner": "session",
+      "imports": [
+        "web/services/api.js"
+      ],
+      "exports": [
+        "createSimulationSessionController"
+      ]
+    },
+    "web/model.js": {
+      "owner": "model",
+      "imports": [],
+      "exports": [
+        "KINDS",
+        "addPort",
+        "blank",
+        "connect",
+        "copy",
+        "exampleProject",
+        "newNode",
+        "newZone",
+        "nextId",
+        "truncate",
+        "used"
+      ]
+    },
+    "web/services/api.js": {
+      "owner": "api",
+      "imports": [],
+      "exports": [
+        "api"
+      ]
+    },
+    "web/ui/dom.js": {
+      "owner": "dom",
+      "imports": [],
+      "exports": [
+        "$",
+        "button",
+        "check",
+        "dropdown",
+        "el",
+        "field",
+        "heading",
+        "input",
+        "small"
+      ]
+    }
+  },
+  "required_tests": [
+    "tests/browser_api_capability.py",
+    "tests/browser_camera_performance.py",
+    "tests/browser_canvas_large_zoom.py",
+    "tests/browser_elk_import.py",
+    "tests/browser_elk_layout.py",
+    "tests/browser_icmp_lesson.py",
+    "tests/browser_primary_selection_x11.py",
+    "tests/browser_smoke.py",
+    "tests/browser_svg_performance.py",
+    "tests/canvas_zoom_bounds_test.mjs",
+    "tests/elk_layout_adapter_test.mjs",
+    "tests/import_review_ui_test.mjs",
+    "tests/mapping_profiles_test.mjs",
+    "tests/ods_fixture.py",
+    "tests/packet_journey_test.mjs",
+    "tests/pedagogy_assessment.py",
+    "tests/raw_json_ingress_test.mjs",
+    "tests/run_pedagogy_assessment.py",
+    "tests/session_stale_responses_test.mjs",
+    "tests/spreadsheet_v13_fixture.py",
+    "tests/test_a0_forensic_manifest.py",
+    "tests/test_architecture_guard.py",
+    "tests/test_arp.py",
+    "tests/test_arp_diagnostics_http.py",
+    "tests/test_arp_special_addresses.py",
+    "tests/test_ci_integrity.py",
+    "tests/test_ci_x11_required.py",
+    "tests/test_connected_routing.py",
+    "tests/test_csv_import.py",
+    "tests/test_dhcp.py",
+    "tests/test_dhcp_clock.py",
+    "tests/test_dhcp_dora.py",
+    "tests/test_dhcp_investigation.py",
+    "tests/test_dhcp_investigation_time.py",
+    "tests/test_dhcp_link_fault.py",
+    "tests/test_dhcp_port_vlan_fault.py",
+    "tests/test_dhcp_registry.py",
+    "tests/test_dhcp_renewal.py",
+    "tests/test_documentation_policy.py",
+    "tests/test_ethernet.py",
+    "tests/test_ethernet_frame.py",
+    "tests/test_example.py",
+    "tests/test_http_boundary.py",
+    "tests/test_icmp_echo.py",
+    "tests/test_icmp_errors.py",
+    "tests/test_icmp_investigation.py",
+    "tests/test_icmp_investigation_lan.py",
+    "tests/test_icmp_lesson.py",
+    "tests/test_import_cables.py",
+    "tests/test_import_candidate.py",
+    "tests/test_import_inspection.py",
+    "tests/test_import_integration_4c.py",
+    "tests/test_import_ipv4.py",
+    "tests/test_import_paging.py",
+    "tests/test_import_plan.py",
+    "tests/test_import_ports.py",
+    "tests/test_import_static_routes.py",
+    "tests/test_import_verification.py",
+    "tests/test_import_vlan.py",
+    "tests/test_import_zones.py",
+    "tests/test_ipv4_forwarding.py",
+    "tests/test_ipv4_host_address.py",
+    "tests/test_ipv4_special_addresses.py",
+    "tests/test_json_boundary.py",
+    "tests/test_mac_persistence.py",
+    "tests/test_model.py",
+    "tests/test_naming_contract.py",
+    "tests/test_ods_import.py",
+    "tests/test_pedagogy_assessment.py",
+    "tests/test_protocol_reference_boundaries.py",
+    "tests/test_protocol_reference_forwarding.py",
+    "tests/test_protocol_reference_l3_dhcp.py",
+    "tests/test_protocol_reference_vectors.py",
+    "tests/test_quality_005_http_races.py",
+    "tests/test_quality_005_storage_faults.py",
+    "tests/test_session_idle.py",
+    "tests/test_simulation_sessions.py",
+    "tests/test_spreadsheet_export.py",
+    "tests/test_spreadsheet_templates.py",
+    "tests/test_spreadsheet_v13.py",
+    "tests/test_static_routing.py",
+    "tests/test_storage_concurrency.py",
+    "tests/test_storage_http.py",
+    "tests/test_storage_symlink_boundary.py",
+    "tests/test_troubleshooting.py",
+    "tests/test_troubleshooting_ipv4_routes.py",
+    "tests/test_troubleshooting_port_vlan.py",
+    "tests/test_uploaded_json_boundary.py",
+    "tests/test_vlan.py",
+    "tests/test_vlan_arp.py",
+    "tests/test_vlan_boundary.py",
+    "tests/test_vlan_persistence.py",
+    "tests/test_web_import_graph.py",
+    "tests/test_xlsx_import.py",
+    "tests/xlsx_fixture.py"
+  ],
+  "critical_files": [
+    ".github/workflows/architecture_guard.yml",
+    ".github/CODEOWNERS",
+    "AGENTS.md",
+    "architecture/baseline.json",
+    "architecture/a0_baseline.json",
+    "architecture/a0_frontend_imports.json",
+    "docs/REMEDIATION_PLAN_2026-11-26.md",
+    "docs/architecture/A1_GUARD_CONTRACT_2026-11-26.md",
+    "tests/test_architecture_guard.py",
+    "tests/test_a0_forensic_manifest.py",
+    "tests/test_web_import_graph.py",
+    "tools/architecture_guard.py"
+  ],
+  "backend_single_truth": {
+    "network_core/model.py": "validate_project",
+    "network_core/icmp_ping.py": "EchoExchange"
+  },
+  "guard_policy": "Budget may only decrease across PR head/base; removed modules, tests, contracts, or required checks must fail. Any exception needs separately authorized change and independent verification, never a self-issued approval."
+}
