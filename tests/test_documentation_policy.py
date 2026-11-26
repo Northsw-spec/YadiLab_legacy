@@ -1,4 +1,4 @@
-"""Guard the active documentation against stale roadmaps and broken local links.
+"""Guard the governing documentation against stale roadmaps and broken local links.
 
 This test checks document structure and navigability, not the truth of every
 technical claim. Actual behavior remains subject to code and real test results.
@@ -42,14 +42,26 @@ EXACT_HEADINGS = (
 
 
 class DocumentationPolicyTests(unittest.TestCase):
-    def test_single_authoritative_pedagogy_plan_is_present(self):
+    def test_closed_pedagogy_program_preserves_contract_without_active_phase(self):
         self.assertTrue(PLAN.is_file())
         body = PLAN.read_text(encoding="utf-8")
         for label in EXACT_HEADINGS:
             self.assertIn(label, body)
         for phase in range(8):
             self.assertIn(f"**P{phase} –", body)
-        self.assertIn("enda aktiva utvecklingsplanen", body.lower())
+        # P0–P7 was formally closed by explicit user decision on 2026-11-26.
+        # Preserve the educational contract, but reject regression to an
+        # automatically active roadmap or implicit next phase.
+        self.assertIn("P0–P7 **CLOSED (2026-11-26)**", body)
+        self.assertIn("**Nästa etapp: INGEN BESLUTAD.**", body)
+        self.assertNotIn("enda aktiva utvecklingsplanen", body.lower())
+        for path in (ROOT / "AGENTS.md", ROOT / "README.md",
+                     ROOT / "docs" / "MASTERPROMPT.md"):
+            with self.subTest(path=str(path.relative_to(ROOT))):
+                text = path.read_text(encoding="utf-8")
+                self.assertIn("2026-11-26", text)
+                self.assertIn("automatisk", text.lower())
+                self.assertNotIn("enda aktiva utvecklingsplanen", text.lower())
 
     def test_retired_markdown_is_absent_and_never_referenced(self):
         markdown_files = list(ROOT.rglob("*.md"))

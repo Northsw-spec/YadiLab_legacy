@@ -1,6 +1,6 @@
 # YadiLab – utvecklingskontrakt
 
-**Beslut 2026-11-24:** [Pedagogisk felsökningsarkitektur](docs/PEDAGOGICAL_TROUBLESHOOTING_PLAN.md) med steg **P0–P7 är den enda aktiva utvecklingsplanen**. Inga äldre QUALITY-, ELK-, import- eller fasroadmaps ska användas för att prioritera nästa PR. Detta dokument är en **operativ regeluppsättning**, inte en parallell plan. [MASTERPROMPT](docs/MASTERPROMPT.md) anger produktmålet.
+**Beslut 2026-11-26:** [Pedagogisk felsökningsarkitektur](docs/PEDAGOGICAL_TROUBLESHOOTING_PLAN.md) med stegen P0–P7 är **formellt avslutad genom användarbeslut**. **Ingen aktiv utvecklingsetapp finns.** Inga äldre QUALITY-, ELK-, import- eller fasroadmaps får återaktiveras som nästa PR utan nytt uttryckligt användarbeslut. Detta dokument är en **operativ regeluppsättning**, inte en parallell plan. [MASTERPROMPT](docs/MASTERPROMPT.md) anger produktmålet.
 
 **Sanningsföreträde:** Senaste uttryckliga användarbeslutet och aktuell kod/test/CI på exakt SHA avgör vad som faktiskt är beslutat respektive implementerat. Dokumentation och gammal PR-historik är aldrig bevis för ett nytt runtimebeteende. Vid konflikt eller saknade fakta: redovisa `UNKNOWN`, `NOT_VERIFIED` eller `UNSUPPORTED`, och avstå från gissningar.
 
@@ -26,7 +26,7 @@
 
 ## GitHub-arbetsprocess
 
-1. Vid nästa ”fortsätt”: läs faktisk `main`, öppna PR:er, pedagogikplanen, relevant teknisk kod och teststatus. Välj **minsta ännu ej genomförda pedagogiska steg i P0–P7**, aldrig en äldre roadmap eller historiskt arbetskort.
+1. Vid nästa utvecklingsuppdrag: läs faktisk `main`, öppna PR:er, pedagogikplanen, relevant teknisk kod och teststatus. **P0–P7 är CLOSED och ger ingen automatisk nästa uppgift.** Arbeta enbart inom det nya uttryckliga användaruppdragets avgränsning; återaktivera inte äldre roadmap eller historiskt arbetskort.
 2. Ha **en aktiv PR åt gången**. `KEEP` är utgångspunkt; en större motor-/schema-/plattform-/integrationsförändring kräver separat uttryckligt beslut. Inga onödiga refaktoreringar eller pentest-/säkerhetskampanjer.
 3. Kräv positivt och negativt test med självständigt tekniskt facit. Vid UI-ändring kontrollera verklig Chromium och relevant X11; vid lagring kontrollera verklig fil, SHA, Save/Open och omstart. Relevanta kommandon: `python3 -m unittest discover -s tests -p 'test_*.py' -v`, `npm run check` och `python3 tests/browser_smoke.py`.
 4. Merga normalt med squash först när exakt slutlig PR-HEAD har alla obligatoriska kontroller **SUCCESS**, förväntad main är kontrollerad, PR är mergebar och inga blockerande reviews finns. Användarens stående godkännande gäller dessa villkor, **aldrig** FAIL/PENDING, tvångspush eller kringgånget branchskydd.
