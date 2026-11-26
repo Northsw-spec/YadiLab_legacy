@@ -44,7 +44,7 @@ function icmpInvestigationDescription(item) {
       : '\nRouter-ICMP: inget genererat av denna begränsade modell i försöket; '
         + 'ett saknat Echo Reply bevisar inte att en router skickade ett fel.';
     return 'ICMP: ' + o.status + ' · giltig Echo Reply: ' + (o.replyMatched ? 'ja' : 'nej')
-      + '\nRequest: ' + o.requestStatus + ' · Reply: ' + (o.replyStatus ?? 'ej skickad')
+      + '\nEcho Request: ' + o.requestStatus + ' · Echo Reply: ' + (o.replyStatus ?? 'ej skickad')
       + routerEvidence
       + '\n' + (hops.map(step => step.direction + ' · ' + step.node
         + ' · route ' + step.route.type + ' ' + step.route.destination
