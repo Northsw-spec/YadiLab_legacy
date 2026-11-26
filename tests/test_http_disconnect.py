@@ -215,6 +215,29 @@ class A2HTTPDisconnectTests(unittest.TestCase):
         self.assertEqual(json.loads(body)["sha256"], saved["sha256"])
         self.assertEqual(self.store.save.call_count, 1)
 
+    def test_real_tcp_reset_mid_request_before_reply_never_saves_partial_json(self):
+        self.start()
+        raw = (f"POST /api/save HTTP/1.1\r\nHost: {self.host}\r\n"
+               "Content-Type: application/json\r\nContent-Length: 10000\r\n"
+               "Connection: close\r\n\r\n"
+               '{"filename":"partial","project":').encode("ascii")
+        sock = socket.create_connection(("127.0.0.1", self.server.server_port), timeout=5)
+        try:
+            sock.sendall(raw)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack("ii", 1, 0))
+        finally:
+            sock.close()
+        self.assertTrue(self.server.handler_finished.wait(5),
+                        "server did not terminate truncated-body request")
+        self.assertEqual(self.store.list(), [], "partial JSON caused a durable Save")
+        self.assertEqual(self.server.json_sends, 0,
+                         "disconnected partial request must not generate an error JSON")
+        self.assertEqual(self.server.logged_errors, [])
+        self.assertEqual(self.server.unhandled, [])
+        status, _, body = self.request("GET", "/api/health")
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(body)["storage"], "local")
+
     def test_early_unauthorized_reply_disconnect_has_no_server_traceback(self):
         self.start(PauseAfterHeadersHandler, protected=True)
         raw = (f"GET /api/projects HTTP/1.1\r\nHost: {self.host}\r\n"
