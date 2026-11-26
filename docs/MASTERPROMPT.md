@@ -1,6 +1,6 @@
 # MASTERPROMPT – pedagogisk nätverksapplikation
 
-**Beslut 2026-11-26:** [PEDAGOGICAL_TROUBLESHOOTING_PLAN.md](PEDAGOGICAL_TROUBLESHOOTING_PLAN.md) innehåller den **formellt avslutade** genomförandeplanen P0–P7 och fortsatt pedagogiskt kvalitetskontrakt. **Ingen utvecklingsetapp är aktiv.** Detta dokument är ett **produktkontrakt**, inte en andra roadmap. [AGENTS.md](../AGENTS.md) innehåller operativa regler. Senaste uttryckliga användarinstruktion och faktisk kod, tester och GitHub-HEAD har företräde framför äldre statuspåståenden.
+**Nytt användarbeslut 2026-11-26:** [REMEDIATION_PLAN_2026-11-26.md](REMEDIATION_PLAN_2026-11-26.md) är **enda aktiva utvecklingsplanen (A0–A10)** för att åtgärda hela granskningsrapporten, motverka återmonolitisering och förbättra verifieringen. [PEDAGOGICAL_TROUBLESHOOTING_PLAN.md](PEDAGOGICAL_TROUBLESHOOTING_PLAN.md) innehåller den **formellt avslutade** P0–P7-roadmapen och fortsatt pedagogiskt kvalitetskontrakt. Detta dokument är ett **produktkontrakt**, inte en andra roadmap. [AGENTS.md](../AGENTS.md) innehåller operativa regler. Senaste uttryckliga användarinstruktion och faktisk kod, tester och GitHub-HEAD har företräde framför äldre statuspåståenden.
 
 ## Produktmål
 
@@ -36,8 +36,8 @@ De guidade ICMP-fallen är **implementerade och täcks av regressionstester**: `
 
 ## Utveckling och acceptans
 
-När användaren ger ett nytt uttryckligt utvecklingsuppdrag: kontrollera senaste `main`/PR/CI och aktuell implementation. **Välj inte automatiskt ett nytt eller kvarvarande P0–P7-steg**, eftersom programmet är formellt avslutat. Implementera endast den godkända avgränsade uppgiften på en PR, bevara gammal funktion och genomför positiva/negativa tester. Verklig Chromium vid UI, riktig Save/Open/omstart vid dataändring och obligatorisk GitHub-CI på **exakt sista PR-HEAD** krävs. Normal squash-merge endast om alla kontroller är godkända och branchskydd följs. Inga gamla QUALITY-/ELK-/import- eller generella fasplaner får trumfa detta beslut.
+När användaren ber att fortsätta YadiLab: kontrollera senaste `main`/PR/CI och aktuell implementation, följ **nästa ej färdiga godkända arbetskort A0–A10** i [den aktiva reparationsplanen](REMEDIATION_PLAN_2026-11-26.md), dokumentera bevis för aktuella C01–C18-ID och bevara gammal funktion. **A0 är första arbetskort**, därpå A1 (verifierade G1–G7 och Required `architecture-guard`) **innan** någon ny A3/A4-modularisering får påbörjas. **A8 och A9 är endast valbara beslutsgrindar**, inga beställningar av mänsklig studie eller nya protokoll. **Välj aldrig automatiskt nytt eller kvarvarande P0–P7-steg** eftersom det programmet är avslutat. Implementera varje godkänt arbetskort i en avgränsad PR och genomför positiva/negativa tester. Verklig Chromium vid UI, riktig Save/Open/omstart vid dataändring och obligatorisk GitHub-CI på **exakt sista PR-HEAD** krävs. Normal squash-merge endast om alla kontroller är godkända och branchskydd följs. Inga gamla QUALITY-/ELK-/import- eller generella fasplaner får trumfa detta beslut.
 
-Ett större nytt protokoll, annat schema, extern integration, annan OS-familj eller brytande omdesign kräver separat uttryckligt beslut. Det är inte ett implicit mål i pedagogikplanen.
+Ett större nytt protokoll, annat schema, extern integration, annan OS-familj eller brytande omdesign kräver separat uttryckligt beslut. Det är inte implicit tillåtet av A0–A10-planen eller det avslutade pedagogikprogrammet.
 
 **Målet är en tekniskt korrekt, begriplig och oberoende verifierbar utbildningsapp inom dokumenterat stödomfång – inte fler dokument, fler funktioner eller obevisad generell felfrihet.**
