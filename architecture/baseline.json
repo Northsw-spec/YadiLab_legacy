@@ -468,6 +468,7 @@
     "tests/test_ethernet_frame.py",
     "tests/test_example.py",
     "tests/test_http_boundary.py",
+    "tests/test_http_disconnect.py",
     "tests/test_icmp_echo.py",
     "tests/test_icmp_errors.py",
     "tests/test_icmp_investigation.py",
