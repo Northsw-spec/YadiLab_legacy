@@ -1,5 +1,8 @@
 # Repository-wide coding-agent instructions
 
+**ADR-0001 (2026-11-26):** [Selective core rewrite](../docs/architecture/ADR_0001_CORE_REPLACEMENT_2026-11-26.md) supersedes any requirement to preserve the old synchronous execution methods. Retain product/persistence/UI/tests, replace event-incompatible forwarding and protocol clocks. Test-only S1 feasibility POCs allowed after S0+A1; one active production motor.
+
+
 All coding agents, including Codex, MUST follow [AGENTS.md](../AGENTS.md),
 [the single A0–A10 + S0–S12 masterplan](../docs/REMEDIATION_PLAN_2026-11-26.md),
 [MASTERPROMPT](../docs/MASTERPROMPT.md),
@@ -14,7 +17,7 @@ Tracer's breadth, correctness and pedagogy. NO VM, IOS emulation, containers,
 host-network scanners or FRRouting/ns-3/GNS3 runtime engines. Existing L2/ARP/
 IPv4/ICMP/DHCP is limited but real; planned OSPF/BGP/STP/IPv6/TCP is NOT
 implemented yet. A9 expansion is authorized within S0–S12. A8 human study
-remains separately gated. S1 coding waits for proven A3/A4/A5/A7 completion.
+remains separately gated. S1 test-only POC may begin after S0+A1; production cutover still requires go/no-go and relevant A3/A4/A5/A7 contracts.
 
 One authoritative project validator and one simulation engine. Per-protocol
 RFC/IEEE/IEC version, deterministic time/state, independent positive,

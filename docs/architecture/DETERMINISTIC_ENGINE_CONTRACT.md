@@ -1,5 +1,8 @@
 # Deterministisk simuleringskärna – tekniskt arkitekturkontrakt
 
+**Arkitekturbeslut 2026-11-26:** [ADR-0001](ADR_0001_CORE_REPLACEMENT_2026-11-26.md) fastslår selektiv nybyggnad av EXEKVERINGSKÄRNAN, inte av hela produkten. Bevara korrekta bytecodecs, UI, import/data och testsanning; pensionera synkron bulk-forwarding och separata klockor. Test-only S1-POC tillåts efter S0 utan dubbel användarsynlig engine.
+
+
 **Status:** målkontrakt, NOT_IMPLEMENTED på main 7dbe2285cde7ea87c08afce1c58d36cd0f5697e7. **Ägare:** enda in-process backendmotorn; all faktisk utbyggnad beslutas i [enda aktiva roadmapen](../REMEDIATION_PLAN_2026-11-26.md), kort S1 och följande S-kort. **Inte** en begäran att lägga till en konkurrerande motor eller ny emulator.
 
 ## Kärninvariant och gränser
