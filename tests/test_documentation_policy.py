@@ -188,7 +188,7 @@ class DocumentationPolicyTests(unittest.TestCase):
         self.assertEqual(ping["icmpError"]["type"], 11)
         self.assertEqual(ping["icmpError"]["status"], "RECEIVED")
         self.assertTrue(ping["icmpError"]["trace"]["icmpSent"])
-        self.assertFalse(ping["request"]["icmpSent"])
+        self.assertTrue(ping["request"]["icmpSent"])  # Echo request was sent before TTL expired.
 
         ipv4 = (ROOT / "docs" / "IPV4_FORWARDING.md").read_text(encoding="utf-8")
         session = (ROOT / "docs" / "SIMULATION_SESSION.md").read_text(
