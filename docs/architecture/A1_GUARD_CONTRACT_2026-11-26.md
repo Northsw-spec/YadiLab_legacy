@@ -56,7 +56,7 @@ These are *regression tripwires*, not objective quality or runtime-correctness s
 
 ## G6. Behavioral parity
 
-The existing `unit-tests` job still tests Python, JavaScript, real Chromium, X11 PRIMARY, ELK and durable Save/Open. A1 itself changes no runtime code. Later refactors must retain the exact positive and negative fixture oracles, actual HTTP/API behavior, SHAs, stale-guards and session lifecycle; architecture checks do not replace behavioral checks.
+The `unit-tests` Required job retains full Python, JavaScript, real Chromium, X11 PRIMARY, ELK and durable Save/Open acceptance for all non-documentation changes. For a strictly verified Markdown-only diff, it runs bounded governance and supply-chain checks instead; `architecture-guard` and the architecture backup gate always run. Missing/unknown scope is fail-closed to full acceptance. A1 itself changed no runtime code. Later refactors must retain the exact positive and negative fixture oracles, actual HTTP/API behavior, SHAs, stale-guards and session lifecycle; architecture checks do not replace behavioral checks.
 
 ## G7. Ongoing report and anti-regression policy
 

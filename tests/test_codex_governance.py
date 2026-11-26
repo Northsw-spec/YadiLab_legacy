@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
 import unittest
+from urllib.parse import unquote
 
 ROOT = Path(__file__).resolve().parents[1]
 POLICY = ROOT / "docs" / "CODEX_EXECUTION_POLICY.md"
@@ -31,6 +33,23 @@ class CodexGovernanceTests(unittest.TestCase):
             with self.subTest(document=relative):
                 doc = (ROOT / relative).read_text(encoding="utf-8")
                 self.assertIn("CODEX_EXECUTION_POLICY.md", doc)
+
+    def test_documentation_only_lane_still_rejects_broken_local_markdown_links(self):
+        # The full documentation-policy suite contains network tests; this
+        # lightweight link oracle MUST run on the docs-only quick lane.
+        for path in ROOT.rglob("*.md"):
+            body = path.read_text(encoding="utf-8")
+            for address in re.findall(r"\]\(([^)\n]+)\)", body):
+                address = address.strip().split(" ", 1)[0].strip("<>")
+                if address.startswith(("#", "http://", "https://", "mailto:")):
+                    continue
+                target = unquote(address.split("#", 1)[0].split("?", 1)[0])
+                if not target:
+                    continue
+                resolved = (path.parent / target).resolve()
+                with self.subTest(file=str(path.relative_to(ROOT)), link=address):
+                    self.assertTrue(resolved.is_relative_to(ROOT))
+                    self.assertTrue(resolved.is_file(), str(resolved))
 
     def test_single_active_roadmap_and_closed_legacy_queue(self):
         plan = (ROOT / "docs/REMEDIATION_PLAN_2026-11-26.md").read_text("utf-8")

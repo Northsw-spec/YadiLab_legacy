@@ -53,11 +53,16 @@ def classify(base_sha: str, head: str = "HEAD") -> bool:
                for n in range(0, len(records), 2)]
     if not documentation_only(changes):
         return False
-    for _, path in changes:
-        # A Markdown-named symlink/submodule is not documentation-only.
+    for status, path in changes:
+        # Mode-only changes must not qualify as documentation-only, including
+        # executable-to-regular edits; both blobs must have regular-file mode.
         entry = git("ls-tree", "-z", head, "--", path)
         if not entry.startswith(b"100644 blob ") or entry.count(b"\0") != 1:
             return False
+        if status == "M":
+            old_entry = git("ls-tree", "-z", base_sha, "--", path)
+            if not old_entry.startswith(b"100644 blob ") or old_entry.count(b"\0") != 1:
+                return False
     return True
 
 

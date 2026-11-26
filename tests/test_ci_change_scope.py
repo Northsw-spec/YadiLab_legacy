@@ -65,6 +65,31 @@ class DocumentationScopeTests(unittest.TestCase):
             finally:
                 os.chdir(original)
 
+    def test_mode_only_markdown_change_must_take_full_ci(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            def run(*args):
+                return subprocess.check_output(["git", *args], cwd=root).decode().strip()
+            run("init", "-q")
+            run("config", "user.email", "ci@example.invalid")
+            run("config", "user.name", "CI Fixture")
+            run("config", "core.filemode", "true")
+            document = root / "README.md"
+            document.write_text("# Not code\n")
+            document.chmod(0o755)
+            run("add", ".")
+            run("commit", "-qm", "executable base")
+            base = run("rev-parse", "HEAD")
+            document.chmod(0o644)
+            run("add", ".")
+            run("commit", "-qm", "mode-only change")
+            original = os.getcwd()
+            try:
+                os.chdir(root)
+                self.assertFalse(classify(base))
+            finally:
+                os.chdir(original)
+
     def test_untrusted_or_missing_base_never_proves_documentation_only(self):
         with tempfile.TemporaryDirectory() as d:
             output = Path(d) / "out"
