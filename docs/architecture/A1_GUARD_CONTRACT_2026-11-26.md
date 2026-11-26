@@ -44,6 +44,8 @@ These are *regression tripwires*, not objective quality or runtime-correctness s
 2. Run `tools/architecture_guard.py --base-ref BASE_SHA` on PRs (or without a base on branch pushes).
 3. Fail on any contract or policy discrepancy; publish a compact architecture report in the Actions job summary even if validation fails.
 
+**Defense in depth already active in this PR:** the existing `unit-tests` workflow (already Required by main ruleset) now executes the same `tools/architecture_guard.py` with the exact PR-base ratchet, and `tests/test_ci_integrity.py` checks that this step is not detached. This gives a **required functional gate** against architectural regression even before the separately named check is configured Required. It does **not** satisfy the explicit A1 acceptance criterion for independently required status.
+
 **Crucial remaining deployment task:** GitHub repository administrator must add the exact `architecture-guard` context from the GitHub Actions installation alongside `unit-tests` in the active main branch ruleset: [main ruleset ID 27419615](https://github.com/Northsw-spec/YadiLab/rules/27419615). Preserve strict required checks and protected linear history. After adding, confirm the API returns both contexts with the correct app integration ID, and verify that the status is genuinely required (missing or failing check causes merge to be blocked). **A green workflow alone is not a required status. Do not mark A1 DONE without this evidence.**
 
 ## G5. Named source ownership
