@@ -1,5 +1,8 @@
 # Tekniskt importkontrakt – källtrogen dokumentationshantering
 
+**Ny normativ koppling 2026-11-26:** [enda masterplanen A0–A10 + S0–S12](REMEDIATION_PLAN_2026-11-26.md), [MASTERPROMPT](MASTERPROMPT.md), [protokollmatrisen](PROTOCOL_COVERAGE_MATRIX.md) och [simulatorarkitekturen](architecture/DETERMINISTIC_ENGINE_CONTRACT.md) tillåter framtida uttryckligt konfigurerade IPv6-/dynamisk routing-/protokollfält med strikt versionssatt schema/migration. **Det ger aldrig tillåtelse att uppfinna saknade dokumentationskällor, kablar, portar, IP, VLAN eller routing.** Äldre begränsningar avser dagens schema, inte ett permanent förbud mot godkänd framtida S-utbyggnad.
+
+
 **2026-11-24:** Detta är ett **tekniskt kontrakt**, inte en plan eller automatisk beställning av ny importerare. Den **enda aktiva utvecklingsplanen** är [REMEDIATION_PLAN_2026-11-26.md](REMEDIATION_PLAN_2026-11-26.md); [PEDAGOGICAL_TROUBLESHOOTING_PLAN.md](PEDAGOGICAL_TROUBLESHOOTING_PLAN.md) (P0–P7) är **CLOSED** och historisk (dess pedagogiska kvalitetskrav kvarstår). Codex arbete styrs operativt av [CODEX_EXECUTION_POLICY.md](CODEX_EXECUTION_POLICY.md). Faktiskt stöd bestäms av aktuell kod, test och CI på exakt commit, inte av denna text.
 
 ## Ägarskap och format

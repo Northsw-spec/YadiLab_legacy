@@ -1,5 +1,8 @@
 # YadiLab – pedagogisk felsökningsarkitektur: evidens, orsak och lärande
 
+**Nytt produktbeslut 2026-11-26:** P0–P7 förblir historiskt CLOSED och dess nio rubriker är ett kvalitetskontrakt, men [enda aktiva masterplanen A0–A10 + S0–S12](REMEDIATION_PLAN_2026-11-26.md) har nu uttryckligen beställt ett Packet Tracer-plus-simuleringsuppdrag. Se [MASTERPROMPT](MASTERPROMPT.md), [protokollmatrisen](PROTOCOL_COVERAGE_MATRIX.md), [motorarkitekturen](architecture/DETERMINISTIC_ENGINE_CONTRACT.md) och [Codex-policyn](CODEX_EXECUTION_POLICY.md). Historiska ord om att inga nya protokoll är beställda gäller inte längre för S-korten.
+
+
 **Datum:** 2026-11-24 (ISO)  
 **Operativ agentprocess:** [CODEX_EXECUTION_POLICY.md](CODEX_EXECUTION_POLICY.md) gäller allt framtida Codex-arbete. Detta dokument är historiskt, inte en ny uppgiftskö; undvik passiv Actions-väntan och återstart av P0–P7.
 
