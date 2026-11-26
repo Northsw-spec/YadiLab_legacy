@@ -75,6 +75,52 @@ class IPv4SpecialAddressOracles(unittest.TestCase):
         self.assertIsNone(result["routerErrorCandidate"])
         self.assertEqual(project, original)
 
+    def test_connected_network_and_directed_broadcast_are_not_fake_arp_failures(self):
+        project = lab()
+        original = deepcopy(project)
+        for dest in ("192.0.2.0", "192.0.2.255"):
+            with self.subTest(destination=dest):
+                result = IPv4Trace(project).send("a", "eth0", dest, 5)
+                self.assertEqual(result["status"], "NON_UNICAST_DESTINATION")
+                self.assertIn("not a modeled unicast IPv4 receiver", result["meaning"])
+                self.assertEqual(result["steps"], [])
+                self.assertEqual(result["macTables"], [])
+                self.assertIsNone(result["receiver"])
+                self.assertIsNone(result["routerErrorCandidate"])
+                self.assertFalse(result["icmpSent"])
+                echo = EchoExchange(project).ping("a", "eth0", dest, 5, 19, 1)
+                self.assertEqual(echo["status"], "REQUEST_FAILED")
+                self.assertEqual(echo["request"]["status"], "NON_UNICAST_DESTINATION")
+                self.assertIsNone(echo["reply"])
+                self.assertIsNone(echo["icmpError"])
+        self.assertEqual(project, original)
+
+    def test_remote_directed_broadcast_does_not_turn_into_arp_error(self):
+        project = lab()
+        original = deepcopy(project)
+        result = IPv4Trace(project).send("a", "eth0", "203.0.113.255", 5)
+        self.assertEqual(result["status"], "NON_UNICAST_DESTINATION")
+        # The source sent a valid unicast datagram to the documented gateway;
+        # its final connected subnet cannot provide a unicast receiver.
+        self.assertEqual([step["node"] for step in result["steps"]], ["a"])
+        self.assertEqual(result["steps"][0]["arp"]["status"], "RESOLVED")
+        self.assertTrue(result["steps"][0]["ipv4Transmissions"])
+        self.assertIsNone(result["receiver"])
+        self.assertIsNone(result["routerErrorCandidate"])
+        self.assertEqual(project, original)
+
+    def test_31_peer_address_must_not_be_confused_with_broadcast(self):
+        project = lan_lab()
+        project["nodes"][0]["ports"][0]["ipv4"] = "192.0.2.0/31"
+        project["nodes"][2]["ports"][0]["ipv4"] = "192.0.2.1/31"
+        original = deepcopy(project)
+        result = EchoExchange(project).ping("a", "eth0", "192.0.2.1", 5, 19, 1)
+        self.assertEqual(result["status"], "REPLIED")
+        self.assertTrue(result["replyMatched"])
+        self.assertEqual(result["request"]["status"], "DELIVERED")
+        self.assertEqual(result["reply"]["status"], "DELIVERED")
+        self.assertEqual(project, original)
+
     def test_no_overrestriction_of_explicit_private_and_test_networks(self):
         for src, dst in (("10.0.0.10", "192.168.1.20"),
                          ("192.0.2.10", "203.0.113.20"),
