@@ -1,12 +1,12 @@
 # YadiLab – pedagogisk felsökningsarkitektur: evidens, orsak och lärande
 
 **Datum:** 2026-11-24 (ISO)  
-**Beslut:** **Enda aktiva utvecklingsplanen (P0–P7)** och bindande undervisningskontrakt. Övriga Markdown-filer är operativa regler eller tekniska referenser, inte roadmaps.  
-**Status:** Den sammanhållna nya undervisningsarbetsytan är **PLANNED / NOT_IMPLEMENTED**. Befintliga funktioner finns endast när de har stöd i aktuell kod och tester. Fortsatt implementation sker först när användaren begär arbete (t.ex. ”fortsätt”).  
+**Beslut 2026-11-26:** P0–P7 är **formellt avslutad genom uttryckligt användarbeslut**. Dokumentet bevaras som historisk genomförandeplan och fortsatt bindande pedagogiskt kvalitetskontrakt; ingen utvecklingsetapp är aktiv och ingen P8 är beslutad.  
+**Status:** P0–P7 **CLOSED (2026-11-26)**. Den formella avslutningen är ett projektbeslut, inte bevis för att samtliga tidigare idéer implementerats eller att YadiLab är felfritt. Den sammanhållna nya undervisningsarbetsytan ska fortfarande behandlas som **PLANNED / NOT_VERIFIED** där faktiskt kod- och teststöd saknas. Befintliga funktioner fastställs endast från aktuell kod och tester. Framtida utveckling kräver ett nytt uttryckligt avgränsat uppdrag.  
 **Historisk granskad bas:** `main@b1c6fb0323fc93085084128e3ff4382f2b3a9576`. Läs om aktuell HEAD/CI före varje ändring.  
 **Plattform:** Linuxdistributioner endast. Windows och macOS är UNSUPPORTED.
 
-> **LÄS FÖRST – enda aktiva roadmapen.** P0–P7 är YadiLabs enda framtida utvecklingsordning vid nytt användaruppdrag. Inget steg ger i sig mandat att införa nytt protokoll, API, schema, datalager, OS-stöd, extern integration eller stor UI-ombyggnad. Operativa regler: `AGENTS.md`; produktkontrakt: `docs/MASTERPROMPT.md`; importgräns: `docs/IMPORT_SOURCE_CONTRACT.md`. Vid konflikt gäller senaste uttryckliga användarbeslut och verifierad kod/test på aktuell HEAD.
+> **LÄS FÖRST – avslutad roadmap.** P0–P7 beskriver ett avslutat utvecklingsprogram och får inte längre användas för att automatiskt välja nästa uppgift. Inget nytt steg, protokoll, API, schema, datalager, OS-stöd, extern integration eller stor UI-ombyggnad är beslutat. Operativa regler: `AGENTS.md`; produktkontrakt: `docs/MASTERPROMPT.md`; importgräns: `docs/IMPORT_SOURCE_CONTRACT.md`. Vid konflikt gäller senaste uttryckliga användarbeslut och verifierad kod/test på aktuell HEAD.
 
 ## 1. Produktmål och orubbliga avgränsningar
 
@@ -184,9 +184,9 @@ Separera i all presentation:
 
 Använd inte diagramposition, subnät, hostnamn, routerroll, ritade pilar eller en LLDP-indikation för att hitta på kablar, routes, MAC eller trafik. Ett fungerande ICMP Echo under modellen visar endast lyckad kommunikation enligt modellen; ACL/NAT/OSPF/STP på verkligt nät får inte ignoreras om slutsatsen sägs avse verklig reachability.
 
-## 9. Enda aktiva genomförandeordning – P0–P7
+## 9. Historisk genomförandeordning – P0–P7 (formellt avslutad 2026-11-26)
 
-**P0–P7 är den enda aktiva pedagogiska utvecklingsordningen** och ersätter gamla kvalitets-, ELK-, import- och fasroadmaps. När användaren senare ber att fortsätta ska aktuell kod kontrolleras och det minsta återstående, verifierbara pedagogiska steget väljas. Tidigare genomförda funktioner ska inte återskapas. Nya protokoll, schema, runtimeintegrationer och brytande redesign kräver separat uttryckligt beslut.
+**P0–P7 är CLOSED, inte en aktiv uppgiftskö.** Ordningen nedan bevaras för spårbarhet och förklarar tidigare prioriteringar; den ger inte mandat att automatiskt starta ett nytt arbetskort eller återuppta historiska planer. Vid framtida användaruppdrag kontrolleras aktuell kod, `main`, PR och CI, men ny utveckling kräver ett nytt uttryckligt avgränsat mål. Tidigare implementerade funktioner ska inte återskapas. Nya protokoll, schema, runtimeintegrationer och brytande redesign kräver separat uttryckligt beslut.
 
 **P0 – kort, skrivskyddad evidensgrind:** Kontrollera senaste huvudgren, aktiv PR, CI, existerande funktioner och förankra en första liten övning i befintliga `icmp_investigation.py` / `troubleshooting.py` eller `dhcp_investigation.py`. Inga påhittade protokoll.
 
@@ -211,7 +211,7 @@ Använd inte diagramposition, subnät, hostnamn, routerroll, ritade pilar eller 
 
 **P6 är komplett när Codex levererat det reproducerbara automatiserade paketet, verifierat positiva/negativa utfall och passerat ordinarie CI-grindar.** Ingen extern mänsklig utvärdering behövs för att gå vidare till P7.
 
-**P7 – vidare kursbredd:** Endast efter faktiskt mätt behov. Fokusera på de vanligaste relevanta felsökningsuppgifterna och behåll tydliga begränsningar; ingen orealistisk helhetsgaranti.
+**P7 – vidare kursbredd (AVSLUTAD):** Inriktningen var faktiskt mätta pedagogiska brister, relevanta felsökningsuppgifter och tydliga begränsningar utan orealistisk helhetsgaranti. **Formellt avslutsbeslut 2026-11-26:** Användaren har uttryckligen beslutat att P7 och därmed P0–P7 ska stängas. De sista verifierade P7-leveranserna omfattar [PR #165](https://github.com/Northsw-spec/YadiLab/pull/165) och [PR #166](https://github.com/Northsw-spec/YadiLab/pull/166), båda mergade. Beslutet är **inte** en utfästelse att varje möjlig pedagogisk förbättring är genomförd, att elevinlärning empiriskt är verifierad eller att all simulatorlogik är felfri. **Nästa etapp: INGEN BESLUTAD.**
 
 ## 10. Acceptans och negativa tester för framtida pedagogiska kodändringar
 
@@ -240,13 +240,13 @@ Varje framtida konkret PR ska enligt `AGENTS.md` och `MASTERPROMPT.md` ha en avg
 
 - `AGENTS.md`: operativa regler, Linux-only, inga hallucinerade kablar, en PR åt gången, obligatoriska kvalitetsgrindar.
 - `docs/MASTERPROMPT.md`: produktmål, en modell, korrekt motor, verifierbar funktionalitet, utbildningsarkitektur och statusklasser.
-- **Detta dokument**: enda aktiva utvecklingsplanen; inga tidigare kvalitetsetapper är aktuella byggorder.
+- **Detta dokument**: formellt avslutad P0–P7-roadmap och fortsatt pedagogiskt kvalitetskontrakt; inga äldre eller nya etapper är därmed aktiva byggorder.
 - `docs/IMPORT_SOURCE_CONTRACT.md`: enda importkontraktet med fail-closed och källproveniens.
 - `docs/ELK_LAYOUT_CONTRACT.md`: bevarat tekniskt layoutkontrakt, inte en separat ELK-roadmap.
 - `docs/ICMP_INVESTIGATION.md`, `docs/TROUBLESHOOTING.md`, `docs/DHCP_DORA.md`: befintliga native diagnoser, inte OSPF-/brandväggsemulering.
 - `tests/test_protocol_reference_vectors.py` och andra negativa referenstester: stödda avgränsade fall, ingen generell RFC-certifiering.
 
-När äldre text säger ”nästa PR”, ”inte implementerat” eller ”ny feature” måste aktuell kod, historiska PR-merge och exakt CI kontrolleras. En daterad plan är inte en körbar order. Nya problem får dokumenteras som verifierade fynd eller förslag, aldrig lösas genom gissning. **Denna fil styr även den fortsatta pedagogiska PR-prioriteten; senaste uttryckliga användarbeslut och verifierad kod/CI har fortfarande företräde.**
+När äldre text säger ”nästa PR”, ”inte implementerat” eller ”ny feature” måste aktuell kod, historiska PR-merge och exakt CI kontrolleras. En daterad plan är inte en körbar order. Nya problem får dokumenteras som verifierade fynd eller förslag, aldrig lösas genom gissning. **Denna fil är inte längre en automatisk prioriteringslista för nya PR:er. Nytt arbete kräver uttryckligt användarbeslut; verifierad kod/CI har fortsatt företräde i tekniska faktapåståenden.**
 
 ## 12. Källor och verifieringsnivå
 
