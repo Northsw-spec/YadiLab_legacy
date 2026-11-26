@@ -219,6 +219,27 @@ class InvestigationEngineTests(unittest.TestCase):
             probe(case, "lease")
         self.assertEqual(case.public_state()["observations"], MAX_PROBES)
 
+    def test_probe_limit_preserves_confirmed_diagnosis_and_recovery(self):
+        original = vlan_clients()
+        case = scenario(original, "VLAN_MISMATCH")
+        self.assertEqual(probe(case, "renew")["observation"]["status"],
+                         "REQUEST_NOT_RECEIVED")
+        probe(case, "link", linkId="to-server")
+        probe(case, "vlan", nodeId="sw", portId="c")
+        self.assertTrue(case.public_state()["canDiagnose"])
+        for _ in range(MAX_PROBES - 3):
+            probe(case, "lease")
+        state = case.public_state()
+        self.assertEqual((state["observations"], state["maxProbes"]),
+                         (MAX_PROBES, MAX_PROBES))
+        self.assertTrue(state["canSubmitDiagnosis"])
+        with self.assertRaisesRegex(ProjectValidationError, "observation limit"):
+            probe(case, "lease")
+        self.assertEqual(case.public_state()["observations"], MAX_PROBES)
+        self.assertTrue(case.diagnose("VLAN_MISMATCH")["correct"])
+        self.assertEqual(case.repair()["status"], "RECOVERED")
+        self.assertEqual(original, vlan_clients())
+
     def test_invalid_baseline_cannot_become_false_exercise(self):
         # The cabling is fully declared/active, but client is on another
         # documented VLAN: actual baseline DORA must fail and never become
