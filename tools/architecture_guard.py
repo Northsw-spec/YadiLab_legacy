@@ -27,7 +27,7 @@ DOM_TOUCH = re.compile(
     r"|\.textContent\s*=)")
 SHA = re.compile(r"[0-9a-f]{40}\Z")
 VALID_OWNERS = frozenset(("composition", "canvas", "model", "dom", "api",
-                          "diagnostics", "projects", "sessions", "layout"))
+                          "diagnostics", "projects", "session", "layout"))
 
 
 def source_lines(source: str) -> int:
@@ -88,7 +88,7 @@ def forbidden_edge(path: str, target: str, owner: str) -> bool:
         return True  # composition root cannot be a downstream dependency
     if owner == "diagnostics" and target.startswith("web/features/projects/"):
         return True
-    if owner == "sessions" and (target.startswith("web/features/projects/")
+    if owner == "session" and (target.startswith("web/features/projects/")
                                or target.startswith("web/features/diagnostics/")
                                or target.startswith("web/ui/")):
         return True
@@ -236,7 +236,7 @@ def validate(root: Path, policy: dict, old: dict | None = None) -> tuple[list[st
         # into composition-root declarations; module-level lexical constraint.
         reserved = {entry for p, spec in contracts.items() if p != "web/app.js"
                     for entry in spec.get("exports", []) if spec.get("owner") in
-                    ("sessions", "diagnostics")}
+                    ("session", "diagnostics")}
         if (set(names) | set(bindings)) & reserved:
             issues.append("DUPLICATED_MODULE_OWNER_IN_APP")
 
