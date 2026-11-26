@@ -1,7 +1,7 @@
 # YadiLab – åtgärdsplan för granskningsbrister och hållbar modularisering
 
 **Datum:** 2026-11-26  
-**Status:** GODKÄND / AKTIV PLAN – genomförande beslutat av användaren 2026-11-26; ännu inga A-kort implementerade  
+**Status:** GODKÄND / AKTIV PLAN – **A0 levererad i PR #169, formellt DONE först när PR #169 är squash-mergad med required CI SUCCESS**; nästa godkända arbetskort är A1  
 **Utgångspunkt:** Granskningsrapporten *Teknisk granskning av YadiLab – 2026-11-26* (hela avsnitt 1–6), användarens observation om försvunnen modularisering samt en separat kodinventering på `main@82fca139cc43e12ff8c21bbb3427ab4f87588fd5`.  
 **Syfte:** Åtgärda påvisade fel och underhållsbrister; verifiera kvarstående osäkerheter; ge dokumenterade simulatorbegränsningar ett explicit beslut; återvinna och skydda modulariseringen.  
 **Styrning:** P0–P7 är formellt avslutat. **Den här A0–A10-planen är nu ensam aktiv utvecklingsplan** genom uttryckligt användarbeslut 2026-11-26, inte en återaktivering av P7. A0–A7 och A10 omfattas av beslutet enligt beroenden och acceptanskrav. **A8 och A9 är villkorade och kräver separata uttryckliga godkännanden**; ingen ny native-protokollmotor, empirisk studie eller annan utökning är automatiskt beställd.
@@ -11,7 +11,7 @@
 
 **LÄS FÖRST:** `AGENTS.md` → **den här enda aktiva planen** → `docs/MASTERPROMPT.md` → `docs/IMPORT_SOURCE_CONTRACT.md` → historisk `docs/PEDAGOGICAL_TROUBLESHOOTING_PLAN.md` endast för fortsatt pedagogiskt kvalitetskontrakt. Primärgranskning ordagrant: [Teknisk granskning 2026-11-26](reviews/TECHNICAL_REVIEW_2026-11-26.md). Välj aldrig uppgift ur den avslutade P0–P7-planen eller andra äldre roadmaps.
 
-**Nästa konkreta uppgift: A0 – Rebaslinje & forensisk modulgranskning (NEXT / NOT_STARTED).** Granska först verklig `main`, öppna PR:er, senaste CI och eventuella A-kort som redan kan ha mergats sedan denna text senast uppdaterades. Om A0 fortfarande återstår ska den utföras först, med egen avgränsad PR. **A1 måste vara implementerad, negativt testad och `architecture-guard` required i branchskyddet innan A3/A4-modularisering påbörjas.** Denna dokumentations-PR installerar inte själv G1–G7.
+**A0 – Rebaslinje & forensisk modulgranskning:** [PR #169](https://github.com/Northsw-spec/YadiLab/pull/169) levererar [forensisk rapport](architecture/A0_FORENSIC_BASELINE_2026-11-26.md), [exakt fil-/testmanifest](../architecture/a0_baseline.json), [ES-importgraf](../architecture/a0_frontend_imports.json) och positiva/negativa manifesttester. Kontrollera att #169 är **MERGED och att dess slutliga HEAD hade required SUCCESS** innan A0 räknas som DONE. **Nästa konkreta uppgift efter verifierad A0-merge: A1 – Arkitekturspärrar G1–G7 (NEXT / NOT_STARTED).** A1 måste installera, negativt testa och göra `architecture-guard` required i GitHub branchskyddet **innan** A3/A4-modularisering. A0-dokumentation är inte en installerad architecture-guard.
 
 **Fortsättningsregel:** När användaren säger `fortsätt` om YadiLab ska nästa **ej slutförda, godkända A-kort** väljas utifrån beroenden och verifierad GitHub-status; inte gamla P7-steg, inte en ny påhittad fas och inte ett valfritt nytt protokoll. Max en aktiv ändrings-PR. Utlovad automatisk bakgrundskörning förekommer inte. Bekräfta exakt PR-HEAD, alla required checks `SUCCESS`, oskadad main och squash före merge. Dokumentera varje färdigt A-kort och påverkat C01–C18-ID i planen eller en evidenslänk som planen refererar till.
 
@@ -19,8 +19,8 @@
 
 | Arbetskort | Utgångsstatus vid aktivering | Kommentar |
 |---|---|---|
-| **A0** | **NEXT / NOT_STARTED** | Första riktiga åtgärds-PR efter aktiveringen |
-| A1 | NOT_STARTED | Obligatorisk arkitekturspärr före refaktorering |
+| **A0** | **DONE efter verifierad merge av PR #169** | C02–C05: arkitekturhistorik, ägarskap, data- och regressionsmanifest; ingen produktkod ändrad |
+| **A1** | **NEXT / NOT_STARTED (efter A0-merge)** | G1–G7 och `architecture-guard` Required före A3/A4 |
 | A2 | NOT_STARTED | HTTP-disconnect och sekundär felhantering |
 | A3 | NOT_STARTED | Frontend-modularisering skyddad av A1 |
 | A4 | NOT_STARTED | Backend-import/ICMP-modularisering skyddad av A1 |
@@ -51,7 +51,7 @@ Rapportens avsnitt 4 innehåller två typer av punkter: (a) faktisk underhålls-
 
 ### 1.2 Viktigt: modulariseringens återfall
 
-Användarens erfarenhet är att modulariseringen ”helt försvann” och måste genomföras på nytt. Den nuvarande kodinventeringen visar en **mer preciserad teknisk bild**: tidigare utdragna frontendmoduler finns fortfarande (bland annat `features/diagnostics/`, `features/sessions/`, `features/projects/` och `features/layout/`), men monolitens omfattning har åter ökat. I den historiska 3E-ändringen minskade `web/app.js` från 2 421 till **2 237 rader**. På granskad aktuell `main` är den **2 978 rader** – alltså **741 rader mer (+33,1 %)** än den historiska slutpunkten. Detta är mätbar *återväxt i en central koordinator*, inte ett verifierat påstående om att samtliga tidigare moduler har raderats.
+Användarens erfarenhet är att modulariseringen ”helt försvann” och måste genomföras på nytt. Den nuvarande kodinventeringen visar en **mer preciserad teknisk bild**: tidigare utdragna frontendmoduler finns fortfarande (bland annat `features/diagnostics/`, `features/sessions/`, `features/projects/` och `features/layout/`), men monolitens omfattning har åter ökat. I den historiska 3E-ändringen minskade `web/app.js` från cirka 2 421 till **2 237 fysiska rader**. På A0:s versionsbundna `main@f36435dd7b108756bdac6e3919c1cb1c61cf58d7` är den **2 977 fysiska rader** (**2 978 vid `split('\n')`-visning) – alltså **740 jämförbara rader mer (+33,1 %)** än den historiska slutpunkten. Den tidigare uppskattningen 741 blandade två olika räknemetoder. Detta är mätbar *återväxt i en central koordinator*, inte ett verifierat påstående om att samtliga tidigare moduler har raderats.
 
 Även `network_core/import_plan.py` (**967 rader**) och `network_core/icmp_investigation.py` (**844 rader på nuvarande main; rapporten angav cirka 829**) kräver förvaltningsbar uppdelning. Radantalet är en riskindikator, inte självständigt bevis för buggar. En tidigare ES-modulgrafkontroll finns redan (`tests/test_web_import_graph.py`), men kontrollerar främst importer, nåbarhet och cykler – **inte** att kod inte samlas tillbaka i `app.js`. Därför behövs ett separat *anti-regressionskontrakt*.
 
@@ -150,6 +150,8 @@ Föreslagna *förvaltningsmål*, inte bevis för korrekt kod: `app.js` under **1
 ## 5. Detaljerade arbetskort
 
 ### A0. Forensik och bevisad nollpunkt
+
+**Leveransevidens:** [PR #169](https://github.com/Northsw-spec/YadiLab/pull/169), [A0-rapport](architecture/A0_FORENSIC_BASELINE_2026-11-26.md), [Git-manifest](../architecture/a0_baseline.json) och [exakt ES-importgraf](../architecture/a0_frontend_imports.json). Test: `tests/test_a0_forensic_manifest.py` med negativt ändrad modul, orphan/cykel, missad import och falskt Git-blobbevis. Räckvidd: statisk inventering, ingen runtimeändring och ingen installerad A1-spärr. **Status: PR #169 levererad; merge/CI-beroende.**
 
 **Utför:** Läs exakt aktuell `main`, samtliga aktiva PR:er och senaste CI. Dokumentera commit där varje modul extraherades, vilka moduler som fortfarande finns och vilka ansvar som åter dykt upp i `app.js`. Ta fram callgraph/importgraf, state- och eventkarta, antalet direkta DOM-beröringar, funktioner med hög komplexitet samt sessionernas generations-/stale-guards. Lägg samtliga regressionsfall och filbytes i ett versionsbundet manifest.
 
@@ -279,4 +281,4 @@ Föreslagna *förvaltningsmål*, inte bevis för korrekt kod: `app.js` under **1
 
 **Direktlänkar:** https://github.com/Northsw-spec/YadiLab ; https://github.com/Northsw-spec/YadiLab/commit/17acb51c8c64c3b4b7a1026514cb8b0a2177a127 ; https://github.com/Northsw-spec/YadiLab/blob/82fca139cc43e12ff8c21bbb3427ab4f87588fd5/tests/test_web_import_graph.py ; https://github.com/Northsw-spec/YadiLab/blob/82fca139cc43e12ff8c21bbb3427ab4f87588fd5/network_core/server.py .
 
-**Statusnot (2026-11-26):** Planen är uttryckligen godkänd och aktiv, men **ingen av dess åtgärder har ännu implementerats**. All `DONE`-status kräver efterföljande verifierbar leverans.
+**Statusnot (2026-11-26):** Planen är godkänd och aktiv. **A0:s rena revisionsleverans finns i PR #169**, med versionsbunden käll-/testmanifestering och negativa manifesttester. A0 blir formellt DONE först efter kontrollerad squash-merge på grön slutlig PR-HEAD. **A1 är nästa utvecklingskort; G1–G7 och `architecture-guard` är ännu INTE installerade.** All senare `DONE`-status kräver kod-/test-/CI-evidens.
