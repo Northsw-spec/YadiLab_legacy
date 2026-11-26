@@ -737,10 +737,10 @@ function renderDhcpDiagnostics() {
   output.textContent = [
     `DHCP-status: ${data.status} · transaktions-ID ${data.transactionId}`,
     data.meaning,
-    `DISCOVER (klient → broadcast): ${data.discover.transmissions.length} fysisk(a) överföring(ar)\n`
+    `DISCOVER (klient → broadcast): ${data.discover.transmissions.length} simulerade kabelöverföringar\n`
       + transmissions(data.discover.transmissions),
     `Vald serverport nåddes: ${data.discover.receivedAtServer ? 'ja' : 'nej'}`,
-    `OFFER (server → broadcast): ${data.offer.transmissions.length} fysisk(a) överföring(ar)\n`
+    `OFFER (server → broadcast): ${data.offer.transmissions.length} simulerade kabelöverföringar\n`
       + transmissions(data.offer.transmissions),
     `VLAN-drop, Discover:\n${vlanDrops(data.discover.vlanDrops)}`,
     `VLAN-drop, Offer:\n${vlanDrops(data.offer.vlanDrops)}`,
@@ -939,7 +939,7 @@ function renderInvestigation() {
     || !investigationState?.diagnosed || Boolean(investigationState?.repaired);
   $('investigation-repair').textContent = investigationState?.requiredRecovery === 'NEW_DORA'
     ? 'Återställ identifierat fel och starta ny DHCP DORA'
-    : 'Återställ identifierat fel och testa riktig DHCPACK';
+    : 'Återställ identifierat fel och testa simulerat DHCPACK';
   const status = $('investigation-status');
   status.textContent = investigationBusy
     ? 'Undersökning pågår…'
@@ -983,7 +983,7 @@ function renderInvestigation() {
       ? 'DIAGNOS BEKRÄFTAD. Du kan nu återställa den identifierade felkategorin '
         + 'och testa om ett faktiskt DHCPACK når klienten.'
       : 'HYPOTES AVVISAD. ' + investigationVerdict.feedback
-        + ' Det verkliga felet avslöjas inte.';
+        + ' Den dolda simulerade felorsaken avslöjas inte.';
   } else {
     verdict.textContent = investigationState?.diagnosisAttempts >= investigationState?.maxDiagnosisAttempts
       && !investigationState?.diagnosed
@@ -1016,7 +1016,7 @@ function renderInvestigation() {
           + ' · identifierad dokumenterad målpunkt: ' + JSON.stringify(investigationRecovery.repair)
         : '\nIngen verifierad DHCP-reparation. Återställning av annan okänd orsak påstås inte.');
   } else {
-    recovery.textContent = 'Ingen reparation. Återställning kräver bekräftad diagnos och verklig DHCPACK.';
+    recovery.textContent = 'Ingen reparation. Återställning kräver bekräftad diagnos och simulerad DHCPACK.';
   }
 }
 
@@ -1385,7 +1385,7 @@ function renderSessionDiagnostics() {
     `Operation ${data.operationCount}: ${arp ? 'ARP' : 'Ethernet II'} ${sourceNode}/${sourcePort} → ${target}`,
     `Status: ${r.status}`,
     r.meaning,
-    `Faktiska överföringar: ${transmissions.length}\n${wireLines.join('\n') || '  Inga'}`,
+    `Simulerade kabelöverföringar: ${transmissions.length}\n${wireLines.join('\n') || '  Inga'}`,
     `VLAN-droppar:\n${dropLines.join('\n') || '  Inga observerade'}`,
     `Inlärda MAC-tabeller:\n${switchTables.join('\n') || '  Inga inlärda poster'}`,
     `ARP-cache på vald källport:\n${arpEntries.join('\n') || '  Tom'}`,
@@ -1505,7 +1505,7 @@ function renderTroubleshooting() {
     const reply = trial.reply?.status || 'INGET';
     const ars = trial.request?.steps?.map(step=>step.arp.status).join(', ') || 'inga';
     return `${label}: ${trial.status} · request ${request}, reply ${reply}, ARP ${ars}`
-      + `\n  Verkligt observerade kablar: ${wires.join(', ') || 'inga'}`;
+      + `\n  Kablar i simulerade paketspår: ${wires.join(', ') || 'inga'}`;
   };
   const faultKind = d.fault.type;
   const target = d.fault.linkId || (d.fault.nodeId + '/' +
@@ -1602,7 +1602,7 @@ function presentJourney(result, snapshot) {
   }
   if (!frames.length) {
     $('probe-status').textContent =
-      `Motorns resultat: ${result.status}. Inga faktiska kabeltransmissioner rapporterades.`;
+      `Motorns resultat: ${result.status}. Inga simulerade kabelöverföringar rapporterades.`;
     return;
   }
   lastJourney = {frames, status: result.status, snapshot};
