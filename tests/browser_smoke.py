@@ -6511,7 +6511,7 @@ def run():
             expect(page.locator('#session-result')).to_contain_text('VLAN 10')
             page.locator('#session-arp').click()
             expect(page.locator('#session-result')).to_contain_text('Status: CACHE_HIT')
-            expect(page.locator('#session-result')).to_contain_text('Faktiska överföringar: 0')
+            expect(page.locator('#session-result')).to_contain_text('Simulerade kabelöverföringar: 0')
             page.locator('#session-ethernet').click()
             expect(page.locator('#session-result')).to_contain_text('Status: SIMULATED')
             expect(page.locator('#session-result')).to_contain_text('0x88B5')
