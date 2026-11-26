@@ -143,6 +143,20 @@ class IPv4Trace:
             out_port = chosen["outInterface"]["port"]
             if hop == 0 and out_port != source_port:
                 return finish("SOURCE_INTERFACE_MISMATCH", "Chosen route exits another port; the supplied source interface cannot be silently replaced.")
+            if chosen["type"] == "CONNECTED":
+                # An on-link subnet ID or directed broadcast is not a
+                # unicast NIC. Let /31 peers and /32 hosts pass normally.
+                # Do not misreport this addressing mistake as failed ARP,
+                # or turn a valid project into an HTTP validation error.
+                connected = ipaddress.IPv4Network(chosen["destination"])
+                target_ip = ipaddress.IPv4Address(packet.destination)
+                if (connected.prefixlen < 31 and
+                        target_ip in (connected.network_address, connected.broadcast_address)):
+                    return finish(
+                        "NON_UNICAST_DESTINATION",
+                        "Selected connected subnet's network or directed broadcast address "
+                        "is not a modeled unicast IPv4 receiver; no ARP or IP frame was sent "
+                        "from this output interface.")
             next_ip = chosen["nextHop"] if chosen["type"] == "STATIC" else packet.destination
             out_endpoint = (device_id, out_port)
             if out_endpoint not in self.bound_macs or out_endpoint not in self.interfaces:
