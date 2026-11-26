@@ -178,5 +178,96 @@ class ArchitectureGuardTests(unittest.TestCase):
                       compare_policies(self.policy, modified))
 
 
+    def test_positive_register_nested_fresh_engine_module(self):
+        fresh = "network_core/engine/event_queue.py"
+        file = self.root / fresh
+        file.parent.mkdir(parents=True, exist_ok=True)
+        file.write_text("class EventQueue:\n    pass\n", encoding="utf-8")
+        self.policy["required_backend_modules"].append(fresh)
+        issues, report = validate(self.root, self.policy)
+        self.assertEqual(issues, [])
+        self.assertEqual(report["backend_module_count"],
+                         len(self.policy["required_backend_modules"]))
+
+    def test_negative_unregistered_nested_engine_is_detected(self):
+        file = self.root / "network_core/engine/untracked.py"
+        file.parent.mkdir(parents=True, exist_ok=True)
+        file.write_text("class Unknown:\n    pass\n", encoding="utf-8")
+        self.assertProblem("BACKEND_MODULE_INVENTORY_DRIFT")
+
+    def _engine_retirement_fixture(self):
+        old_file = "network_core/ethernet.py"
+        new_file = "network_core/engine/l2_runtime.py"
+        test_file = "tests/test_new_engine_oracle.py"
+        decision = "docs/architecture/TEST_ENGINE_RETIREMENT.md"
+        (self.root / old_file).unlink()
+        module = self.root / new_file
+        module.parent.mkdir(parents=True, exist_ok=True)
+        module.write_text("class L2Runtime:\n    pass\n", encoding="utf-8")
+        oracle = self.root / test_file
+        oracle.write_text(
+            "import unittest\nclass Oracle(unittest.TestCase):\n"
+            "    def test_new_l2(self):\n        self.assertTrue(True)\n",
+            encoding="utf-8")
+        doc = self.root / decision
+        doc.parent.mkdir(parents=True, exist_ok=True)
+        doc.write_text("approved: " + old_file + " -> " + new_file + "\n",
+                       encoding="utf-8")
+        self.policy["required_backend_modules"].remove(old_file)
+        self.policy["required_backend_modules"].append(new_file)
+        self.policy["required_tests"].append(test_file)
+        self.policy["retirement_receipts"]["backend"][old_file] = {
+            "replacements": [new_file],
+            "acceptance_tests": [test_file],
+            "decision": decision,
+        }
+        return old_file, new_file, test_file, decision
+
+    def test_positive_retirement_with_live_successor_and_acceptance(self):
+        old = copy.deepcopy(self.policy)
+        self._engine_retirement_fixture()
+        issues, report = validate(self.root, self.policy, old)
+        self.assertEqual(issues, [])
+        self.assertEqual(report["retirement_receipts"]["backend"], 1)
+
+    def test_negative_retire_without_receipt_fails_closed(self):
+        old = copy.deepcopy(self.policy)
+        former = "network_core/ethernet.py"
+        (self.root / former).unlink()
+        self.policy["required_backend_modules"].remove(former)
+        self.assertProblem("PROTECTION_REMOVED: required_backend_modules", old=old)
+
+    def test_negative_forged_retirement_missing_successor(self):
+        old = copy.deepcopy(self.policy)
+        _, new_file, _, _ = self._engine_retirement_fixture()
+        (self.root / new_file).unlink()
+        self.policy["required_backend_modules"].remove(new_file)
+        self.assertProblem("NO_LIVE_RETIREMENT_SUCCESSOR", old=old)
+
+    def test_negative_retirement_missing_tests_and_decision(self):
+        old = copy.deepcopy(self.policy)
+        former, _, _, decision = self._engine_retirement_fixture()
+        self.policy["retirement_receipts"]["backend"][former][
+            "acceptance_tests"] = ["tests/missing_oracle.py"]
+        (self.root / decision).unlink()
+        self.assertProblem("UNVERIFIED_RETIREMENT_TESTS", old=old)
+        self.assertProblem("MISSING_RETIREMENT_DECISION", old=old)
+
+    def test_negative_rewrite_prior_retirement_history(self):
+        old = copy.deepcopy(self.policy)
+        self._engine_retirement_fixture()
+        old["retirement_receipts"]["backend"] = copy.deepcopy(
+            self.policy["retirement_receipts"]["backend"])
+        self.policy["retirement_receipts"]["backend"] = {}
+        self.assertProblem("RETIREMENT_HISTORY_REWRITTEN", old=old)
+
+    def test_negative_critical_governance_file_cannot_be_retired(self):
+        old = copy.deepcopy(self.policy)
+        critical = "tools/architecture_guard.py"
+        self.policy["critical_files"].remove(critical)
+        self.assertProblem("PROTECTION_REMOVED: critical_files", old=old)
+
+
+
 if __name__ == "__main__":
     unittest.main()
