@@ -72,6 +72,21 @@ class ArchitectureGuardTests(unittest.TestCase):
             encoding="utf-8")
         self.assertProblem("FORBIDDEN_LAYER_DEPENDENCY")
 
+    def test_negative_forged_module_owner_is_rejected(self):
+        self.policy["frontend_contracts"]["web/features/diagnostics/presenters.js"][
+            "owner"] = "projects"
+        self.assertProblem("MODULE_OWNER_PATH_MISMATCH")
+
+    def test_negative_role_laundering_cannot_bypass_presentation_storage_boundary(self):
+        path = self.root / "web/features/diagnostics/presenters.js"
+        path.write_text(path.read_text("utf-8") +
+                        "\nimport {prepareSave} from '../projects/persistence.js';\n",
+                        encoding="utf-8")
+        contract = self.policy["frontend_contracts"]["web/features/diagnostics/presenters.js"]
+        contract["owner"] = "projects"
+        contract["imports"].append("web/features/projects/persistence.js")
+        self.assertProblem("FORBIDDEN_LAYER_DEPENDENCY")
+
     def test_negative_presenter_copied_into_entrypoint(self):
         path = self.root / "web/app.js"
         path.write_text(path.read_text("utf-8") +
