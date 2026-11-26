@@ -83,6 +83,26 @@ def import_targets(root: Path, path: str, source: str) -> tuple[list[str], list[
     return targets, errors
 
 
+def expected_owner(path: str) -> str | None:
+    """Ownership comes from source location, not from editable JSON labels."""
+    if path == "web/app.js":
+        return "composition"
+    if path == "web/canvas.js":
+        return "canvas"
+    if path == "web/model.js":
+        return "model"
+    if path.startswith("web/ui/"):
+        return "dom"
+    if path.startswith("web/services/"):
+        return "api"
+    for part, owner in (("diagnostics", "diagnostics"),
+                        ("projects", "projects"), ("sessions", "session"),
+                        ("layout", "layout")):
+        if path.startswith(f"web/features/{part}/"):
+            return owner
+    return None
+
+
 def forbidden_edge(path: str, target: str, owner: str) -> bool:
     if target == "web/app.js":
         return True  # composition root cannot be a downstream dependency
@@ -177,8 +197,11 @@ def validate(root: Path, policy: dict, old: dict | None = None) -> tuple[list[st
             continue
         source = file.read_text(encoding="utf-8")
         owner = spec.get("owner")
+        derived_owner = expected_owner(path)
         if owner not in VALID_OWNERS:
             issues.append(f"UNDEFINED_MODULE_OWNER: {path}")
+        if derived_owner is None or owner != derived_owner:
+            issues.append(f"MODULE_OWNER_PATH_MISMATCH: {path}")
         targets, edge_errors = import_targets(root, path, source)
         issues.extend(edge_errors)
         graph[path] = targets
@@ -190,7 +213,9 @@ def validate(root: Path, policy: dict, old: dict | None = None) -> tuple[list[st
         for target in targets:
             if target not in contracts:
                 issues.append(f"MISSING_DEPENDENCY_MODULE: {path} -> {target}")
-            if forbidden_edge(path, target, owner):
+            # Derive the layer from path so an edited policy cannot relabel
+            # a session/presenter as 'composition' to bypass the boundary.
+            if forbidden_edge(path, target, derived_owner or ""):
                 issues.append(f"FORBIDDEN_LAYER_DEPENDENCY: {path} -> {target}")
 
     visited: set[str] = set()
