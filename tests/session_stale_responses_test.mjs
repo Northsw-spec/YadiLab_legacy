@@ -143,25 +143,74 @@ test('5C-S3: changed query hides obsolete highlight without erasing server opera
   transport.empty();
 });
 
-test('5C-S4: Reset wins over a delayed prior Run response', async t => {
+test('5C-S4: Reset waits for Run acknowledgement before it reaches the server', async t => {
   const transport = deferredTransport(t), ctx = context(), c = simulation(ctx);
   await startSimulation(c, transport);
   const run = c.run('ethernet', 'a', 'eth0', 'b', () => 'same');
   const oldRun = transport.next('/api/simulation/run');
   assert.equal(c.getState().inFlight, 'run');
   const reset = c.reset();
-  const resetRequest = transport.next('/api/simulation/reset');
-  resetRequest.reply({sessionId: 'session-1', operationCount: 0});
-  await reset;
+  assert.equal(c.getState().inFlight, 'reset');
+  assert.equal(c.getState().busy, true);
+  // A reset request before this response could arrive at the server first.
+  transport.empty();
   oldRun.reply({sessionId: 'session-1', operationCount: 1,
     result: {transmissions: [{linkId: 'obsolete'}]}});
   await run;
+  await flushMicrotasks();
+  const resetRequest = transport.next('/api/simulation/reset');
+  assert.equal(resetRequest.body.sessionId, 'session-1');
+  resetRequest.reply({sessionId: 'session-1', operationCount: 0});
+  await reset;
   const state = c.getState();
   assert.equal(state.state.operationCount, 0);
   assert.equal(state.diagnostic, null);
   assert.deepEqual(state.highlightedLinks, []);
   assert.equal(state.busy, false);
   assert.equal(state.inFlight, null);
+  transport.empty();
+});
+
+test('5C-S4a: failed Run transport cannot authorize Reset on uncertain server state', async t => {
+  const transport = deferredTransport(t), ctx = context(), c = simulation(ctx);
+  await startSimulation(c, transport);
+  const run = c.run('ethernet', 'a', 'eth0', 'b', () => 'same');
+  const oldRun = transport.next('/api/simulation/run');
+  const reset = c.reset();
+  transport.empty();
+  oldRun.networkFailure();
+  await run;
+  await reset;
+  const cleanup = transport.next('/api/simulation/stop');
+  assert.equal(cleanup.body.sessionId, 'session-1');
+  cleanup.reply({status: 'STOPPED'});
+  await flushMicrotasks();
+  assert.equal(c.getState().id, null);
+  assert.equal(c.getState().busy, false);
+  assert.match(c.getState().diagnostic.error, /saknar bekräftat serversvar/);
+  assert.equal(c.getState().pendingStopCount, 0);
+  transport.empty();
+});
+
+test('5C-S4b: workspace replacement cancels queued Reset without touching new network', async t => {
+  const transport = deferredTransport(t), ctx = context(), c = simulation(ctx);
+  await startSimulation(c, transport);
+  const run = c.run('ethernet', 'a', 'eth0', 'b', () => 'same');
+  const oldRun = transport.next('/api/simulation/run');
+  const reset = c.reset();
+  ctx.workspaceRevision += 1;
+  ctx.projectSnapshot = JSON.stringify({...JSON.parse(ctx.projectSnapshot), name: 'Different'});
+  c.invalidate();
+  const cleanup = transport.next('/api/simulation/stop');
+  cleanup.reply({status: 'STOPPED'});
+  oldRun.reply({error: 'INVALID_PROJECT',
+    message: 'simulation: unknown or expired session; start a new session'}, 422);
+  await run;
+  await reset;
+  await flushMicrotasks();
+  assert.equal(c.getState().id, null);
+  assert.equal(c.getState().state, null);
+  assert.equal(c.getState().busy, false);
   transport.empty();
 });
 

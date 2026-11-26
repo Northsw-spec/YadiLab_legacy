@@ -1313,11 +1313,16 @@ def simulation_session_races(context, network_mode, errors):
                 page.locator('#session-arp').click()
             assert old_run.value.status == 200
             page.wait_for_function('window.__heldReply')
+            reset_requests = []
+            page.on('request', lambda req: reset_requests.append(req)
+                    if req.url.endswith('/api/simulation/reset') else None)
+            page.locator('#session-reset').click()
+            assert not reset_requests, 'Reset reached server before delayed Run acknowledgement'
             with page.expect_response('**/api/simulation/reset') as reset:
-                page.locator('#session-reset').click()
+                release_http_reply(page)
             assert reset.value.json() == {'sessionId': sid, 'operationCount': 0,
                                            'macTables': [], 'ephemeral': True}
-            release_http_reply(page)
+            assert len(reset_requests) == 1
             assert old_run.value.json()['operationCount'] == 2
             assert server.simulations._sessions[sid].state()['macTables'] == []
             expect(page.locator('#session-status')).to_contain_text('0 operation')

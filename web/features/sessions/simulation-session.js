@@ -6,6 +6,7 @@ export function createSimulationSessionController({getContext, onChange}) {
   let generation = 0;
   let busy = false;
   let inFlight = null;
+  let pendingRun = null;
   let state = null;
   let diagnostic = null;
   let highlightedLinks = [];
@@ -82,12 +83,19 @@ export function createSimulationSessionController({getContext, onChange}) {
     const signature = readInputs();
     const token = ++generation;
     busy = true; inFlight = 'run'; diagnostic = null; highlightedLinks = []; onChange();
+    // A later Reset must not overtake this Run on the server. Its HTTP
+    // response is the only acknowledgement that this operation has finished.
+    let finishRun;
+    const pending = {sessionId, finished: new Promise(resolve => { finishRun = resolve; })};
+    pendingRun = pending;
+    let serverReplied = false;
     const current = () => token === generation && id === sessionId && sameProject(context);
     try {
       const data = await api('/api/simulation/run', {
         sessionId, project: JSON.parse(context.projectSnapshot),
         operation, sourceNode, sourcePort, target,
       });
+      serverReplied = true;
       if (current()) {
         state = data; // Preserve actual ARP/MAC learning and operation count.
         if (readInputs() === signature) {
@@ -99,6 +107,9 @@ export function createSimulationSessionController({getContext, onChange}) {
         }
       }
     } catch (problem) {
+      // A structured HTTP error confirms the server finished this request.
+      // A transport failure does not: the server may still execute Run.
+      serverReplied = typeof problem.code === 'string';
       if (current()) {
         if (missingSession(problem)) {
           invalidate(true);
@@ -113,16 +124,32 @@ export function createSimulationSessionController({getContext, onChange}) {
         if (!sameProject(context)) invalidate();
         else { busy = false; inFlight = null; onChange(); }
       }
+      if (pendingRun === pending) pendingRun = null;
+      finishRun(serverReplied);
     }
   };
   const reset = async () => {
     if (!id || (busy && inFlight !== 'run')) return;
+    const preceding = busy ? pendingRun : null;
+    if (busy && (!preceding || preceding.sessionId !== id)) return;
     const sessionId = id;
     const context = getContext();
     const token = ++generation;
     busy = true; inFlight = 'reset'; onChange();
     const current = () => token === generation && id === sessionId && sameProject(context);
     try {
+      if (preceding) {
+        const acknowledged = await preceding.finished;
+        if (!current()) return;
+        if (!acknowledged) {
+          // Unknown transport result: Reset could be overtaken by the old Run.
+          // Discard this session instead of claiming an authoritative reset.
+          invalidate();
+          diagnostic = {error: 'Run saknar bekräftat serversvar. Starta en ny session.'};
+          onChange();
+          return;
+        }
+      }
       const data = await api('/api/simulation/reset', {
         sessionId, project: JSON.parse(context.projectSnapshot),
       });
