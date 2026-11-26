@@ -67,6 +67,15 @@ class GuidedIcmpLessonTests(unittest.TestCase):
                 self.assertFalse(ping["replyMatched"])
 
     def test_modified_missing_or_invalid_fixture_rejected(self):
+        # Dict equality accepts 0 == 0.0, but the lesson's exact canonical
+        # fixture (and its session signature) must not accept that edit.
+        for numeric in (0.0, -0.0):
+            with self.subTest(x=numeric):
+                changed = project()
+                changed["nodes"][0]["x"] = numeric
+                self.assertEqual(changed, project())
+                with self.assertRaisesRegex(ProjectValidationError, "unchanged fixture"):
+                    IcmpInvestigation(changed, *ARGS, lesson="echo-reply")
         for field in ("name", "links", "nodes"):
             with self.subTest(field=field):
                 modified = project()
@@ -194,6 +203,14 @@ class GuidedIcmpLessonTests(unittest.TestCase):
                           "STATIC_NEXT_HOP_UNREACHABLE", "RESTORE_NEXT_HOP", "expectedNextHop"):
                 self.assertNotIn(value, encoded)
 
+        for numeric in (0.0, -0.0):
+            altered = deepcopy(fixture)
+            altered["nodes"][0]["x"] = numeric
+            code, denied = http.post("start", {**query, "project": altered})
+            self.assertEqual(code, 422, denied)
+            self.assertEqual(denied["error"], "INVALID_PROJECT")
+            self.assertIn("unchanged fixture", denied["message"])
+            no_answer(denied)
         code, opening = http.post("start", query)
         self.assertEqual(code, 200)
         self.assertEqual(opening["openingObservation"], {

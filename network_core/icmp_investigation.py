@@ -326,7 +326,9 @@ class IcmpInvestigation:
                 _LESSON_FIXTURE.read_bytes(), context="icmp lesson"))
         except (OSError, ProjectValidationError):
             raise ProjectValidationError("icmp investigation: lesson fixture unavailable") from None
-        if self.project != expected:
+        if self._project_signature != _signature(expected):
+            # Python equality conflates JSON numbers like 0 and 0.0.
+            # The guided lesson promises an exact canonical fixture.
             raise ProjectValidationError("icmp investigation: lesson requires the unchanged fixture")
 
     def _compare_lesson(self, identifier: int, sequence: int) -> dict:
