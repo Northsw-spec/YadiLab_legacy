@@ -1,7 +1,6 @@
 {
-  "schema": "yadilab.a0.forensic-baseline.v1",
+  "schema": "architecture.a0.forensic-baseline.v1",
   "status": "BASELINE_NOT_ENFORCEMENT",
-  "repo": "Northsw-spec/YadiLab",
   "baseline_main_sha": "f36435dd7b108756bdac6e3919c1cb1c61cf58d7",
   "historical_3e_sha": "17acb51c8c64c3b4b7a1026514cb8b0a2177a127",
   "methodology": {
