@@ -6,7 +6,7 @@ A simulation session is an explicit, temporary **Python server-memory** object h
 
 Builder provides a separate Stepwise Layer 2 panel with Start, Send ARP, Send Ethernet, Reset Tables and Stop actions. Nothing runs automatically. Select a real non-switch source interface with an explicit bound MAC. To resolve ARP, that interface also needs configured IPv4/CIDR. VLANs come only from **explicitly declared** persisted switch-port configurations (introduced in schema 1.2 and also supported in later schemas), with the same access/trunk semantics and strict missing-configuration rejection. This Layer 2 session never infers a VLAN from naming or IP.
 
-A real Ethernet send constructs a strictly validated **opaque Ethernet II** frame, with an explicitly configured source MAC, a user-entered destination MAC and EtherType **0x88B5** with empty payload. It uses `EthernetFabric.inject_frame`; broadcast/unknown unicast and known-unicast switching and VLAN drops are observable. A destination port arrival is **not** proof a NIC accepted or decoded the frame. No IPv4 or ping simulation is implied.
+A simulated Ethernet send constructs a strictly validated **opaque Ethernet II** frame, with an explicitly configured source MAC, a user-entered destination MAC and EtherType **0x88B5** with empty payload. It uses `EthernetFabric.inject_frame`; broadcast/unknown unicast and known-unicast switching and VLAN drops are observable. A destination port arrival is **not** proof a NIC accepted or decoded the frame. No IPv4 or ping simulation is implied.
 
 ## HTTP contract (loopback server only)
 
@@ -21,7 +21,7 @@ All endpoints accept only POST JSON, with exact required keys:
 
 The registry validates and canonically hashes the current project **on each operation/reset**; if any declared source fact changes (including ports, links, VLAN, IP or MAC), operations reject with `INVALID_PROJECT`. It does not quietly create a fresh session or silently continue with stale state. Changing a project in Builder invalidates the UI session and requests release; manual Start is required again. A project load, new/import or position edit likewise invalidates it. UI output is tied to the in-flight project snapshot; stale asynchronous results are not displayed.
 
-Every session uses a server-generated opaque identifier. Sessions are isolated from one another, with serialized state transitions protected by a lock. The registry is bounded to **16 active sessions per server process** and **256 successful operations per session**; capacity or operation exhaustion is explicitly rejected. Stop or Reset is required to free capacity/operation budget. A local server restart loses all sessions, IDs and caches. This is *not* a persistent multiuser/session service or a background emulator.
+Every session uses a server-generated opaque identifier. Sessions are isolated from one another, with serialized state transitions protected by a lock. The registry is bounded to **16 active sessions per server process** and **256 successful operations per session**; capacity or operation exhaustion is explicitly rejected. **Stop** releases a session's slot from the 16-session process limit. **Reset** clears the operation count within an existing session, but does not free a session slot; a server restart also discards all in-memory sessions. A local server restart loses all sessions, IDs and caches. This is *not* a persistent multiuser/session service or a background emulator.
 
 The prior `/api/diagnostics/arp` remains a separate, one-shot diagnostic route. It never borrows MAC or ARP state from a live session.
 
@@ -29,7 +29,7 @@ The prior `/api/diagnostics/arp` remains a separate, one-shot diagnostic route. 
 
 A simulation session **preserves the input project's validated schema version**; the current validator accepts versions **1.0–1.4** (1.4 includes separately validated historical import evidence). Session state does not introduce learned protocol data, tokens or diagnostic traces into any persisted project schema. Start/Run/Reset/Stop call no project file writer. Only explicit Save performs existing atomic writes with SHA-256 conflict control. Ethernet frames do not simulate IPv4, TTL, ICMP or ping. No ARP aging, STP, native VLAN, NIC acceptance, custom payload injection or persistent sessions.
 
-Returned `RESOLVED` is a modeled ARP exchange, `CACHE_HIT` a real previous successful entry with **no new request/reply frames**, `NO_REPLY` a missing ARP response in the modeled broadcast domain, and Ethernet `SIMULATED` only that the frame was forwarded according to declared ports/links and learned entries. No status is a generic proof of IP reachability.
+Returned `RESOLVED` is a modeled ARP exchange, `CACHE_HIT` an entry established by a prior successful **simulated** ARP exchange in that session, with **no new request/reply frames**, `NO_REPLY` a missing ARP response in the modeled broadcast domain, and Ethernet `SIMULATED` only that the frame was forwarded according to declared ports/links and learned entries. No status is a generic proof of IP reachability.
 
 ## Verification
 
