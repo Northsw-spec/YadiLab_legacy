@@ -36,7 +36,7 @@
 | A9 | APPROVED_SCOPE / IMPLEMENTATION_NOT_STARTED | Full protokollutbyggnad godkänd som S-kort; ingen native ny motor påstås färdig |
 | A10 | NOT_STARTED | Slutrevision och stängningsbeslut när föregående grindar klarats |
 
-**Avslutsregel:** Planen får först markeras `CLOSED` efter A10:s verifierade slutrapport och full spårning av C01–C18. Valfria A8/A9 kan redovisas som `DECISION_REQUIRED` eller `NOT_VERIFIED` utan att någon obeställd implementation krävs. Ingen oberoende mänsklig pedagogisk effekt eller fullständig RFC-certifiering får då påstås utan faktisk evidens.
+**Avslutsregel:** A0–A10-stabiliseringen får markeras CLOSED efter A10:s verifierade slutrapport och full spårning C01–C18, men **den beställda S0–S12-produktresan förblir aktiv** tills S12:s verkliga slutgrindar. A8 mänsklig studie kan vara DECISION_REQUIRED/NOT_VERIFIED; A9:s godkända S-utbyggnad får inte felmärkas som valfri eller färdig. Ingen fullständig RFC-certifiering eller mänsklig pedagogisk effekt får påstås utan evidens.
 
 ## Beslutssammanfattning
 
@@ -294,7 +294,7 @@ Föreslagna *förvaltningsmål*, inte bevis för korrekt kod: `app.js` under **1
 
 **A3 del 3, diagnostisk UI-race (IN_PROGRESS):** DHCP Discover/Offer och read-only DORA måste frigöra busy när relevant indata invalidideras och tillåta nytt försök utan att invänta ett gammalt HTTP-svar. Endast det aktuella generations-ID:t får frigöra busy i `finally`. Två verkliga Chromium-regressioner håller det första svaret tillbaka tills ett andra försök startat och bevisar att det gamla svaret inte återaktiverar UI, läcker gammal diagnostik eller ändrar projektdata. Denna del är inte DONE före båda Required-kontrollerna på exakt HEAD och verifierad squash-merge. Ingen motor-/schemamutation.
 
-**Statusnot (2026-11-26):** A0 DONE (#169), A1 DONE (#170 med separat Required-negativ #173), A2 DONE (#175), **A3 IN_PROGRESS**, delarna #176 och #177 verifierat squash-mergade (main `16e6bd67444b1ef9eb96f2448edf04efda2ab17f`). Nästa del är UI-invalidering/stale `finally`, därefter Builder/Inspector och diagnos/import enligt beroenden. Codex följer [exekveringspolicyn](CODEX_EXECUTION_POLICY.md) och får inte vänta passivt på CI eller dubblera dyra körningar. A8/A9 DECISION_REQUIRED, P0–P7 CLOSED.
+**Uppdaterad statusnot (2026-11-26):** A0 DONE (#169), A1 DONE (#170 + separat Required-negativ #173), A2 DONE (#175). A3:s del 1 #176, del 2 #177 och del 3 #179 är verifierat squash-mergade (main efter #179: 7dbe2285cde7ea87c08afce1c58d36cd0f5697e7), men **hela A3 IN_PROGRESS**; fortsätt Builder/Inspector, diagnos/import. Codex följer [exekveringspolicyn](CODEX_EXECUTION_POLICY.md) och får inte vänta passivt på CI. **A8 DECISION_REQUIRED**, **A9 APPROVED_SCOPE** genom S0–S12, P0–P7 CLOSED.
 
 ---
 
