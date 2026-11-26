@@ -928,6 +928,7 @@ function renderInvestigation() {
   portSelector.disabled = !active || busy || !needsPort;
   $('investigation-probe').disabled = !active || busy;
   $('investigation-run-probe').disabled = !active || busy
+    || investigationState?.observations >= investigationState?.maxProbes
     || (needsLink && !linkSelector.value) || (needsPort && !portSelector.value)
     || Boolean(investigationState?.repaired)
     || (selectedProbe === 'renew' && !investigationState?.leaseActive);
@@ -952,6 +953,11 @@ function renderInvestigation() {
         + (investigationState.phase === 'EXPIRED'
           ? ' · lease har upphört, ny DORA krävs' : '')
         + ' · ' + investigationState.observations + ' observation(er)'
+        + (investigationState.observations >= investigationState.maxProbes
+          ? ' · ' + investigationState.observations + ' av '
+            + investigationState.maxProbes
+            + ' mätningar använda – inga fler mätningar kan göras'
+          : '')
         + (!investigationState.diagnosed
             && investigationState.diagnosisAttempts >= investigationState.maxDiagnosisAttempts
           ? ' · ' + investigationState.diagnosisAttempts + ' av '
