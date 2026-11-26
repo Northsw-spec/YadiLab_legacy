@@ -13,7 +13,7 @@ export function presentArp(arpDiagnostic) {
   const {result, macTables, arpTable} = arpDiagnostic;
   if (result.status === 'RESOLVED') tone = 'ok';
   else tone = 'fail';
-  const traces = (name, transmissions) => `${name}: ${transmissions.length} fysisk(a) överföring(ar)\n`
+  const traces = (name, transmissions) => `${name}: ${transmissions.length} simulerade kabelöverföringar\n`
     + (transmissions.length ? transmissions.map(t =>
         `  ${t.linkId}: ${t.from.node}/${t.from.port} → ${t.to.node}/${t.to.port}`
         + (t.vlanId == null ? '' : ` · VLAN ${t.vlanId}${t.tagged ? ' (taggad)' : ' (otaggad)'}`)
@@ -66,7 +66,7 @@ export function presentRoute(routeLookup) {
       status === 'AMBIGUOUS' ?
       'Lika specifika kandidatvägar, inget antaget beslut:\n' + candidates.map(describe).join('\n') :
       'Ingen matchande route.',
-    'Ingen faktisk paketöverföring eller ARP-förfrågan utfördes. Grafväg, VLAN, länkstatus och NIC-acceptans är inte verifierade.',
+    'Ingen paket- eller ARP-simulering utfördes. Grafväg, VLAN, länkstatus och NIC-acceptans är inte verifierade.',
   ].join('\n\n');
   return {status: tone, text};
 }
@@ -113,7 +113,7 @@ export function presentPing(pingDiagnostic) {
   }
   for (const [label, trace] of [['Request',data.request],['Reply',data.reply]]) {
     if (!trace) {
-      lines.push(`${label}: ingen faktisk datagramöverföring`);
+      lines.push(`${label}: ingen simulerad datagramöverföring`);
       continue;
     }
     lines.push(`${label}: ${trace.status} · IP ${trace.sourceIpv4} → ${trace.destinationIpv4}`
@@ -128,7 +128,7 @@ export function presentPing(pingDiagnostic) {
       }
     }
   }
-  lines.push('Svarstid: ej uppmätt. ICMP-fel visas endast när paketet faktiskt returnerat. Inga externa nät verifieras.');
+  lines.push('Svarstid: ej uppmätt. ICMP-fel visas endast när ett felpaket nådde mottagaren i simuleringen. Inga externa nät verifieras.');
   text = lines.join('\n');
   return {status: tone, text};
 }
