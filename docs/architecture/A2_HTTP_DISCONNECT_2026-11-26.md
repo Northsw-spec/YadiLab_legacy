@@ -3,7 +3,7 @@
 **Datum:** 2026-11-26  
 **Aktiv plan:** [A0–A10](../REMEDIATION_PLAN_2026-11-26.md)  
 **Leverans:** [PR #175](https://github.com/Northsw-spec/YadiLab/pull/175), Linux-lokal HTTP-server  
-**Acceptansstatus:** **DONE först efter verifierad squash-merge av PR #175 med Required `unit-tests` och `architecture-guard` SUCCESS på exakt slutlig PR-HEAD**. Före det är status IN_PROGRESS.
+**Acceptansstatus:** **DONE (2026-11-26)**. [PR #175](https://github.com/Northsw-spec/YadiLab/pull/175) squash-mergades till main som `73a3fe0fb490ec8a7dbd5487ba8c4527ac9ea2ea` efter två Required `unit-tests` SUCCESS och två `architecture-guard` SUCCESS på exakt slutlig HEAD `3bcdf6d869a79e1fd3c4d4c117fa0a6b1e8a9f9b`.
 
 ## Problem och felklass
 
