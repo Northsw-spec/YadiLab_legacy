@@ -6540,7 +6540,7 @@ def run():
             expect(page.locator('#route-result')).to_contain_text('Routingstatus: MATCH')
             expect(page.locator('#route-result')).to_contain_text('192.0.2.0/24')
             expect(page.locator('#route-result')).to_contain_text('node-1/port-1')
-            expect(page.locator('#route-result')).to_contain_text('Ingen faktisk paketöverföring')
+            expect(page.locator('#route-result')).to_contain_text('Ingen paket- eller ARP-simulering utfördes')
 
             page.locator('#route-destination-ip').fill('198.51.100.55')
             with page.expect_response('**/api/routing/connected') as lookup:
