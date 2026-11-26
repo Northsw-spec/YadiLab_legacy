@@ -40,6 +40,9 @@ class WorkflowSupplyChainTests(unittest.TestCase):
         # policy is not temporarily optional before ruleset administration.
         ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text("utf-8")
         self.assertIn("\n  unit-tests:\n", ci)
+        checkout_section = ci.split("      - name: Required architecture anti-regression backup gate\n", 1)[0]
+        self.assertIn("fetch-depth: 0", checkout_section,
+                      "base SHA must be fetchable for a monotonic ratchet")
         self.assertIn("      - name: Required architecture anti-regression backup gate\n", ci)
         body = ci.split("      - name: Required architecture anti-regression backup gate\n", 1)[1]
         body = body.split("      - name: Model, storage and HTTP functional tests\n", 1)[0]
