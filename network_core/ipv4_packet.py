@@ -1,8 +1,9 @@
 """Minimal IPv4 datagram codec (RFC 791 header, no options/fragmentation).
 
 Protocol 253 remains an opaque experimental payload. Protocol 1 is allowed
-only for separately validated ICMPv4 Echo. No transport, NAT, fragmentation
-or ICMP error messages are implemented.
+for separately validated ICMPv4 Echo and the bounded ICMP router-error
+codec (type 11/code 0 and type 3/code 0). This IPv4 header codec performs
+no general ICMP handling, transport simulation, NAT or fragmentation.
 """
 from __future__ import annotations
 

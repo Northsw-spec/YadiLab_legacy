@@ -148,9 +148,12 @@ engångsanrop till `/api/dhcp/dora` påverkar inte någon session.
 
 **Ingen session sparas** till projektfilen. Leases gäller bara den
 aktuella serverprocessens simulerade arbetsminne; de försvinner
-vid omstart, och inget faktiskt nät verifieras. En uttryckligt framflyttad
-virtuell klocka hanterar nu expiration, men ingen verklig
-tidsbaserad nedräkning eller RFC-förnyelsemekanism finns.
+vid omstart, och inget faktiskt nät verifieras. En uttryckligt framflyttad virtuell klocka hanterar expiration.
+**T1- och T2-förnyelse enligt den avgränsade RFC 2131-modellen är
+implementerad**, men kräver ett uttryckligt anrop till
+`/api/dhcp/session/renew` efter T1 respektive T2 och en mottagen
+simulerad DHCPACK. **Ingen realtidsbaserad nedräkning, automatisk
+förnyelse, DHCP-relay eller bakgrundsretry finns.**
 
 ## Virtuell DHCP-sessionstid och expiration (PR #34)
 
@@ -224,7 +227,7 @@ expiration, för klient utan aktiv lease, ogiltigt transaktions-ID,
 **T1 (RENEWING):** Från `ciaddr` = klientens simulerade leasade IP
 skickas ett Ethernet-unicast/IP-unicast DHCPREQUEST till vald server
 på UDP 68→67, med BOOTP broadcast flag **0**, utan option 50/54.
-Motorn kräver att denna riktiga wire-kodade REQUEST når just serverporten.
+Motorn kräver att denna bytekodade simulerade REQUEST når just serverporten.
 
 **T2 (REBINDING):** Samma BOOTP-`ciaddr`, UDP 68→67,
 flagga **0** och inga optioner 50/54, men
@@ -233,7 +236,7 @@ explicit konfigurerade DHCP-servern får i detta avgränsade
 enserverlabb svara. Detta är inte ett påstående om routad
 DHCP eller stöd för konkurrerande servrar.
 
-Vid faktisk mottagning på serverporten skapas en byte-kodad
+Vid mottagning i simuleringen på serverporten skapas en bytekodad
 DHCPACK med den leasade adressen i både `ciaddr` och `yiaddr` enligt RFC 2131 tabell 3,
 optioner 53/54/1/51, UDP 67→68 och **unicast till klientens
 IP och dokumenterade MAC**. EthernetFabric måste sedan faktiskt
@@ -251,7 +254,7 @@ aktuella värde och öka `renewalCount`. IP-adressen ändras inte.
   förlängning, och en expired lease kan endast få ny DORA.
 
 Varken T1 eller T2 stöder routade vägar eller DHCP-relay:
-paketen går enbart över faktiskt dokumenterade kablar och VLAN
+paketen går enbart över uttryckligen dokumenterade kablar och VLAN
 i en EthernetFabric. Bara en uttryckligen vald server stöds
 också vid T2. Operativsystemets riktiga NIC, kanoniska IPv4,
 projektfilens bytes och Save/Open påverkas inte. Inga NAK,
@@ -519,17 +522,17 @@ automatiska paket eller retries**. Publika statusfält
 tids- och observationsprocess, aldrig det dolda felet.
 
 **Verifierad reparation:** före expiration skickar
-`repair` ett verkligt T1-/T2-DHCPREQUEST och kräver
+`repair` ett simulerat T1-/T2-DHCPREQUEST och kräver
 korrekt mottaget ACK för att förlänga samma BOUND-lease.
 Efter expiration får den gamla leasen **inte** förnyas.
 Efter uttrycklig korrekt diagnos återställs den enda
 internt simulerade orsaken och en **ny fyrastegs-DORA**
-måste verkligen lyckas med DISCOVER, OFFER, REQUEST
+måste lyckas i simuleringen med DISCOVER, OFFER, REQUEST
 och ACK, annars är resultatet `NOT_VERIFIED`.
 Reparationsresultatet anger `verifiedProtocol=RENEWAL`
 eller `verifiedProtocol=NEW_DORA`, `packetStatus`
 och separata sändnings-/mottagningsbevis för relevanta
-DHCP-steg. `RECOVERED` innebär en ny faktisk BOUND-lease
+DHCP-steg. `RECOVERED` innebär en ny ACK-bekräftad simulerad BOUND-lease
 efter ACK; inte någon verklig IP-konfiguration av OS.
 Feltyp och målpunkt visas först efter denna bevisade
 reparation.
