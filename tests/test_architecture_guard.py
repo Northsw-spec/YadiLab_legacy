@@ -44,6 +44,8 @@ class ArchitectureGuardTests(unittest.TestCase):
         self.assertEqual(issues, [])
         self.assertEqual(report["frontend_module_count"], 18)
         self.assertEqual(report["import_edge_count"], 29)
+        self.assertEqual(report["module_owner_counts"]["session"], 4)
+        self.assertEqual(report["source_line_trend"]["web/app.js"]["actual_lines"], 2977)
 
     def test_negative_deleted_icmp_session_module(self):
         (self.root / "web/features/sessions/icmp-investigation.js").unlink()
@@ -138,8 +140,10 @@ class ArchitectureGuardTests(unittest.TestCase):
         self.assertIn("\n\n", source)
         path.write_text(source.replace("\n\n", "\n", 1), encoding="utf-8")
         self.policy["line_budgets"]["web/app.js"] -= 1
-        issues, _ = validate(self.root, self.policy, old)
+        issues, report = validate(self.root, self.policy, old)
         self.assertEqual(issues, [])
+        self.assertEqual(report["source_line_trend"]["web/app.js"]["delta_vs_base"], -1)
+        self.assertEqual(report["frontend_module_delta_vs_base"], 0)
 
     def test_negative_policy_removes_required_test(self):
         modified = copy.deepcopy(self.policy)
