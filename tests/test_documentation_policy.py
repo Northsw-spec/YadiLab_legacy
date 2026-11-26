@@ -152,6 +152,55 @@ class DocumentationPolicyTests(unittest.TestCase):
         self.assertIn("ICMPv4 Echo and the bounded ICMP router-error", codec)
         self.assertIn("router-error *candidates* only", trace)
 
+    def test_saved_vlan_and_arp_docs_match_real_native_session_behavior(self):
+        from network_core.arp import ArpSession
+        from test_vlan_persistence import persisted_topology
+
+        # Independent end-to-end confirmation: an explicitly configured VLAN
+        # takes effect even without a vlan_ports argument. The target on VLAN
+        # 10 is resolved; a host on VLAN 20 is not silently reached.
+        session = ArpSession(persisted_topology())
+        result = session.resolve("a", "eth0", "192.0.2.20")
+        self.assertEqual(result["status"], "RESOLVED")
+        self.assertEqual(result["requestTransmissions"][1]["vlanId"], 10)
+        self.assertEqual(session.resolve("a", "eth0", "192.0.2.40")["status"],
+                         "NO_REPLY")
+
+        arp = (ROOT / "docs" / "ARP.md").read_text(encoding="utf-8")
+        vlan = (ROOT / "docs" / "VLAN.md").read_text(encoding="utf-8")
+        self.assertNotIn("ingen beständig ARP-session eller interaktiv flerpaketssimulering", arp)
+        self.assertIn("Interaktiv flerpaketssimulering finns", arp)
+        self.assertIn("/api/simulation/start", arp)
+        self.assertNotIn("Omitting `vlan_ports` retains legacy unsegmented ARP.", vlan)
+        self.assertIn("ArpSession(project)` is VLAN-aware", vlan)
+        self.assertIn("only when the project also contains no persisted", vlan)
+        self.assertIn("not packet captures from physical cables", vlan)
+
+    def test_router_icmp_sent_and_session_capacity_claims_match_native_behavior(self):
+        from network_core.icmp_ping import EchoExchange
+        from test_icmp_echo import routed_reply_lab
+
+        # A router-generated Type 11 packet was transmitted and received, so
+        # icmpSent cannot truthfully mean "only Echo was sent".
+        ping = EchoExchange(routed_reply_lab()).ping(
+            "a", "eth0", "203.0.113.20", 1, 12, 44)
+        self.assertEqual(ping["status"], "REQUEST_FAILED")
+        self.assertEqual(ping["icmpError"]["type"], 11)
+        self.assertEqual(ping["icmpError"]["status"], "RECEIVED")
+        self.assertTrue(ping["icmpError"]["trace"]["icmpSent"])
+        self.assertTrue(ping["request"]["icmpSent"])  # Echo request was sent before TTL expired.
+
+        ipv4 = (ROOT / "docs" / "IPV4_FORWARDING.md").read_text(encoding="utf-8")
+        session = (ROOT / "docs" / "SIMULATION_SESSION.md").read_text(
+            encoding="utf-8")
+        self.assertNotIn("`icmpSent` is true only if a protocol-1 ICMP Echo-containing", ipv4)
+        self.assertIn("Echo **or one of the supported router-error messages**", ipv4)
+        self.assertIn("It does **not** mean a response was received", ipv4)
+        self.assertIn("**Stop** releases a session's slot", session)
+        self.assertIn("**Reset** clears the operation count", session)
+        self.assertIn("A simulated Ethernet send", session)
+        self.assertNotIn("Stop or Reset is required to free capacity", session)
+
     def test_relative_markdown_links_point_to_real_files(self):
         # This is a deliberately narrow repository-file check, not a general
         # Markdown, HTTP, GitHub anchor or external-link validator.
