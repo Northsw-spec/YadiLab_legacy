@@ -145,12 +145,37 @@ class InvestigationEngineTests(unittest.TestCase):
         probe(case, "renew")
         probe(case, "link", linkId="to-server")
         probe(case, "port", nodeId="sw", portId="s")
-        for _ in range(3):
-            r = case.diagnose("CABLE_DOWN")
-            self.assertFalse(r["correct"])
-            self.assertNotIn("PORT_SHUTDOWN", json.dumps(r))
+        for attempt in range(1, 4):
+            result = case.diagnose("CABLE_DOWN")
+            self.assertFalse(result["correct"])
+            self.assertTrue(result["canDiagnose"])  # Evidence remains known.
+            self.assertEqual(result["canSubmitDiagnosis"], attempt < 3)
+            self.assertEqual(result["maxDiagnosisAttempts"], 3)
+            self.assertEqual(result["diagnosisAttempts"], attempt)
+            self.assertNotIn("PORT_SHUTDOWN", json.dumps(result))
+        self.assertFalse(case.public_state()["canSubmitDiagnosis"])
         with self.assertRaisesRegex(ProjectValidationError, "maximum three"):
             case.diagnose("PORT_SHUTDOWN")
+        with self.assertRaisesRegex(ProjectValidationError, "correct diagnosis"):
+            case.repair()
+
+    def test_correct_diagnosis_on_third_attempt_is_final_and_repairable(self):
+        case = scenario(vlan_clients(), "PORT_SHUTDOWN")
+        probe(case, "renew")
+        probe(case, "link", linkId="to-server")
+        probe(case, "port", nodeId="sw", portId="s")
+        self.assertTrue(case.public_state()["canSubmitDiagnosis"])
+        for _ in range(2):
+            self.assertFalse(case.diagnose("CABLE_DOWN")["correct"])
+        self.assertTrue(case.public_state()["canSubmitDiagnosis"])
+        accepted = case.diagnose("PORT_SHUTDOWN")
+        self.assertTrue(accepted["correct"])
+        self.assertTrue(accepted["repairAvailable"])
+        self.assertFalse(accepted["canSubmitDiagnosis"])
+        self.assertEqual(accepted["diagnosisAttempts"], 3)
+        with self.assertRaisesRegex(ProjectValidationError, "already recorded"):
+            case.diagnose("CABLE_DOWN")
+        self.assertEqual(case.repair()["status"], "RECOVERED")
 
     def test_no_vlan_configuration_never_invents_vlan_candidate(self):
         p = clients()

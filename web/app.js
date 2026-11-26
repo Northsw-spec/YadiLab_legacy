@@ -932,8 +932,7 @@ function renderInvestigation() {
     || Boolean(investigationState?.repaired)
     || (selectedProbe === 'renew' && !investigationState?.leaseActive);
   $('investigation-submit').disabled = !active || busy
-    || Boolean(investigationState?.repaired) || Boolean(investigationState?.diagnosed)
-    || !investigationState?.canDiagnose;
+    || !investigationState?.canSubmitDiagnosis;
   $('investigation-diagnosis').disabled = !active || busy || Boolean(investigationState?.diagnosed);
   $('investigation-repair').disabled = !active || busy
     || !investigationState?.diagnosed || Boolean(investigationState?.repaired);
@@ -953,6 +952,12 @@ function renderInvestigation() {
         + (investigationState.phase === 'EXPIRED'
           ? ' · lease har upphört, ny DORA krävs' : '')
         + ' · ' + investigationState.observations + ' observation(er)'
+        + (!investigationState.diagnosed
+            && investigationState.diagnosisAttempts >= investigationState.maxDiagnosisAttempts
+          ? ' · ' + investigationState.diagnosisAttempts + ' av '
+            + investigationState.maxDiagnosisAttempts
+            + ' diagnosförsök förbrukade – avsluta och starta ny övning'
+          : '')
       : 'Ingen felsökningsövning. Starta från ett dokumenterat DHCP-nät.';
   const log = $('investigation-observations');
   log.classList.remove('ok', 'fail');
@@ -974,7 +979,10 @@ function renderInvestigation() {
       : 'HYPOTES AVVISAD. ' + investigationVerdict.feedback
         + ' Det verkliga felet avslöjas inte.';
   } else {
-    verdict.textContent = investigationState?.canDiagnose
+    verdict.textContent = investigationState?.diagnosisAttempts >= investigationState?.maxDiagnosisAttempts
+      && !investigationState?.diagnosed
+      ? 'Alla diagnosförsök är förbrukade. Avsluta och starta en ny övning.'
+      : investigationState?.canSubmitDiagnosis
       ? 'Mätningarna räcker för att pröva en hypotes.'
       : 'Observera ett misslyckat DHCPREQUEST vid T1 och följ den valda nivån. '
         + 'Mät länken till DHCP-servern. Om länken är nere, kontrollera portläget '

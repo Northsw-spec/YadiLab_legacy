@@ -16,6 +16,7 @@ from .model import ProjectValidationError
 from .simulation import MAX_SESSIONS
 
 MAX_PROBES = 48
+MAX_GUESSES = 3
 DIAGNOSES = ("CABLE_DOWN", "PORT_SHUTDOWN", "VLAN_MISMATCH")
 PROBES = ("lease", "renew", "link", "port", "vlan")
 DIFFICULTIES = ("T1_ONLY", "T2_REBIND", "EXPIRY_RECOVERY")
@@ -222,6 +223,13 @@ class InvestigationSession:
                 self._renewal_evidence_blocker(phase) is None
                 and self._observed_cause() is not None
             ),
+            "canSubmitDiagnosis": (
+                self._renewal_evidence_blocker(phase) is None
+                and self._observed_cause() is not None
+                and not self._diagnosed and not self._repaired
+                and self._attempts < MAX_GUESSES
+            ),
+            "maxDiagnosisAttempts": MAX_GUESSES,
             "renewedPhases": sorted(self._renewed_phases),
             "observations": len(self._probes),
             "probesPerformed": [p["probe"] for p in self._probes],
@@ -338,6 +346,8 @@ class InvestigationSession:
     def diagnose(self, diagnosis: object) -> dict:
         if self._repaired:
             raise ProjectValidationError("investigation: exercise already repaired")
+        if self._diagnosed:
+            raise ProjectValidationError("investigation: correct diagnosis already recorded")
         if type(diagnosis) is not str or diagnosis not in DIAGNOSES:
             raise ProjectValidationError("investigation: choose a defined diagnosis")
         blocker = self._renewal_evidence_blocker(self._phase(self._active_lease()))
@@ -347,7 +357,7 @@ class InvestigationSession:
         if cause is None:
             raise ProjectValidationError(
                 "investigation: distinguishing observations are required on the DHCP path")
-        if self._attempts >= 3:
+        if self._attempts >= MAX_GUESSES:
             raise ProjectValidationError("investigation: maximum three diagnostic attempts")
         self._attempts += 1
         correct = diagnosis == cause == self._fault["kind"]

@@ -571,6 +571,37 @@ def investigation_lifecycle_races(context, base, network_mode, errors):
         expect(page.locator('#investigation-submit')).to_be_enabled()
         return cause
 
+    # P7: exhaustion is a genuine server-side gate, not just stale UI
+    # evidence. Three wrong guesses leave measurements available but prevent
+    # a fourth attempt; no hidden cause or repair is revealed.
+    page = fresh()
+    actual_cause = ready_for_diagnosis(page)
+    wrong_cause = next(name for name in
+                       ('CABLE_DOWN', 'PORT_SHUTDOWN', 'VLAN_MISMATCH')
+                       if name != actual_cause)
+    page.locator('#investigation-diagnosis').select_option(wrong_cause)
+    for attempt in range(1, 4):
+        with page.expect_response('**/api/dhcp/investigation/diagnose') as denied:
+            page.locator('#investigation-submit').click()
+        data = denied.value.json()
+        assert denied.value.status == 200
+        assert data['correct'] is False and data['diagnosisAttempts'] == attempt
+        assert data['canDiagnose'] is True
+        assert data['canSubmitDiagnosis'] is (attempt < 3)
+        assert data['maxDiagnosisAttempts'] == 3
+        assert actual_cause not in json.dumps(data)
+        if attempt < 3:
+            expect(page.locator('#investigation-submit')).to_be_enabled()
+        else:
+            expect(page.locator('#investigation-submit')).to_be_disabled()
+            expect(page.locator('#investigation-status')).to_contain_text(
+                '3 av 3 diagnosförsök förbrukade')
+            expect(page.locator('#investigation-repair')).to_be_disabled()
+    with page.expect_response('**/api/dhcp/investigation/stop') as cleaned:
+        page.locator('#investigation-stop').click()
+    assert cleaned.value.status == 200
+    page.close()
+
     # E: the server returns a genuine 422 for an invalid session ID. A
     # delayed error after workspace replacement must not appear in the new UI.
     page = fresh()

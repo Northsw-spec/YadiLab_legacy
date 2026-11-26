@@ -467,6 +467,11 @@ class IcmpInvestigation:
             "observations": len(self._probes),
             "probesPerformed": list(self._probes),
             "canDiagnose": can_diagnose,
+            "canSubmitDiagnosis": (
+                can_diagnose and self._guesses < MAX_GUESSES
+                and not self._diagnosed and not self._repaired
+            ),
+            "maxDiagnosisAttempts": MAX_GUESSES,
             "diagnosisAttempts": self._guesses,
             "diagnosed": self._diagnosed,
             "repaired": self._repaired,
@@ -648,6 +653,8 @@ class IcmpInvestigation:
     def diagnose(self, diagnosis: object) -> dict:
         if self._repaired:
             raise ProjectValidationError("icmp investigation: exercise already repaired")
+        if self._diagnosed:
+            raise ProjectValidationError("icmp investigation: correct diagnosis already recorded")
         if type(diagnosis) is not str or diagnosis not in KINDS:
             raise ProjectValidationError("icmp investigation: unsupported diagnosis")
         if not self.state()["canDiagnose"]:

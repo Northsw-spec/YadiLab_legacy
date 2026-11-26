@@ -228,7 +228,7 @@ export function renderIcmpInvestigationPanel(project, session) {
     || (lesson && !lessonDiagnoses.includes(diagnosis.value))
     || Boolean(icmpInvestigationState?.diagnosed)
     || Boolean(icmpInvestigationState?.repaired)
-    || !icmpInvestigationState?.canDiagnose;
+    || !icmpInvestigationState?.canSubmitDiagnosis;
   $('icmp-investigation-repair').disabled = !active || busy
     || !icmpInvestigationState?.diagnosed || Boolean(icmpInvestigationState?.repaired)
     || !icmpInvestigationVerdict?.correct;
@@ -242,6 +242,12 @@ export function renderIcmpInvestigationPanel(project, session) {
         + ' → ' + icmpInvestigationState.destinationIpv4
         + ' · ' + icmpInvestigationState.observations + ' mätningar'
         + (lesson ? '' : ' · DHCP-ursprung: ' + icmpInvestigationState.dhcpCheck)
+        + (!icmpInvestigationState.diagnosed
+            && icmpInvestigationState.diagnosisAttempts >= icmpInvestigationState.maxDiagnosisAttempts
+          ? ' · ' + icmpInvestigationState.diagnosisAttempts + ' av '
+            + icmpInvestigationState.maxDiagnosisAttempts
+            + ' diagnosförsök förbrukade – avsluta och starta ny övning'
+          : '')
       : 'Ingen ICMP-övning startad. En fungerande ICMP-baslinje krävs.';
   const observations = $('icmp-investigation-observations');
   observations.textContent = icmpInvestigationLog.length
