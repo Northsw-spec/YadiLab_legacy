@@ -1,10 +1,12 @@
-# YadiLab – åtgärdsplan för granskningsbrister och hållbar modularisering
+# YadiLab – enda masterplan: arkitekturstabilisering A0–A10 och komplett nätverkssimulator S0–S12
 
 **Datum:** 2026-11-26  
-**Status:** GODKÄND / AKTIV PLAN – **A0 DONE** ([PR #169](https://github.com/Northsw-spec/YadiLab/pull/169)); **A1 DONE** ([PR #170](https://github.com/Northsw-spec/YadiLab/pull/170), separat Required-negativ [#173](https://github.com/Northsw-spec/YadiLab/pull/173)); **A2 DONE** ([PR #175](https://github.com/Northsw-spec/YadiLab/pull/175)); **A3 IN_PROGRESS**, del 1 [PR #176](https://github.com/Northsw-spec/YadiLab/pull/176) och del 2 [PR #177](https://github.com/Northsw-spec/YadiLab/pull/177) är squash-mergade med samtliga Required-checks SUCCESS (senaste main `16e6bd67444b1ef9eb96f2448edf04efda2ab17f`); fortsatt A3: UI-invalidering och sena `finally`, Builder/inspector, diagnostik och import-UI.  
+**Status:** GODKÄND / AKTIV PLAN – **NYTT UTTRYCKLIGT PRODUKTBESLUT 2026-11-26:** Fullständig, exakt, in-process nätverkssimulator utan VM/emulering, med objektiv ambition att överträffa Cisco Packet Tracer. **A9 PROTOKOLLUTBYGGNAD ÄR GODKÄND SOM S0–S12-OMFÅNG; A8 MÄNSKLIG STUDIE KRÄVER FORTFARANDE SEPARAT BESLUT.** S0 strategi/arkitektur IN_PROGRESS, ingen ny protokollmotor levererad av denna plan-PR.
+
+**Historisk A-status (ska bevaras):** **A0 DONE** ([PR #169](https://github.com/Northsw-spec/YadiLab/pull/169)); **A1 DONE** ([PR #170](https://github.com/Northsw-spec/YadiLab/pull/170), separat Required-negativ [#173](https://github.com/Northsw-spec/YadiLab/pull/173)); **A2 DONE** ([PR #175](https://github.com/Northsw-spec/YadiLab/pull/175)); **A3 IN_PROGRESS**, del 1 [PR #176](https://github.com/Northsw-spec/YadiLab/pull/176) och del 2 [PR #177](https://github.com/Northsw-spec/YadiLab/pull/177) är squash-mergade med samtliga Required-checks SUCCESS (senaste main `16e6bd67444b1ef9eb96f2448edf04efda2ab17f`); fortsatt A3: UI-invalidering och sena `finally`, Builder/inspector, diagnostik och import-UI.  
 **Utgångspunkt:** Granskningsrapporten *Teknisk granskning av YadiLab – 2026-11-26* (hela avsnitt 1–6), användarens observation om försvunnen modularisering samt en separat kodinventering på `main@82fca139cc43e12ff8c21bbb3427ab4f87588fd5`.  
 **Syfte:** Åtgärda påvisade fel och underhållsbrister; verifiera kvarstående osäkerheter; ge dokumenterade simulatorbegränsningar ett explicit beslut; återvinna och skydda modulariseringen.  
-**Styrning:** P0–P7 är formellt avslutat. **Den här A0–A10-planen är nu ensam aktiv utvecklingsplan** genom uttryckligt användarbeslut 2026-11-26, inte en återaktivering av P7. A0–A7 och A10 omfattas av beslutet enligt beroenden och acceptanskrav. **A8 och A9 är villkorade och kräver separata uttryckliga godkännanden**; ingen ny native-protokollmotor, empirisk studie eller annan utökning är automatiskt beställd.
+**Styrning:** P0–P7 förblir CLOSED. **Denna fil är YadiLabs ENDA aktiva backlog:** A0–A10 = kvalitet/arkitekturgrund; S0–S12 = nu uttryckligen beställd full simulatorplattform. **A8 och A9 har olika beslut:** A8 (empirisk människostudie) = DECISION_REQUIRED; A9:s tidigare godkännandespärr har upphävts för det exakt definierade S-omfånget. Tidigare snäva förbud i denna fils historiska A-avsnitt är underställda de nya avsnitten 10–11. [MASTERPROMPT](MASTERPROMPT.md), [Packet Tracer-forskning](research/PACKET_TRACER_GAP_ANALYSIS_2026-11-26.md), [protokollmatris](PROTOCOL_COVERAGE_MATRIX.md) och [simulatorkontrakt](architecture/DETERMINISTIC_ENGINE_CONTRACT.md) är underordnade specifikationer, inte egna roadmaps.
 
 
 ## 0. Operativ startpunkt för kommande konversationer (beslutad 2026-11-26)
@@ -16,7 +18,7 @@
 
 **A0 – Rebaslinje & forensisk modulgranskning:** [PR #169](https://github.com/Northsw-spec/YadiLab/pull/169) är verifierat MERGED med required CI SUCCESS; [A0-forensik](architecture/A0_FORENSIC_BASELINE_2026-11-26.md) och [manifest](../architecture/a0_baseline.json) kvarstår. **A1 – Arkitekturspärrar G1–G7 är DONE:** [PR #170](https://github.com/Northsw-spec/YadiLab/pull/170) implementerade 17 testade negativa/positiva spärrar, modulkontrakt, ägarskap, trendrapport och separata workflowjobb. GitHub [main-ruleset #27419615](https://github.com/Northsw-spec/YadiLab/rules/27419615) kräver nu uttryckligen båda `unit-tests` och `architecture-guard` (app 15368; strict). [PR #173](https://github.com/Northsw-spec/YadiLab/pull/173) gav **grön `unit-tests` + röd separat `architecture-guard` i båda körningar + GitHub `mergeable_state=blocked`**; stängd utan merge. [Evidens i Issue #171](https://github.com/Northsw-spec/YadiLab/issues/171#issuecomment-7197176467). **A2 är DONE** ([PR #175](https://github.com/Northsw-spec/YadiLab/pull/175), C06); **A3 är IN_PROGRESS** med den första DOM-extraktionen i [PR #176](https://github.com/Northsw-spec/YadiLab/pull/176).
 
-**Fortsättningsregel:** När användaren säger `fortsätt` om YadiLab ska nästa **ej slutförda, godkända A-kort** väljas utifrån beroenden och verifierad GitHub-status; inte gamla P7-steg, inte en ny påhittad fas och inte ett valfritt nytt protokoll. Max en aktiv ändrings-PR. Utlovad automatisk bakgrundskörning förekommer inte. Bekräfta exakt PR-HEAD, alla required checks `SUCCESS`, oskadad main och squash före merge. Dokumentera varje färdigt A-kort och påverkat C01–C18-ID i planen eller en evidenslänk som planen refererar till.
+**Fortsättningsregel:** Vid YadiLab-"fortsätt": välj nästa beroendeupplåsta **A- eller S-kort i just denna fil** efter faktisk GitHub/CI. S0-design får färdigställas nu, men S1-kod väntar tills A3, A4, A5 och A7 är sakligt accepterade. Alla protokoll får egna versionsbundna S-del-PR med dokumenterade standarder, oberoende positiva/negativa/motsägande tester och gemensam motor. Ingen ny parallell roadmap eller gammal P7-etapp. Max en aktiv ändrings-PR. Utlovad automatisk bakgrundskörning förekommer inte. Bekräfta exakt PR-HEAD, alla required checks `SUCCESS`, oskadad main och squash före merge. Dokumentera varje färdigt A-kort och påverkat C01–C18-ID i planen eller en evidenslänk som planen refererar till.
 
 **Statusregel:** `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`, `ACCEPTED_LIMITATION`, `DECISION_REQUIRED` och `NOT_VERIFIED` betyder olika saker. Ändra aldrig till `DONE` från enbart dokumentation eller CI-symbol. Länkad PR + resultat/negativt test + arkitekturdelta + återstående risk krävs. När en uppgift slutförts uppdateras tabellen **i samma PR** så att nästa konversation inte behöver gissa.
 
@@ -25,13 +27,13 @@
 | **A0** | **DONE – PR #169 / main@fcf8171** | C02–C05: arkitekturhistorik, ägarskap, data- och regressionsmanifest; all required CI SUCCESS på PR-HEAD |
 | **A1** | **DONE – PR #170 + negativt Required-test #173** | C03–C05: [G1–G7-kontrakt](architecture/A1_GUARD_CONTRACT_2026-11-26.md); två Required-checks API-verifierade; `unit-tests=SUCCESS` och `architecture-guard=FAILURE` gav `mergeable_state=blocked` i ej mergad #173 |
 | **A2** | **DONE – PR #175 / main@73a3fe0** | C06: [HTTP-robusthetskontrakt](architecture/A2_HTTP_DISCONNECT_2026-11-26.md); 10 regressioner med riktiga TCP RST, 200/4xx/500-paritet, en Save och återläst SHA; båda Required-checks SUCCESS på exakt sista PR-HEAD; ingen ändrad nätverksmotor |
-| **A3** | **IN_PROGRESS – del 1 #176 och del 2 #177 DONE; del 3 (diagnostikens sena HTTP-finally) under verifiering** | C03–C05: [del 1 DOM](architecture/A3_WORKSPACE_PANELS_2026-11-26.md), [del 2 workspace-/stale-revision](architecture/A3_WORKSPACE_REVISIONS_2026-11-26.md), main `16e6bd67444b1ef9eb96f2448edf04efda2ab17f`; inga nya A3-delar utan positivt/negativt orakel, korrekt Required CI, säker squash. UI-invalidering/sena `finally`, inspector, diagnos/import kvarstår |
+| **A3** | **IN_PROGRESS – del 1 #176, del 2 #177 och del 3 #179 DONE** | C03–C05: [del 1 DOM](architecture/A3_WORKSPACE_PANELS_2026-11-26.md), [del 2 workspace-/stale-revision](architecture/A3_WORKSPACE_REVISIONS_2026-11-26.md), main `16e6bd67444b1ef9eb96f2448edf04efda2ab17f`; inga nya A3-delar utan positivt/negativt orakel, korrekt Required CI, säker squash. UI-invalidering/sena `finally`, inspector, diagnos/import kvarstår |
 | A4 | NOT_STARTED | Backend-import/ICMP-modularisering skyddad av A1 |
 | A5 | NOT_STARTED | Oberoende referenser och komplexa topologier |
 | A6 | NOT_STARTED | Pedagogisk funktion och testad elevresa |
 | A7 | NOT_STARTED | Tydlig support-/begränsningsmatris |
 | A8 | DECISION_REQUIRED / OPTIONAL | Empirisk mänsklig studie kräver separat godkännande |
-| A9 | DECISION_REQUIRED / OPTIONAL | Nya protokoll eller fysikmodell kräver separat godkännande |
+| A9 | APPROVED_SCOPE / IMPLEMENTATION_NOT_STARTED | Full protokollutbyggnad godkänd som S-kort; ingen native ny motor påstås färdig |
 | A10 | NOT_STARTED | Slutrevision och stängningsbeslut när föregående grindar klarats |
 
 **Avslutsregel:** Planen får först markeras `CLOSED` efter A10:s verifierade slutrapport och full spårning av C01–C18. Valfria A8/A9 kan redovisas som `DECISION_REQUIRED` eller `NOT_VERIFIED` utan att någon obeställd implementation krävs. Ingen oberoende mänsklig pedagogisk effekt eller fullständig RFC-certifiering får då påstås utan faktisk evidens.
@@ -145,7 +147,7 @@ Föreslagna *förvaltningsmål*, inte bevis för korrekt kod: `app.js` under **1
 | A6 | Pedagogiskt UI och uppföljning | P2 | A3, A5 | Ett verkligt användarflöde som ej läcker facit; negativ testmatris |
 | A7 | Explicit begränsnings- och protokollbeslut | P2 | A5 | Full `SUPPORTED/UNSUPPORTED/DECISION_REQUIRED`-matris |
 | A8 | Separat empirisk användarstudie (valfri) | P2 | A6 och särskilt godkännande | Metod eller fortsatt tydlig `NOT_VERIFIED` |
-| A9 | Eventuell protokollbredd (separata kodkort) | P3 / spärrad | A7 + separat uttryckligt beslut | En avgränsad motor i taget, oberoende facit, ingen dold emulering |
+| A9 | Godkänd native protokollutbyggnad genom S0–S12 | P1 produktmål | S-kortens teknik-/testberoenden och A7 | En avgränsad motor i taget, oberoende facit, ingen dold emulering |
 | A10 | Slutrevision, rollback och beslut om avslut | P0 som slutgrind | Relevanta A-kort | Slutrapport C01–C18, oförändrade invariants, grön CI |
 
 **Tidsplanering:** Ordningen ovan är beroendestyrd; ingen kalenderdeadline eller ”alla protokoll färdiga” utlovas utan kapacitetsunderlag och uttryckliga omfångsbeslut. A0–A2 är första leveransgruppen. A3 delas i små, funktionellt begränsade PR:er. Backenddelning och nya referensfall bör inte kombineras i samma PR. A9 är en reserverad beslutsgrind, inte en automatisk beställning.
@@ -222,15 +224,15 @@ Föreslagna *förvaltningsmål*, inte bevis för korrekt kod: `app.js` under **1
 
 **Utför först efter separat beslut:** ange en förregistrerad hypotes, rekryteringskriterier, jämförelse mot alternativ metod, före-/eftertest av nätverksfelsökning, rimlig bias-/bortfallshantering och dataskydd/samtycke. Mät faktiska prestationer, inte ”AI-konfidens” eller generiska sannolikheter. Om ingen studie genomförs ska kunskapsluckan **fortsätta markeras NOT_VERIFIED** utan att blockerande omfång utökas.
 
-### A9. Valbara nya protokoll eller fysikmodeller – endast särskilt beslut
+### A9. Explicit godkänd protokoll-/motorutbyggnad, nu genom S-spåret
 
-**Separata förslag:** (a) STP-förklarande/liten deterministisk loopmodell; (b) IPv4-fragmentering; (c) DHCP relay och serverkonkurrens; (d) avgränsad TCP/UDP; (e) kö/bandbredd/fördröjning; (f) IPv6; (g) ACL/NAT; (h) OSPF/BGP. Var och en kräver explicit produktkontrakt, definierade stödda/avvisade fall, verifierad referens, resursbudget, säkerhetsgenomgång och separat användargodkännande. **Att lista ett protokoll här ger inte mandat att implementera det.** En heltäckande emulator likställd med GNS3/EVE-NG är inte realistisk acceptans för denna reparationsplan.
+**Användarens nya beslut 2026-11-26:** YadiLab ska få STP/RSTP, IPv6, DHCP-relay/multiserver, generell TCP/UDP, OSPF/BGP/EIGRP, ACL/NAT, säkerhet, tidsmodell, WAN/trådlöst, applikationer och Packet Tracer 9.0:s industriella protokoll med verkligt källförankrat stöd. A9 är alltså APPROVED_SCOPE men IMPLEMENTATION_NOT_STARTED. Allt delas i S1–S12 med separata, små verifierade PR:er, och endast efter respektive beroendegrind. VM, emulator, Cisco IOS, externa protokollprocesser och live scan är fortsatt förbjudna. A8:s mänskliga studie är INTE beställd.
 
 ### A10. Slutrevision och stängning
 
 **Utför:** kör alla obligatoriska testgrindar på sista PR-HEAD, verifiera ren squashhistorik och jämför `main` efter merge. Kontrollera arkitekturrapporten och prov att framtida återmonolitisering blockeras. Sammanställ C01–C18: status, bevis, risk, explicit omfångsbeslut och eventuell restpunkt. Genomför separat riskbaserad kodgranskning och relevant långkörning; beskriv klart det som inte testats.
 
-**Acceptans:** inga P0/P1-fel öppna, alla aktiverade A-kort har reproducerbart resultat, inget skydd är avaktiverat, både funktionell CI och `architecture-guard` är `SUCCESS`, sparad data oförändrad när ingen Save gjorts, dokumentationen beskriver faktiska gränser, och ny modularisering överlever minst en efterföljande funktions-PR med skydden aktiva.
+**Acceptans:** inga blockerande P0/P1-fel, alla aktiverade A-kort reproducerbara, Required CI utan bypass, explicit Save/Open och riktiga unsupported-etiketter. **A10 avslutar enbart A-stabiliseringsspåret, inte den beställda S0–S12-resan.**
 
 ## 6. Gemensam test- och acceptansmatris
 
@@ -293,3 +295,97 @@ Föreslagna *förvaltningsmål*, inte bevis för korrekt kod: `app.js` under **1
 **A3 del 3, diagnostisk UI-race (IN_PROGRESS):** DHCP Discover/Offer och read-only DORA måste frigöra busy när relevant indata invalidideras och tillåta nytt försök utan att invänta ett gammalt HTTP-svar. Endast det aktuella generations-ID:t får frigöra busy i `finally`. Två verkliga Chromium-regressioner håller det första svaret tillbaka tills ett andra försök startat och bevisar att det gamla svaret inte återaktiverar UI, läcker gammal diagnostik eller ändrar projektdata. Denna del är inte DONE före båda Required-kontrollerna på exakt HEAD och verifierad squash-merge. Ingen motor-/schemamutation.
 
 **Statusnot (2026-11-26):** A0 DONE (#169), A1 DONE (#170 med separat Required-negativ #173), A2 DONE (#175), **A3 IN_PROGRESS**, delarna #176 och #177 verifierat squash-mergade (main `16e6bd67444b1ef9eb96f2448edf04efda2ab17f`). Nästa del är UI-invalidering/stale `finally`, därefter Builder/Inspector och diagnos/import enligt beroenden. Codex följer [exekveringspolicyn](CODEX_EXECUTION_POLICY.md) och får inte vänta passivt på CI eller dubblera dyra körningar. A8/A9 DECISION_REQUIRED, P0–P7 CLOSED.
+
+---
+
+## 10. Det nya huvuduppdraget – full simulator, inte emulator
+
+**Beslut:** YadiLab ska bli en **komplett, tekniskt korrekt, precis, pedagogisk Linuxbaserad nätverkssimulator**, med målet att mätbart överträffa Cisco Packet Tracer 9.0. Den får INTE köra VM, gästande OS, Cisco IOS binärer, emulera maskinvara, starta FRRouting/GNS3/EVE-NG/ns-3 som runtime, skanna riktiga nät eller skapa en parallell "låtsasmotor". De befintliga riktiga Ethernet/ARP/IPv4/ICMP/DHCP-funktionerna ska återanvändas och migreras kontrollerat. Ciscos [officiella protokoll- och UI-katalog](https://tutorials.ptnetacad.net/help/default/intro.htm) och [9.0-industrinyheter](https://tutorials.ptnetacad.net/help/default/whatsNew.htm) är konkurrensbaslinje, medan standarder och oberoende orakel avgör teknisk korrekthet. Se [tre forskningsvågor](research/PACKET_TRACER_GAP_ANALYSIS_2026-11-26.md).
+
+**En enda aktiv plan:** denna fil; A0–A10 = kvalitet och arkitekturstabilisering, S0–S12 = nu beslutad produktutbyggnad. [MASTERPROMPT](MASTERPROMPT.md) = övergripande produkt- och kodagentkontrakt. [PROTOCOL_COVERAGE_MATRIX](PROTOCOL_COVERAGE_MATRIX.md) = paritet på feature- och versionsnivå. [Deterministiskt simulatorkontrakt](architecture/DETERMINISTIC_ENGINE_CONTRACT.md) = norm för S1 och efterföljande motor. Dessa är INTE egna arbetsköer.
+
+**Nya statusdefinitioner:** APPROVED_SCOPE betyder att användaren har beställt funktionen som mål; NOT_STARTED att kod ej finns; LIMITED_NATIVE att verifierbar men avgränsad implementation finns; VERIFIED_NATIVE först när standardspecifikation, egen kod, oberoende referensvektor och Required CI stöder ett exakt definierat beteende; PT_DOK = Ciscos dokumentation, INTE jämförd konkurrentkörning; PT_VERIFIED_COMPARISON kräver samma verkliga labb körda på exakta båda versioner. Ändra aldrig stödstatus via enbart Markdown.
+
+**Beroendelås:** S0 kan genomföras som dokumentation nu. **S1-kod får startas först när A3, A4, A5 och A7 är DONE i sak med erforderliga CI-bevis**, inte när deras rubriker bara markerats. A6/A10 avslutas som underhållskort enligt sina kriterier. S1 blockerar övrig native protokollutbyggnad; varje S-kort efter S1 kan delas i mindre PR, ett åt gången. A8 mänsklig forskning kräver fortfarande separat uttryckligt beslut. A9:s produktutbyggnad är nu uttryckligen godkänd i detta S-omfång, inte en licens för godtycklig teknikstack.
+
+### 10.1 Prioriterad produktväg och blockerande beroenden
+
+| Kort | Status | Leverans | Blockerande föregångare |
+|---|---|---|---|
+| S0 | IN_PROGRESS – masterdesign / docs | Källbelagd konkurrentmatris, standardlista, design- och sanningskontrakt | A1 och användarbeslut |
+| S1 | NOT_STARTED | Deterministisk diskret event kernel, simulerad tid, eventlogg och replay | S0 + A3/A4/A5/A7 |
+| S2 | NOT_STARTED | Full L2/VLAN, FDB aging, STP/RSTP, LACP/EtherChannel, kontrollerade loopar | S1 |
+| S3 | NOT_STARTED | IPv4/v6, ICMPv6, ND/SLAAC/DAD, MTU/fragment, RIB/FIB/SVI | S1/S2 |
+| S4 | NOT_STARTED | UDP, TCP FSM, DHCPv4/v6 relay/multiserver, DNS och appprotokoll | S1/S2/S3 |
+| S5 | NOT_STARTED | RIP, OSPFv2/v3, EIGRP, BGP-4, redistribution och konvergens | S1–S4, TCP före BGP |
+| S6 | NOT_STARTED | ACL, NAT/PAT, stateful firewall, GRE/IPsec, AAA/802.1X | S1–S5 relevanta paketvägar |
+| S7 | NOT_STARTED | Bandbredd, fördröjning, jitter, köer/QoS, WAN/fiber/wireless | S1–S4 |
+| S8 | NOT_STARTED | HSRP/VRRP, LLDP/CDP, SPAN/RSPAN/NetFlow, REP/PRP/PTP | S1–S5/S7 |
+| S9 | NOT_STARTED | Industriellt nätverk: Modbus TCP, PROFINET, CIP, OPC UA, IEC 61850, PLC/HMI | S4/S7/S8 |
+| S10 | NOT_STARTED | Komplett logical/physical UI, korrekt CLI, PDU/OSI inspector, labbförfattande och pedagogik | S1 och berörda protokoll |
+| S11 | NOT_STARTED | RFC-/IEEE-/IEC-orakel, differentialtest, skala/robusthet, jämförbar PT-körning | implementerade S2–S10 |
+| S12 | NOT_STARTED | Oberoende full kod-/arkitektur-/precision-/pedagogikgranskning, releasebeslut | S0–S11 |
+
+### S0. Källbaserad design och sanningsmatris
+
+Håll [Packet Tracer 9.0-katalogen](research/PACKET_TRACER_GAP_ANALYSIS_2026-11-26.md) versionslåst; äldre 8.2-FAQ kan vara historiskt komplement men inte automatiskt intyg för 9.0-stöd. Inventera **varje** protokollvariant i [täckningsmatrisen](PROTOCOL_COVERAGE_MATRIX.md). Dokumentera dagens kod, gaps, mål, standardversioner, licensfrågor och framtida jämförelseorakel. Acceptans: en canonical masterplan, ömsesidiga länkar, ingen unsupported som felaktigt kallas native, Required governance/architecture PASS. Denna PR ändrar ingen runtime.
+
+### S1. Den gemensamma in-process simuleringskärnan
+
+Bygg **en** prioriterad händelsekö ordnad på (integer virtual_time_ns, monotont event_id), per-scenario seedad PRNG, avbrytbara timers, resurs-/eventbudget, fail-closed zero-time loop- och overflowguard, och oföränderliga packet-/eventrecords med parent_event_id och packet_id. Simulerad tid är skild från väggklocka och GUI-animation. Varje riktig packet TX → link serialization → propagation → RX → parser → protocol state transition → route/FDB/ACL/queue decision → nästa hop/drop. Gemensam sessionstate äger FDB, ARP/ND, RIB/FIB, TCP, DHCP, OSPF/BGP och NAT enligt capability.
+
+**Acceptans:** två oberoende processstarter + samma konfiguration/seed ger identisk eventhash; samtidiga events har stabil tie-break; cancelled events kan inte utföras, ogiltig tid/zero-time-loop ger kontrollerat fel, gamla sessioner kan inte uppdatera ny workspace, och befintlig IPv4/ARP/ICMP/DHCP-beteendeparitet kvarstår. Inga två parallella motorer. [Detaljerat kontrakt](architecture/DETERMINISTIC_ENGINE_CONTRACT.md).
+
+### S2. Ethernet, VLAN, switchloopar och L2-konvergens
+
+Utöka befintlig EthernetFabric, MAC aging/flush och explicit portstate; 802.1Q native/allowed VLAN; STP/RSTP med BPDU root election, portroller, timers/topology change, LACP/EtherChannel med förhandling och linkfailover. Senare separata profiler för VTP/DTP/PAgP och andra proprietära tekniker. Positiva/negativa tester: fysiska loopar utan tyst falsk leverans, två potentiella roots, VLAN isolation, portdown, broadcast-storm-budget, STP-rekonvergens, LACP mismatch.
+
+### S3. IPv4/v6 dataplan och riktig routning
+
+Bakåtkompatibel, explicit projektmigration; RFC-stödd IPv4-fragmentering/DF/PMTUD där relevant; IPv6 headers och multicast/link-local scope; ND/RA/SLAAC/DAD, ICMPv6, ARP/ND aging, routing/RIB/FIB, inter-VLAN/SVI/router-on-a-stick. Negativa fall: nät-/broadcastadresser, no route, ND duplicate, wrong hop limit, TTL expiry, MTU, error suppression. Ingen IPv6-adress gissas från importerade dokument.
+
+### S4. TCP/UDP, DHCP och verklig applikationstrafik
+
+Generell UDP checksum/portdelivery; TCP enligt [RFC 9293](https://www.rfc-editor.org/rfc/rfc9293) med SYN/ACK, seq/window, retransmission, FIN/RST och simulerade timers; DHCPv4 relay/multiserver/renew/expiry, DHCPv6 RFC 8415, DNS query/cache/TTL. Därefter HTTP, TFTP/FTP, SMTP/POP3, SSH/Telnet, SNMP/Syslog/NTP/MQTT och RTP/VoIP i små dokumenterade kort. Varje tjänst måste kräva verkligt simulerad L2–L4-framväg och retur, aldrig statisk "request success". TLS/SSH/IPsec får aldrig hävda kryptografisk säkerhet som inte implementerats.
+
+### S5. Dynamiska routingprotokoll
+
+RIP v1/v2/ng, OSPFv2/v3 Hello/neighbor FSM/LSDB/SPF/areas, EIGRP DUAL med licens-/rättighetsbedömning, BGP4 över simulatorns riktiga TCP med OPEN/KEEPALIVE/UPDATE/withdrawal, AS_PATH, eBGP/iBGP/policy. Gemensam RIB/FIB install/uninstall, route preferences, redistribution och loopskydd. Negativa standardfall: ensidig Hello blir inte Full, flappande adjacency, withdrawn route, AS loop, BGP TCP fail, saknad retur, ECMP och policyfel.
+
+### S6. Säkerhet och tunnelsanning
+
+ACL ordning/direction/implicit deny, NAT/PAT och conntrack, stateful firewall/ZBF/CBAC, GRE/IPsec/IKE, AAA/RADIUS/TACACS/802.1X och IDS/IPS med tydlig begränsning. Korrekt filter/translation på simulerade packets, ingen "show access-list" utan motsvarande tillstånd. Falska security guarantees förbjudna.
+
+### S7. Tid, köer, WAN och radio
+
+Portbitrates, serialization/propagation, bandwidth, queue limit, delay/jitter/loss, DSCP/QoS, link types och fiber-/duplexfel; PPP/PPPoE/HDLC/Frame Relay/DSL, 802.11 association/roaming och uttryckligen avgränsade 3G/4G/5G-profiler. RTT och throughput ska beräknas ur verklig simulerad händelsekedja, aldrig ospecifik fast gissning. Fysiska lägen kräver uttrycklig linkprofil, inte avstånd på SVG.
+
+### S8. Hög tillgänglighet, management, avancerat L2
+
+VRRP/HSRP med unik aktiv gateway, LLDP/CDP, SPAN/RSPAN, NetFlow, NTP/PTP och REP/PRP/L2NAT; varje implementation med explicit standard och state. Negativt test: inga dubbla masters utan definierad split-brainmodell, korrekta timers vid failover, speglade packets och flow counters härledda från faktisk trafik.
+
+### S9. OT/IoT och isolerad industriell simulering
+
+Packet Tracer 9.0 stöder förenklade [Modbus TCP, PROFINET, CIP, IEC 61850, OPC-UA, PTP/PRP och PLC/HMI](https://tutorials.ptnetacad.net/help/default/industrial_otFeatures.htm). YadiLab ska erbjuda egna standardspecifika, versionsmärkta in-process delmodeller, korrekta exception-/register-/sequence-/timerfall och pedagogiska cyberobservatörer. Ingen kontakt med verklig PLC, inga host scripts, inga falska realtidsgarantier. IEC/ODVA/licenser granskas innan ny implementation.
+
+### S10. Komplett nätverks-UI och undervisning som slår konkurrenten
+
+Logisk och fysisk workspace, enhetspalett/profil och explicit kablage, riktig konfigurations-CLI som anropar samma backendmotor, device tables, OSI/PDU/header/timeline med exakta orsaksförklaringar, filter/step/pause/replay, importproveniens, labb-/övningsförfattande, automatisk bedömning, konkurrerande hypoteser, fördröjt facit och stöd för samma elevresa som konkurrenten. CLI-kommandon utan native semantik ska ge synligt UNSUPPORTED, aldrig tyst godkännande. Inga animerade eller fejkade leveransbevis.
+
+### S11. Standardefterlevnad, differential och benchmarks
+
+Fristående RFC/IEEE/IEC-orakel med råbytesfacit, state-/timergränser, positiva/negativa/motsägande fall, property/fuzz/metamorphic tests och reproducerade multi-hop, failover, race, loop och stora topologier. Referensimplementationer och isolerade jämförbara Packet Tracer-labb får användas **test-only**, aldrig runtime. Spåra SHA, seed, versionsnummer, maskin, PASS/FAIL/NOT_RUN och orakelproveniens. Föreslagna RELEASEMÅL (ej uppmätta): noll kända falskt positiva packet deliveries i låst negativ corpus, samtliga deklarerat stödda referensfall PASS, inga öppna P0/P1, deterministisk reproducerbarhet och minst ett end-to-end-scenario för varje deklarerad PT-paritetsfunktion. Skalmål beslutas först efter mätning, inte efter gissning.
+
+### S12. Oberoende produktbedömning och 10/10-gate
+
+Kräv helt ny oberoende code/architecture/security/protocol review; jämför samma versionslåsta labb i Packet Tracer och YadiLab där laglig körning finns; redovisa korrekta/inkorrekta/unsupported scenarier, faktisk teknisk precision, pedagogisk mätning och resurskostnad. En mänsklig lärstudie ingår bara om separat A8-godkännande. **Ingen "bättre än Cisco", 10/10, 100 % RFC-kompatibel eller COMPLETE** förrän relevant evidens är både mätt och publicerad. Brister klassas BUG/MODEL_LIMITATION/NOT_VERIFIED/UNSUPPORTED.
+
+## 11. Operativ MASTERPROMPT för alla framtida agentkörningar
+
+1. Läs senaste GitHub main/PR/CI, AGENTS.md, denna ENDA plan, [MASTERPROMPT](MASTERPROMPT.md) och relevant matris-/motorkontrakt. S0 är det aktiva designkortet fram till dokument-PR:s Required+merge. **Efter S0: återgå till ej färdig A3**, sedan A4/A5/A7 före S1. A6/A10 enligt egna acceptanskriterier.
+2. Leverera minsta meningsfulla positiva nätverksbeteende med tillhörande **negativt och motsägande oberoende orakel**, explicit standardversion, state ownership, virtual clock, resource budget, fullfidelity packet/drop trace, migrations- och rollbacktest där relevant. Separera underliggande dokumenterade konfigfakta från simulerade resultat.
+3. En enda motor och en final validator. Ingen VM/emulering/extern runtime, ingen falsk route/CLI/packet och ingen tyst import-/Save-förändring. Bevara Linux-only, exact source provenance, SHA-256, sessionsgenerationsstopp, A1-arkitekturspärr och anti-monolitkontrakt.
+4. Använd riktad snabb testtrappa, därefter full Required functional + architecture CI vid kodändring. Vid passiv CI-väntan, arbeta bara inom samma PR eller avsluta med exakta SHA/status; inga pollingsloopar/Codex-slöseri. Max en PR. Squash-merge enbart på exakt senaste grön HEAD utan blockerande reviews.
+5. Uppdatera **denna** A-/S-status och [protokollmatrisen](PROTOCOL_COVERAGE_MATRIX.md) utifrån faktiskt utförd evidens, inte vad en plan lovar. Läs inte gamla A9-förbud som veto mot användarens nya, uttryckliga S-godkännande. Markera okänt NOT_VERIFIED.
+
+**Tolkningsföreträde:** De äldre A0–A10-avsnitten beskriver den ursprungliga reparationsplanens begränsade omfång och bevaras för revisionsspår. För nya protokoll och ny produktvision gäller användarens uttryckliga beslut och avsnitt 10–11. A8 separat godkännande, A9 beslutad utbyggnad; inga redan godkända Required-kontroller får försvagas.
