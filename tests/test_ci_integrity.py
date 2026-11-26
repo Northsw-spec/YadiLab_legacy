@@ -34,6 +34,27 @@ class WorkflowSupplyChainTests(unittest.TestCase):
             self.assertNotRegex(content, r"(?m)^\s*(?:id-token|actions|checks|issues|packages|pull-requests|security-events|workflows):\s*write\b",
                                 f"{path.name}: unreviewed write access")
 
+    def test_architecture_regression_cannot_detach_from_required_functional_ci(self):
+        # The main branch already requires unit-tests. Keep the architecture
+        # scanner inside that job in addition to the separate status, so the
+        # policy is not temporarily optional before ruleset administration.
+        ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text("utf-8")
+        self.assertIn("\n  unit-tests:\n", ci)
+        self.assertIn("      - name: Required architecture anti-regression backup gate\n", ci)
+        body = ci.split("      - name: Required architecture anti-regression backup gate\n", 1)[1]
+        body = body.split("      - name: Model, storage and HTTP functional tests\n", 1)[0]
+        self.assertIn('python3 tools/architecture_guard.py --base-ref "$BASE_REF"', body)
+        self.assertIn("python3 tools/architecture_guard.py", body)
+        self.assertNotRegex(body, r"(?m)^        (?:if|continue-on-error):")
+
+        separate = (ROOT / ".github" / "workflows" /
+                    "architecture_guard.yml").read_text("utf-8")
+        self.assertRegex(separate, r"(?m)^on:\n  push:\n  pull_request:")
+        self.assertIn("\n  architecture-guard:\n", separate)
+        self.assertIn("python3 -m unittest discover -s tests -p 'test_architecture_guard.py' -v",
+                      separate)
+        self.assertNotIn("continue-on-error: true", separate)
+
     def test_git_checkout_never_leaves_workflow_token_on_disk(self):
         workflows = list((ROOT / ".github" / "workflows").glob("*.yml"))
         for path in workflows:
