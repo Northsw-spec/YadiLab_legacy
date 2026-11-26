@@ -535,6 +535,21 @@ class IcmpInvestigation:
                     for step in (result_echo["reply"] or {}).get("steps", [])
                 ],
                 "observedLinkIds": _observed_wires(result_echo),
+                # The Echo engine can separately model a router-generated
+                # ICMP Time Exceeded / Network Unreachable response. Do not
+                # flatten "no Echo Reply" into "no ICMP response". Equally,
+                # a locally generated but undelivered router error must never
+                # be presented as received at the source.
+                "routerError": ({
+                    "type": error["type"], "code": error["code"],
+                    "deliveryStatus": error["status"],
+                    "receivedAtSource": error["status"] == "RECEIVED",
+                    "sourceNode": error["sourceNode"],
+                    "sourcePort": error["sourcePort"],
+                    "quotedDestinationIpv4": error["quotedDestinationIpv4"],
+                    "returnTraceStatus": error["trace"]["status"],
+                    "source": "SIMULATED",
+                } if (error := result_echo["icmpError"]) is not None else None),
                 "source": "SIMULATED",
             }
             if self._lesson:
