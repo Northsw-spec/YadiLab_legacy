@@ -32,11 +32,15 @@ function icmpInvestigationDescription(item) {
     const hops = [...o.requestSteps.map(step => ({direction:'UT', ...step})),
                   ...o.replySteps.map(step => ({direction:'RETUR', ...step}))];
     const error = o.routerError;
-    const errorType = error?.type === 11 ? 'Time Exceeded'
-      : error?.type === 3 ? 'Destination Unreachable' : 'okänd typ';
+    const errorType = error?.type === 11 && error?.code === 0
+      ? 'Time Exceeded – TTL expired in transit'
+      : error?.type === 3 && error?.code === 0
+        ? 'Destination Unreachable – Network Unreachable'
+        : 'okänd eller ej stödd typ/kod';
     const routerEvidence = error
       ? '\nRouter-ICMP i simuleringen: typ ' + error.type + '/kod ' + error.code
         + ' (' + errorType + ') från ' + error.sourceNode + '/' + error.sourcePort
+        + ' · citerad destination ' + error.quotedDestinationIpv4
         + (error.receivedAtSource
           ? ' · MOTTAGET vid ursprungskällan i modellen'
           : ' · INTE MOTTAGET vid ursprungskällan; generering i modellen är inte en observerad felrespons')

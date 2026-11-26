@@ -749,6 +749,7 @@ def icmp_panel_integration(context, network_mode, errors):
             failed = probe(page, 'ping')['observation']
             assert failed['status'] != 'REPLIED' and failed['replyMatched'] is False
             assert failed['routerError'] is None
+            expect(page.locator('#icmp-investigation-observations')).not_to_contain_text('citerad destination')
             expect(page.locator('#icmp-investigation-observations')).to_contain_text('giltig Echo Reply: nej')
             expect(page.locator('#icmp-investigation-observations')).to_contain_text(
                 'Router-ICMP: inget genererat av denna begränsade modell')
@@ -839,6 +840,7 @@ def icmp_panel_integration(context, network_mode, errors):
             assert seen['status'] == 'REQUEST_FAILED'
             assert seen['replyMatched'] is False
             assert seen['routerError']['type'] == 3
+            assert seen['routerError']['quotedDestinationIpv4'] == '198.51.100.20'
             assert seen['routerError']['deliveryStatus'] == 'RECEIVED'
             assert seen['routerError']['receivedAtSource'] is True
             assert seen['routerError']['returnTraceStatus'] == 'DELIVERED'
@@ -846,7 +848,9 @@ def icmp_panel_integration(context, network_mode, errors):
                 'Echo Reply: ej skickad')
             assert 'STATIC_ROUTE_MISSING' not in json.dumps(seen)
             expect(page.locator('#icmp-investigation-observations')).to_contain_text(
-                'Router-ICMP i simuleringen: typ 3/kod 0 (Destination Unreachable)')
+                'Router-ICMP i simuleringen: typ 3/kod 0 (Destination Unreachable – Network Unreachable)')
+            expect(page.locator('#icmp-investigation-observations')).to_contain_text(
+                'citerad destination 198.51.100.20')
             expect(page.locator('#icmp-investigation-observations')).to_contain_text(
                 'MOTTAGET vid ursprungskällan i modellen')
             expect(page.locator('#icmp-investigation-observations')).not_to_contain_text(

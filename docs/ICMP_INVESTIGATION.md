@@ -131,6 +131,8 @@ eller simulerad felpunkt exponeras.
 | `port` | `{"nodeId":"sw-left","portId":"a"}` | Dokumenterat kontra simulerat administrativt portläge och IPv4/CIDR (eller null för port utan IP); inte live-telemetri |
 | `vlan` | `{"nodeId":"sw-left","portId":"a"}` | Dokumenterad kontra simulerad explicit VLAN-konfiguration |
 
+När ett routerfel finns visar panelen den **citerade destinationen ur ursprungligt IPv4-paket** samt typ och kod. Enligt [RFC 792](https://www.rfc-editor.org/rfc/rfc792) betyder ICMP typ 3/kod 0 *Destination Unreachable – Network Unreachable*; typ 11/kod 0 betyder *Time Exceeded – TTL expired in transit*. Detta är evidens från en validerad **simulering**, inte ett live-mätresultat eller ett bevis för den dolda övningsorsaken. Om `routerError=null` visas ingen uppfunnen citerad destination.
+
 `route` får endast slå upp **källans eller destinationens egen IP**
 inom samma övning och på faktiskt existerande host/router. Detta
 möjliggör att särskilt granska returvägen från destinationen mot
